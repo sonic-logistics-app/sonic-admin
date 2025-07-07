@@ -21,6 +21,12 @@ export default defineNuxtConfig({
     ]
   },
 
+  runtimeConfig: {
+    public: {
+      BACKEND_URL: process.env.BACKEND_URL || 'http://localhost/api'
+    }
+  },
+
   components: {
     dirs: [
       {

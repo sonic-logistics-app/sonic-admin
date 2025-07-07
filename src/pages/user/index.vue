@@ -6,6 +6,7 @@ import ProductService from '~~/services/ProductService';
 export default {
   data() {
     return {
+      displayConfirmation: true,
       customers: null,
       filters1: null,
       filters2: {},
@@ -38,7 +39,8 @@ export default {
           label: 'Delete',
           icon: 'pi pi-trash'
         }
-      ]
+      ],
+      contextActionItems: [] as { label: string, icon: string, command: () => void }[]
     };
   },
   customerService: null,
@@ -50,8 +52,13 @@ export default {
   },
   mounted() {
     this.productService.getProductsWithOrdersSmall().then(data => this.products = data);
-    this.customerService.getCustomersLarge().then((data) => {
-      this.customers = data;
+    this.customerService.getAllCustomers().then((data) => {
+      console.log(data);
+      this.customers = data.map((customer) => ({
+        ...customer,
+        imageLoaded: true,
+        verifying: false
+      }));
       this.loading1 = false;
       this.customers.forEach(customer => customer.date = new Date(customer.date));
     });
@@ -86,11 +93,76 @@ export default {
         year: 'numeric'
       });
     },
-    toggleMenu(event) {
-      this.$refs.menu.toggle(event);
-    },
+    // toggleMenu(event) {
+    //   this.$refs.menu.toggle(event);
+    // },
     onContextRightClick(event) {
       this.$refs.contextMenu.show(event);
+    },
+    getInitials(first, last) {
+      return ((first?.charAt(0) || '') + (last?.charAt(0) || '')).toUpperCase();
+    },
+    onImageError(event, data) {
+      data.imageLoaded = false;
+      event.target.style.display = 'none'; // Sembunyikan <img> jika gagal load
+    },
+    toggleMenu(event, data) {
+      this.contextActionItems = [];
+
+      if (!data.is_verified) {
+        this.contextActionItems.push({
+          label: 'Verify',
+          icon: 'pi pi-check',
+          command: () => {
+            this.$confirm.require({
+              message: `Are you sure you want to verify ${data.first_name} ${data.last_name}?`,
+              header: 'Confirm Verification',
+              icon: 'pi pi-check-circle',
+              acceptLabel: 'Yes',
+              rejectLabel: 'Cancel',
+              accept: () => {
+                this.verifyCustomer(data);
+              }
+            });
+          }
+        });
+      }
+
+      this.contextActionItems.push({
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.deleteCustomer(data)
+      });
+
+      this.$refs.menu.toggle(event);
+    },
+    async verifyCustomer(customer) {
+      if (!customer) {
+        return;
+      }
+
+      customer.verifying = true;
+      try {
+        await this.customerService.verifyCustomer(customer.id);
+
+        customer.is_verified = true;
+          this.$toast.add({
+          severity: 'success',
+          summary: 'Customer Verified',
+          detail: `${customer.first_name} ${customer.last_name || ''} has been successfully verified.`,
+          life: 3000
+        });
+      } catch (error) {
+        console.error('Verifikasi gagal:', error);
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Verification Failed',
+          detail: `Failed to verify ${customer.first_name} ${customer.last_name || ''}. Please try again.`,
+          life: 3000
+        });
+      } finally {
+        customer.verifying = false;
+      }
     }
   }
 };
@@ -98,6 +170,7 @@ export default {
 
 <template>
   <div class="grid">
+    <Toast />
     <div class="col-12">
       <div class="card">
         <h5>Customer</h5>
@@ -140,8 +213,25 @@ export default {
             style="min-width:14rem"
           >
             <template #body="{ data }">
-              <img :alt="data.representative.name" :src="`/images/avatar/${data.representative.image}`" width="32" style="vertical-align: middle">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.representative.name }}</span>
+              <div style="display: flex; align-items: center;">
+                <img
+                  :src="`/images/avatar/${data.first_name}`"
+                  width="32"
+                  height="32"
+                  style="vertical-align: middle; border-radius: 50%; object-fit: cover;"
+                  @error="onImageError($event, data)"
+                  :alt="data.first_name"
+                >
+                <span
+                  v-if="!data.imageLoaded"
+                  class="fallback-avatar"
+                >
+                  {{ getInitials(data.first_name, data.last_name) }}
+                </span>
+                <span style="margin-left: .5em; vertical-align: middle" class="image-text">
+                  {{ data.first_name }} {{ data.last_name }}
+                </span>
+              </div>
             </template>
           </Column>
           <!-- <Column field="name" header="Name" style="min-width:12rem">
@@ -153,21 +243,20 @@ export default {
             </template>
           </Column> -->
           <Column header="Email" filter-field="country.name" style="min-width:12rem">
-            <!-- <template #body="{ data }">
-              <img src="~/assets/demo/flags/flag_placeholder.png" :alt="data.country.name" :class="`flag flag-${data.country.code}`" width="30">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.country.name }}</span>
-            </template> -->
+            <template #body="{ data }">
+              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.email }}</span>
+            </template>
           </Column>
           <Column header="Phone number" filter-field="balance" data-type="numeric" style="min-width:10rem">
-            <!-- <template #body="{ data }">
-              {{ formatCurrency(data.balance) }}
-            </template> -->
+            <template #body="{ data }">
+              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.phone ? `+${data.phone}` : '' }}</span>
+            </template>
           </Column>
           <Column field="status" header="Login with" :filter-menu-style="{ width: '14rem' }" style="min-width:12rem">
             <template #body="{ data }">
-              <span :class="`customer-badge status-${data.status}`">{{ data.status }}</span>
+              <span :class="`customer-badge status-${data.provider}`">{{ data.provider }}</span>
             </template>
-            <template #filter="{ filterModel }">
+            <!-- <template #filter="{ filterModel }">
               <ClientOnly>
                 <Dropdown
                   v-model="filterModel.value" :options="statuses" placeholder="Any"
@@ -183,7 +272,7 @@ export default {
                   </template>
                 </Dropdown>
               </ClientOnly>
-            </template>
+            </template> -->
           </Column>
           <Column
             field="verified" header="Verified" data-type="boolean"
@@ -191,7 +280,18 @@ export default {
             style="min-width:8rem"
           >
             <template #body="{ data }">
-              <i class="pi" :class="{ 'text-green-500 pi-check-circle': data.verified, 'text-pink-500 pi-times-circle': !data.verified }" />
+              <i
+                v-if="data.verifying"
+                class="pi pi-spin pi-spinner text-gray-500"
+              />
+              <i
+                v-else
+                class="pi"
+                :class="{
+                  'text-green-500 pi-check-circle': data.is_verified,
+                  'text-pink-500 pi-times-circle': !data.is_verified
+                }"
+              />
             </template>
             <template #filter="{ filterModel }">
               <TriStateCheckbox v-model="filterModel.value" />
@@ -209,17 +309,23 @@ export default {
               </span>
             </template>
             <template #body="{ data }">
-              <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="w-fit px-2" />
+              <Menu
+                ref="menu"
+                :model="contextActionItems"
+                :popup="true"
+                class="w-fit px-2"
+              />
               <Button
                 icon="pi pi-ellipsis-v"
                 class="p-button-rounded p-button-text p-2"
-                @click="toggleMenu"
+                @click="toggleMenu($event, data)"
               />
             </template>
           </Column>
         </DataTable>
       </div>
     </div>
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -232,7 +338,7 @@ export default {
 		font-size: 12px;
 		letter-spacing: .3px;
 
-		&.status-qualified {
+		&.status-CREDENTIALS {
 			background: #C8E6C9;
 			color: #256029;
 		}
@@ -247,7 +353,7 @@ export default {
 			color: #8A5340;
 		}
 
-		&.status-new {
+		&.status-GOOGLE {
 			background: #B3E5FC;
 			color: #23547B;
 		}
@@ -315,4 +421,17 @@ export default {
 			color: #694382;
 		}
 	}
+
+  .fallback-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #ccc;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>

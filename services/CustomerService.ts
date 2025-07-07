@@ -1,8 +1,24 @@
-const BACKEND_URL = process.env.BACKEND_URL;
+const config = useRuntimeConfig();
+const apiUrl = config.public.BACKEND_URL;
 
 export default class CustomerService {
   getAllCustomers() {
-    return fetch(`${BACKEND_URL}/user`).then(res => res.json()).then(d => d.data);
+    return fetch(`${apiUrl}/admin/user`)
+      .then(res => res.json())
+      .then((d) => {
+        console.log(d.users);
+        return d.users;
+      });
+  }
+
+  verifyCustomer(user_id) {
+    return fetch(`${apiUrl}/admin/user/verify`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id })
+    }).then(res => res.json());
   }
 
   getCustomersSmall() {
@@ -21,7 +37,7 @@ export default class CustomerService {
     return fetch('/data/customers-xlarge.json').then(res => res.json()).then(d => d.data);
   }
 
-  getCustomers(params) {
+  getCustomers(params: { [x: string]: string | number | boolean }) {
     const queryParams = Object.keys(params).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
     return fetch(`https://www.primefaces.org/data/customers?${queryParams}`).then(res => res.json());
   }
