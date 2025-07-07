@@ -1,4 +1,10 @@
+const BACKEND_URL = process.env.BACKEND_URL;
+
 export default class CustomerService {
+  getAllCustomers() {
+    return fetch(`${BACKEND_URL}/user`).then(res => res.json()).then(d => d.data);
+  }
+
   getCustomersSmall() {
     return fetch('/data/customers-small.json').then(res => res.json()).then(d => d.data);
   }

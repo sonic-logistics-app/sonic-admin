@@ -6,9 +6,7 @@ import ProductService from '~~/services/ProductService';
 export default {
   data() {
     return {
-      customer1: null,
-      customer2: null,
-      customer3: null,
+      customers: null,
       filters1: null,
       filters2: {},
       loading1: true,
@@ -30,6 +28,16 @@ export default {
         { name: 'Onyama Limba', image: 'onyamalimba.png' },
         { name: 'Stephen Shaw', image: 'stephenshaw.png' },
         { name: 'XuXue Feng', image: 'xuxuefeng.png' }
+      ],
+      overlayMenuItems: [
+        {
+          label: 'Verify',
+          icon: 'pi pi-check'
+        },
+        {
+          label: 'Delete',
+          icon: 'pi pi-trash'
+        }
       ]
     };
   },
@@ -43,13 +51,10 @@ export default {
   mounted() {
     this.productService.getProductsWithOrdersSmall().then(data => this.products = data);
     this.customerService.getCustomersLarge().then((data) => {
-      this.customer1 = data;
+      this.customers = data;
       this.loading1 = false;
-      this.customer1.forEach(customer => customer.date = new Date(customer.date));
+      this.customers.forEach(customer => customer.date = new Date(customer.date));
     });
-    this.customerService.getCustomersLarge().then(data => this.customer2 = data);
-    this.customerService.getCustomersMedium().then(data => this.customer3 = data);
-    this.loading2 = false;
   },
   methods: {
     initFilters1() {
@@ -74,9 +79,6 @@ export default {
     collapseAll() {
       this.expandedRows = null;
     },
-    formatCurrency(value) {
-      return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-    },
     formatDate(value) {
       return value.toLocaleDateString('en-US', {
         day: '2-digit',
@@ -84,17 +86,11 @@ export default {
         year: 'numeric'
       });
     },
-    calculateCustomerTotal(name) {
-      let total = 0;
-      if (this.customer3) {
-        for (const customer of this.customer3) {
-          if (customer.representative.name === name) {
-            total++;
-          }
-        }
-      }
-
-      return total;
+    toggleMenu(event) {
+      this.$refs.menu.toggle(event);
+    },
+    onContextRightClick(event) {
+      this.$refs.contextMenu.show(event);
     }
   }
 };
@@ -107,7 +103,7 @@ export default {
         <h5>Customer</h5>
         <DataTable
           v-model:filters="filters1"
-          :value="customer1"
+          :value="customers"
           :paginator="true"
           class="p-datatable-gridlines"
           :rows="10"
@@ -117,7 +113,7 @@ export default {
           :loading="loading1"
           :filters="filters1"
           responsive-layout="scroll"
-          :global-filter-fields="['name', 'country.name', 'representative.name', 'balance', 'status']"
+          :global-filter-fields="['name', 'representative.name', 'balance', 'status']"
         >
           <template #header>
             <div class="flex justify-content-between flex-column sm:flex-row">
@@ -138,31 +134,8 @@ export default {
           <!-- <template #loading>
             Loading customers data. Please wait.
           </template> -->
-          <Column field="name" header="Name" style="min-width:12rem">
-            <template #body="{ data }">
-              {{ data.name }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
-            </template>
-          </Column>
-          <Column header="Country" filter-field="country.name" style="min-width:12rem">
-            <template #body="{ data }">
-              <img src="~/assets/demo/flags/flag_placeholder.png" :alt="data.country.name" :class="`flag flag-${data.country.code}`" width="30">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.country.name }}</span>
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by country" />
-            </template>
-            <template #filterclear="{ filterCallback }">
-              <Button type="button" icon="pi pi-times" class="p-button-secondary" @click="filterCallback()" />
-            </template>
-            <template #filterapply="{ filterCallback }">
-              <Button type="button" icon="pi pi-check" class="p-button-success" @click="filterCallback()" />
-            </template>
-          </Column>
           <Column
-            header="Agent" filter-field="representative" :show-filter-match-modes="false"
+            header="Name" filter-field="representative" :show-filter-match-modes="false"
             :filter-menu-style="{ width: '14rem' }"
             style="min-width:14rem"
           >
@@ -170,45 +143,27 @@ export default {
               <img :alt="data.representative.name" :src="`/images/avatar/${data.representative.image}`" width="32" style="vertical-align: middle">
               <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.representative.name }}</span>
             </template>
-            <template #filter="{ filterModel }">
-              <div class="mb-3 text-bold">
-                Agent Picker
-              </div>
-              <ClientOnly>
-                <MultiSelect
-                  v-model="filterModel.value" :options="representatives" option-label="name"
-                  placeholder="Any"
-                  class="p-column-filter"
-                >
-                  <template #option="slotProps">
-                    <div class="p-multiselect-representative-option">
-                      <img :alt="slotProps.option.name" :src="`/images/avatar/${slotProps.option.image}`" width="32" style="vertical-align: middle">
-                      <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ slotProps.option.name }}</span>
-                    </div>
-                  </template>
-                </MultiSelect>
-              </ClientOnly>
-            </template>
           </Column>
-          <Column header="Date" filter-field="date" data-type="date" style="min-width:10rem">
+          <!-- <Column field="name" header="Name" style="min-width:12rem">
             <template #body="{ data }">
-              {{ formatDate(data.date) }}
+              {{ data.name }}
             </template>
             <template #filter="{ filterModel }">
-              <ClientOnly>
-                <Calendar v-model="filterModel.value" date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
-              </ClientOnly>
+              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
             </template>
+          </Column> -->
+          <Column header="Email" filter-field="country.name" style="min-width:12rem">
+            <!-- <template #body="{ data }">
+              <img src="~/assets/demo/flags/flag_placeholder.png" :alt="data.country.name" :class="`flag flag-${data.country.code}`" width="30">
+              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.country.name }}</span>
+            </template> -->
           </Column>
-          <Column header="Balance" filter-field="balance" data-type="numeric" style="min-width:10rem">
-            <template #body="{ data }">
+          <Column header="Phone number" filter-field="balance" data-type="numeric" style="min-width:10rem">
+            <!-- <template #body="{ data }">
               {{ formatCurrency(data.balance) }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputNumber v-model="filterModel.value" mode="currency" currency="USD" locale="en-US" />
-            </template>
+            </template> -->
           </Column>
-          <Column field="status" header="Status" :filter-menu-style="{ width: '14rem' }" style="min-width:12rem">
+          <Column field="status" header="Login with" :filter-menu-style="{ width: '14rem' }" style="min-width:12rem">
             <template #body="{ data }">
               <span :class="`customer-badge status-${data.status}`">{{ data.status }}</span>
             </template>
@@ -230,18 +185,6 @@ export default {
               </ClientOnly>
             </template>
           </Column>
-          <Column field="activity" header="Activity" :show-filter-match-modes="false" style="min-width:12rem">
-            <template #body="{ data }">
-              <ProgressBar :value="data.activity" :show-value="false" style="height:.5rem" />
-            </template>
-            <template #filter="{ filterModel }">
-              <Slider v-model="filterModel.value" range class="m-3" />
-              <div class="flex align-items-center justify-content-between px-2">
-                <span>{{ filterModel.value ? filterModel.value[0] : 0 }}</span>
-                <span>{{ filterModel.value ? filterModel.value[1] : 100 }}</span>
-              </div>
-            </template>
-          </Column>
           <Column
             field="verified" header="Verified" data-type="boolean"
             body-class="text-center"
@@ -252,6 +195,26 @@ export default {
             </template>
             <template #filter="{ filterModel }">
               <TriStateCheckbox v-model="filterModel.value" />
+            </template>
+          </Column>
+
+          <Column
+            filter-field="balance"
+            data-type="numeric"
+            style="min-width:1rem; text-align: center;"
+          >
+            <template #header>
+              <span class="text-center w-full">
+                Action
+              </span>
+            </template>
+            <template #body="{ data }">
+              <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="w-fit px-2" />
+              <Button
+                icon="pi pi-ellipsis-v"
+                class="p-button-rounded p-button-text p-2"
+                @click="toggleMenu"
+              />
             </template>
           </Column>
         </DataTable>
