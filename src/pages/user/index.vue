@@ -57,7 +57,8 @@ export default {
       this.customers = data.map((customer) => ({
         ...customer,
         imageLoaded: true,
-        verifying: false
+        verifying: false,
+        deleting: false
       }));
       this.loading1 = false;
       this.customers.forEach(customer => customer.date = new Date(customer.date));
@@ -163,6 +164,45 @@ export default {
       } finally {
         customer.verifying = false;
       }
+    },
+    async deleteCustomer(customer) {
+      if (!customer) {
+        return;
+      }
+
+      this.$confirm.require({
+        message: `Are you sure you want to delete ${customer.first_name} ${customer.last_name || ''}?`,
+        header: 'Confirm Deletion',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Yes',
+        rejectLabel: 'No',
+        accept: async () => {
+          customer.deleting = true;
+          try {
+            await this.customerService.deleteCustomer(customer.id);
+
+            // Remove from local list
+            this.customers = this.customers.filter(c => c.id !== customer.id);
+
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Customer Deleted',
+              detail: `${customer.first_name} ${customer.last_name || ''} has been successfully deleted.`,
+              life: 3000
+            });
+          } catch (error) {
+            console.error('Deletion failed:', error);
+            this.$toast.add({
+              severity: 'error',
+              summary: 'Deletion Failed',
+              detail: `Failed to delete ${customer.first_name} ${customer.last_name || ''}. Please try again.`,
+              life: 3000
+            });
+          } finally {
+            customer.deleting = false;
+          }
+        }
+      });
     }
   }
 };
@@ -215,7 +255,7 @@ export default {
             <template #body="{ data }">
               <div style="display: flex; align-items: center;">
                 <img
-                  :src="`/images/avatar/${data.first_name}`"
+                  :src="`${data.picture}`"
                   width="32"
                   height="32"
                   style="vertical-align: middle; border-radius: 50%; object-fit: cover;"
@@ -316,7 +356,7 @@ export default {
                 class="w-fit px-2"
               />
               <Button
-                icon="pi pi-ellipsis-v"
+                :icon="data.deleting ? 'pi pi-spin pi-spinner' : 'pi pi-ellipsis-v'"
                 class="p-button-rounded p-button-text p-2"
                 @click="toggleMenu($event, data)"
               />

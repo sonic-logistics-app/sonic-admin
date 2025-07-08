@@ -21,6 +21,16 @@ export default class CustomerService {
     }).then(res => res.json());
   }
 
+  deleteCustomer(user_id) {
+    return fetch(`${apiUrl}/admin/user`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id })
+    }).then(res => res.json());
+  }
+
   getCustomersSmall() {
     return fetch('/data/customers-small.json').then(res => res.json()).then(d => d.data);
   }
