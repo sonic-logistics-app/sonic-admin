@@ -1,7 +1,11 @@
 <script lang="ts">
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-import CustomerService from '~~/services/CustomerService';
+import DriverService from '~~/services/DriverService';
 import ProductService from '~~/services/ProductService';
+import { useRouter } from '#vue-router';
+import CustomerService from '~~/services/CustomerService';
+
+const router = useRouter();
 
 export default {
   data() {
@@ -9,6 +13,7 @@ export default {
       customer1: null,
       customer2: null,
       customer3: null,
+      drivers: null,
       filters1: null,
       filters2: {},
       loading1: true,
@@ -16,6 +21,9 @@ export default {
       idFrozen: false,
       products: null,
       expandedRows: [],
+      selectedDriver: null,
+      deleteDialogVisible: false,
+      driverToDelete: null,
       statuses: [
         'unqualified', 'qualified', 'new', 'negotiation', 'renewal', 'proposal'
       ],
@@ -30,20 +38,57 @@ export default {
         { name: 'Onyama Limba', image: 'onyamalimba.png' },
         { name: 'Stephen Shaw', image: 'stephenshaw.png' },
         { name: 'XuXue Feng', image: 'xuxuefeng.png' }
+      ],
+      overlayMenuItems: [
+        {
+          label: 'Verify',
+          icon: 'pi pi-check',
+          command: () => {
+            this.verifyDriver(this.selectedDriver);
+          }
+        },
+        {
+          label: 'Delete',
+          icon: 'pi pi-trash',
+          command: () => {
+            this.confirmDelete(this.selectedDriver);
+          }
+        }
       ]
     };
   },
   customerService: null,
   productService: null,
+  driverService: null,
   created() {
     this.customerService = new CustomerService();
     this.productService = new ProductService();
+    this.driverService = new DriverService();
     this.initFilters1();
   },
   mounted() {
+    this.driverService.getAllDrivers().then(data => {
+      this.drivers = data.map(driver => ({
+        ...driver,
+        name: `${driver.first_name} ${driver.last_name}`,
+        dateBirth: driver.birth_date || new Date().toISOString().split('T')[0],
+        email: driver.email,
+        verified: driver.otp_verified,
+        status: driver.status.toLowerCase(),
+        picture: driver.picture,
+        public_id: driver.public_id,
+        verificationProgress: driver.verificationProgress,
+        verificationStatus: driver.verificationStatus,
+        representative: {
+          name: `${driver.first_name} ${driver.last_name}`,
+          image: driver.picture || 'default.png'
+        },
+        imageLoaded: !!driver.picture
+      }));
+    });
     this.productService.getProductsWithOrdersSmall().then(data => this.products = data);
     this.customerService.getCustomersLarge().then((data) => {
-      this.customer1 = data;
+      this.customer1 = this.transformDriverData(data);
       this.loading1 = false;
       this.customer1.forEach(customer => customer.date = new Date(customer.date));
     });
@@ -52,6 +97,20 @@ export default {
     this.loading2 = false;
   },
   methods: {
+
+    transformDriverData(data) {
+      return data.map(item => ({
+        id: item.id,
+        representative: {
+          name: item.name || item.representative?.name || 'Unknown',
+          image: item.representative?.image || 'default.png'
+        },
+        dateBirth: item.dateBirth || item.date || new Date().toISOString().split('T')[0],
+        email: item.email || `${(item.representative?.name || 'user').toLowerCase().replace(' ', '.')}@example.com`,
+        verified: item.verified !== undefined ? item.verified : Math.random() > 0.5,
+        ...item
+      }));
+    },
     initFilters1() {
       this.filters1 = {
         'global': { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -84,6 +143,57 @@ export default {
         year: 'numeric'
       });
     },
+    toggleMenu(event, selectedDriver) {
+      this.selectedDriver = selectedDriver;
+      this.$refs.menu.toggle(event);
+    },
+    getInitials(first, last) {
+      return ((first?.charAt(0) || '') + (last?.charAt(0) || '')).toUpperCase();
+    },
+    confirmDelete(driver) {
+      this.driverToDelete = driver;
+      this.deleteDialogVisible = true;
+    },
+    onImageError(event, data) {
+      data.imageLoaded = false;
+      event.target.style.display = 'none'; // Sembunyikan <img> jika gagal load
+    },
+    deleteDriver() {
+      if (this.driverToDelete) {
+        this.driverService.deleteDriver(this.driverToDelete.id)
+          .then(response => {
+            this.drivers = this.drivers.filter(d => d.id !== this.driverToDelete.id);
+            
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Driver deleted successfully',
+              life: 3000
+            });
+          })
+          .catch(error => {
+            console.error('Failed to delete driver:', error);
+            
+            this.$toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error.message || 'Failed to delete driver',
+              life: 3000
+            });
+          })
+          .finally(() => {
+            // Reset state
+            this.loading1 = false;
+            this.deleteDialogVisible = false;
+            this.driverToDelete = null;
+          });
+      }
+    },
+    
+    cancelDelete() {
+      this.deleteDialogVisible = false;
+      this.driverToDelete = null;
+    },
     calculateCustomerTotal(name) {
       let total = 0;
       if (this.customer3) {
@@ -95,6 +205,14 @@ export default {
       }
 
       return total;
+    },
+
+    verifyDriver(driver) {
+      if (driver && driver.id) {
+        navigateTo(`/driver/${driver.id}`);
+      } else {
+        console.error('Driver or driver ID not found');
+      }
     }
   }
 };
@@ -107,7 +225,7 @@ export default {
         <h5>Driver</h5>
         <DataTable
           v-model:filters="filters1"
-          :value="customer1"
+          :value="drivers"
           :paginator="true"
           class="p-datatable-gridlines"
           :rows="10"
@@ -138,30 +256,49 @@ export default {
           <!-- <template #loading>
             Loading customers data. Please wait.
           </template> -->
-          <Column field="name" header="Name" style="min-width:12rem">
-            <template #body="{ data }">
-              {{ data.name }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
-            </template>
-          </Column>
-          <Column header="Country" filter-field="country.name" style="min-width:12rem">
-            <template #body="{ data }">
-              <img src="~/assets/demo/flags/flag_placeholder.png" :alt="data.country.name" :class="`flag flag-${data.country.code}`" width="30">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.country.name }}</span>
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by country" />
-            </template>
-            <template #filterclear="{ filterCallback }">
-              <Button type="button" icon="pi pi-times" class="p-button-secondary" @click="filterCallback()" />
-            </template>
-            <template #filterapply="{ filterCallback }">
-              <Button type="button" icon="pi pi-check" class="p-button-success" @click="filterCallback()" />
-            </template>
-          </Column>
           <Column
+            header="Name" filter-field="representative" :show-filter-match-modes="false"
+            :filter-menu-style="{ width: '14rem' }"
+            style="min-width:14rem"
+          >
+            <template #body="{ data }">
+              <div style="display: flex; align-items: center;">
+                <!-- Wrapper untuk avatar -->
+                <div class="avatar-wrapper">
+                  <img
+                    v-if="data.imageLoaded && data.picture"
+                    :src="data.picture"
+                    width="32"
+                    height="32"
+                    style="vertical-align: middle; border-radius: 50%; object-fit: cover;"
+                    @error="onImageError($event, data)"
+                    :alt="data.first_name"
+                  >
+                  <span
+                    v-if="!data.imageLoaded || !data.picture"
+                    class="fallback-avatar"
+                  >
+                    {{ getInitials(data.first_name, data.last_name) }}
+                  </span>
+                </div>
+                <span style="margin-left: .5em; vertical-align: middle" class="image-text">
+                  {{ data.name }}
+                </span>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="dateBirth" header="Date of Birth" style="min-width:12rem">
+            <template #body="{ data }">
+              {{ data.dateBirth ? formatDate(new Date(data.dateBirth)) : 'N/A' }}
+            </template>
+          </Column>
+          <Column header="Email" filter-field="email" style="min-width:12rem">
+            <template #body="{ data }">
+              {{ data.email }}
+            </template>
+          </Column>
+          <!-- <Column
             header="Agent" filter-field="representative" :show-filter-match-modes="false"
             :filter-menu-style="{ width: '14rem' }"
             style="min-width:14rem"
@@ -241,26 +378,90 @@ export default {
                 <span>{{ filterModel.value ? filterModel.value[1] : 100 }}</span>
               </div>
             </template>
-          </Column>
+          </Column> -->
           <Column
             field="verified" header="Verified" data-type="boolean"
             body-class="text-center"
             style="min-width:8rem"
           >
             <template #body="{ data }">
-              <i class="pi" :class="{ 'text-green-500 pi-check-circle': data.verified, 'text-pink-500 pi-times-circle': !data.verified }" />
+              {{ data.verificationProgress }}
             </template>
-            <template #filter="{ filterModel }">
-              <TriStateCheckbox v-model="filterModel.value" />
+          </Column>
+          <Column
+            body-class="text-center"
+          >
+            <template #header>
+              <span class="text-center w-full">
+                Action
+              </span>
+            </template>
+            <template #body="{ data }">
+              <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="w-fit px-2" />
+              <Button
+                icon="pi pi-ellipsis-v"
+                class="p-button-rounded p-button-text p-2"
+                @click="toggleMenu($event, data)"
+              />
             </template>
           </Column>
         </DataTable>
       </div>
     </div>
+    <Dialog
+      v-model:visible="deleteDialogVisible"
+      :style="{ width: '450px' }"
+      header="Confirm Delete"
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="flex align-items-center justify-content-center my-3">
+        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem; color: var(--orange-500)"/>
+        <span v-if="driverToDelete">
+          Are you sure you want to delete <b>{{ driverToDelete.name }}</b>?
+        </span>
+      </div>
+      
+      <template #footer>
+        <Button
+          label="No"
+          icon="pi pi-times"
+          class="p-button-text"
+          @click="cancelDelete"
+        />
+        <Button
+          label="Yes"
+          icon="pi pi-check"
+          class="p-button-danger"
+          @click="deleteDriver"
+        />
+      </template>
+    </Dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
+  .avatar-wrapper {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fallback-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #ccc;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
 	.customer-badge {
 		border-radius: 2px;
 		padding: .25em .5rem;
