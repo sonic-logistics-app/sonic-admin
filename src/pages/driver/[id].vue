@@ -1,14 +1,12 @@
 <script lang="ts">
-import { useRouter } from '#vue-router';
 import DriverService from '~~/services/DriverService';
-
-const router = useRouter();
 
 export default {
   data() {
     return {
       activeTab: 'personal',
       driver: null,
+      loading: false,
       personalInfo: {
         firstName: '',
         lastName: '',
@@ -130,6 +128,8 @@ export default {
         return;
       }
 
+      this.loading = true;
+
       this.driverService.getDriverById(driverId)
         .then((response) => {
           const driver = response.data || response.driver || response;
@@ -188,7 +188,6 @@ export default {
             accountType: bankData.account_type || this.bankDetails.accountType,
             status: driver.verificationStatus?.bank_account?.toLowerCase() || 'pending'
           };
-
         })
         .catch((error) => {
           console.error('Error fetching driver details:', error);
@@ -199,6 +198,9 @@ export default {
             detail: 'Failed to load driver details. Please try again.',
             life: 5000
           });
+        })
+        .finally(() => {
+          this.loading = false;
         });
     } else {
       console.error('No driver ID found in URL');
@@ -236,6 +238,8 @@ export default {
       } else if (action === 'rejected') {
         apiCall = this.driverService.rejectDriver(driverId, actionData);
       }
+
+      this.loading = true;
 
       apiCall
         .then(response => {
@@ -294,6 +298,9 @@ export default {
             detail: `Failed to ${action === 'verified' ? 'verify' : 'reject'} ${sectionType} section. Please try again.`,
             life: 5000
           });
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
 
@@ -364,6 +371,11 @@ export default {
 
 <template>
   <div class="grid">
+    <div v-if="loading" class="loading-overlay">
+      <div>
+        <i class="pi pi-spin pi-spinner" />
+      </div>
+    </div>
     <div class="col-12">
       <div class="card">
         <div class="flex justify-content-between align-items-center mb-4">
@@ -404,21 +416,21 @@ export default {
                 <h6 class="text-primary">Personal Information</h6>
                 <div class="flex gap-2">
                   <Button
-                    v-if="
-                      personalInfo.status !== 'verified' && personalInfo.status !== 'rejected'
-                    "
+                    v-if="personalInfo.status !== 'verified' && personalInfo.status !== 'rejected'"
                     icon="pi pi-check"
                     label="Verify"
                     class="p-button-success"
+                    :loading="loading"
+                    :disabled="loading"
                     @click="showConfirmation('personal', 'verified')"
                   />
                   <Button
-                    v-if="
-                      personalInfo.status !== 'rejected' && personalInfo.status !== 'verified'
-                    "
+                    v-if="personalInfo.status !== 'rejected' && personalInfo.status !== 'verified'"
                     icon="pi pi-times"
                     label="Reject"
                     class="p-button-danger"
+                    :loading="loading"
+                    :disabled="loading"
                     @click="showConfirmation('personal', 'rejected')"
                   />
                   <div
@@ -1006,7 +1018,14 @@ export default {
       :style="{ width: '25rem' }"
     >
       <div class="flex align-items-center">
-        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem; color: var(--orange-500)"/>
+        <i
+          :class="[
+            confirmationAction === 'verified' ? 'pi pi-check-circle' : 'pi pi-times-circle',
+            confirmationAction === 'verified' ? 'text-green-600' : 'text-red-600'
+          ]"
+          class="mr-3"
+          style="font-size: 2rem;"
+        />
         <span>{{ confirmationMessage }}</span>
       </div>
       <template #footer>
@@ -1028,6 +1047,24 @@ export default {
 </template>
 
 <style scoped lang="scss">
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .field {
   margin-bottom: 1rem;
 }
