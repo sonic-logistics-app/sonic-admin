@@ -1,208 +1,161 @@
 <script lang="ts">
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-import CustomerService from '~~/services/CustomerService';
-import ProductService from '~~/services/ProductService';
+import VoucherService from '~~/services/VoucherService';
 
 export default {
   data() {
     return {
-      displayConfirmation: true,
-      customers: null,
-      filters1: null,
-      filters2: {},
-      loading1: true,
-      loading2: true,
-      idFrozen: false,
-      products: null,
-      expandedRows: [],
-      statuses: [
-        'unqualified', 'qualified', 'new', 'negotiation', 'renewal', 'proposal'
-      ],
-      representatives: [
-        { name: 'Amy Elsner', image: 'amyelsner.png' },
-        { name: 'Anna Fali', image: 'annafali.png' },
-        { name: 'Asiya Javayant', image: 'asiyajavayant.png' },
-        { name: 'Bernardo Dominic', image: 'bernardodominic.png' },
-        { name: 'Elwin Sharvill', image: 'elwinsharvill.png' },
-        { name: 'Ioni Bowcher', image: 'ionibowcher.png' },
-        { name: 'Ivan Magalhaes', image: 'ivanmagalhaes.png' },
-        { name: 'Onyama Limba', image: 'onyamalimba.png' },
-        { name: 'Stephen Shaw', image: 'stephenshaw.png' },
-        { name: 'XuXue Feng', image: 'xuxuefeng.png' }
-      ],
+      vouchers: [],
+      filters: null,
+      loading: true,
+      selectedVoucher: null,
+      deleteDialogVisible: false,
+      voucherToDelete: null,
       overlayMenuItems: [
         {
-          label: 'Verify',
-          icon: 'pi pi-check'
+          label: 'View',
+          icon: 'pi pi-eye',
+          command: () => {
+            this.goToEditVoucher(this.selectedVoucher);
+          }
         },
         {
           label: 'Delete',
-          icon: 'pi pi-trash'
+          icon: 'pi pi-trash',
+          command: () => {
+            this.confirmDelete(this.selectedVoucher);
+          }
         }
-      ],
-      contextActionItems: [] as { label: string, icon: string, command: () => void }[]
+      ]
     };
   },
-  customerService: null,
-  productService: null,
+  voucherService: null,
   created() {
-    this.customerService = new CustomerService();
-    this.productService = new ProductService();
-    this.initFilters1();
+    this.voucherService = new VoucherService();
+    this.initFilters();
   },
   mounted() {
-    this.productService.getProductsWithOrdersSmall().then(data => this.products = data);
-    this.customerService.getAllCustomers().then((data) => {
-      console.log(data);
-      this.customers = data.map((customer) => ({
-        ...customer,
-        imageLoaded: true,
-        verifying: false,
-        deleting: false
-      }));
-      this.loading1 = false;
-      this.customers.forEach(customer => customer.date = new Date(customer.date));
-    });
+    this.loadVouchers();
   },
   methods: {
-    initFilters1() {
-      this.filters1 = {
+    loadVouchers() {
+      this.loading = true;
+      this.voucherService.getAllVouchers().then(data => {
+        this.vouchers = data.map(voucher => ({
+          ...voucher,
+          amount: voucher.amount || 0,
+          code: voucher.code || '',
+          voucherType: voucher.expiry_type.split(' ')[0],
+          expiryDate: voucher.expiry_type.split(' ')[1],
+          name: voucher.name || '',
+          used: voucher.used || 0,
+          deleting: false
+        }));
+        this.loading = false;
+      }).catch(error => {
+        console.error('Failed to load voucher:', error);
+        this.loading = false;
+      });
+    },
+
+    initFilters() {
+      this.filters = {
         'global': { value: null, matchMode: FilterMatchMode.CONTAINS },
         'name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        'country.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-        'representative': { value: null, matchMode: FilterMatchMode.IN },
-        'date': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
-        'balance': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        'status': { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-        'activity': { value: null, matchMode: FilterMatchMode.BETWEEN },
-        'verified': { value: null, matchMode: FilterMatchMode.EQUALS }
+        'voucherType': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
+        'expiryDate': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+        'amount': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
+        'used': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] }
       };
     },
-    clearFilter1() {
-      this.initFilters1();
+
+    clearFilter() {
+      this.initFilters();
     },
-    expandAll() {
-      this.expandedRows = this.products.filter(p => p.id);
-    },
-    collapseAll() {
-      this.expandedRows = null;
-    },
+
     formatDate(value) {
-      return value.toLocaleDateString('en-US', {
+      if (!value) return 'N/A';
+      return new Date(value).toLocaleDateString('en-US', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
       });
     },
-    // toggleMenu(event) {
-    //   this.$refs.menu.toggle(event);
-    // },
-    onContextRightClick(event) {
-      this.$refs.contextMenu.show(event);
-    },
-    getInitials(first, last) {
-      return ((first?.charAt(0) || '') + (last?.charAt(0) || '')).toUpperCase();
-    },
-    onImageError(event, data) {
-      data.imageLoaded = false;
-      event.target.style.display = 'none'; // Sembunyikan <img> jika gagal load
-    },
-    toggleMenu(event, data) {
-      this.contextActionItems = [];
 
-      if (!data.is_verified) {
-        this.contextActionItems.push({
-          label: 'Verify',
-          icon: 'pi pi-check',
-          command: () => {
-            this.$confirm.require({
-              message: `Are you sure you want to verify ${data.first_name} ${data.last_name}?`,
-              header: 'Confirm Verification',
-              icon: 'pi pi-check-circle',
-              acceptLabel: 'Yes',
-              rejectLabel: 'Cancel',
-              accept: () => {
-                this.verifyCustomer(data);
-              }
-            });
-          }
-        });
-      }
-
-      this.contextActionItems.push({
-        label: 'Delete',
-        icon: 'pi pi-trash',
-        command: () => this.deleteCustomer(data)
-      });
-
+    toggleMenu(event, selectedVoucher) {
+      this.selectedVoucher = selectedVoucher;
       this.$refs.menu.toggle(event);
     },
-    async verifyCustomer(customer) {
-      if (!customer) {
+
+    confirmDelete(voucher: any) {
+      this.voucherToDelete = voucher;
+      this.deleteDialogVisible = true;
+    },
+
+    async deleteVoucher() {
+      console.log('deleting voucher:', this.voucherToDelete);
+      if (!this.voucherToDelete) {
+        this.$toast.add({
+          severity: 'warn',
+          summary: 'Warning',
+          detail: 'No voucher selected for deletion',
+          life: 3000
+        });
         return;
       }
 
-      customer.verifying = true;
-      try {
-        await this.customerService.verifyCustomer(customer.id);
+      this.voucherToDelete.deleting = true;
 
-        customer.is_verified = true;
-          this.$toast.add({
+      try {
+        await this.voucherService.deleteVoucher(this.voucherToDelete.id);
+
+        this.vouchers = this.vouchers.filter(d => d.id !== this.voucherToDelete.id);
+
+        this.$toast.add({
           severity: 'success',
-          summary: 'Customer Verified',
-          detail: `${customer.first_name} ${customer.last_name || ''} has been successfully verified.`,
+          summary: 'Success',
+          detail: `Voucher ${this.voucherToDelete.name} deleted successfully`,
           life: 3000
         });
+
+        console.log('voucher deleted successfully:', this.voucherToDelete.name);
       } catch (error) {
-        console.error('Verifikasi gagal:', error);
+        console.error('Failed to delete voucher:', error);
+
         this.$toast.add({
           severity: 'error',
-          summary: 'Verification Failed',
-          detail: `Failed to verify ${customer.first_name} ${customer.last_name || ''}. Please try again.`,
-          life: 3000
+          summary: 'Delete Failed',
+          detail: error.response?.data?.message || error.message || 'Failed to delete voucher. Please try again.',
+          life: 5000
         });
       } finally {
-        customer.verifying = false;
+        this.voucherToDelete.deleting = false;
+        this.deleteDialogVisible = false;
+        this.voucherToDelete = null;
       }
     },
-    async deleteCustomer(customer) {
-      if (!customer) {
-        return;
-      }
 
+    confirmDelete(voucher) {
+      console.log('confirmDelete', voucher);
       this.$confirm.require({
-        message: `Are you sure you want to delete ${customer.first_name} ${customer.last_name || ''}?`,
+        message: `Are you sure you want to delete ${voucher.name}?`,
         header: 'Confirm Deletion',
         icon: 'pi pi-exclamation-triangle',
         acceptLabel: 'Yes',
         rejectLabel: 'No',
         accept: async () => {
-          customer.deleting = true;
-          try {
-            await this.customerService.deleteCustomer(customer.id);
-
-            // Remove from local list
-            this.customers = this.customers.filter(c => c.id !== customer.id);
-
-            this.$toast.add({
-              severity: 'success',
-              summary: 'Customer Deleted',
-              detail: `${customer.first_name} ${customer.last_name || ''} has been successfully deleted.`,
-              life: 3000
-            });
-          } catch (error) {
-            console.error('Deletion failed:', error);
-            this.$toast.add({
-              severity: 'error',
-              summary: 'Deletion Failed',
-              detail: `Failed to delete ${customer.first_name} ${customer.last_name || ''}. Please try again.`,
-              life: 3000
-            });
-          } finally {
-            customer.deleting = false;
-          }
+          this.voucherToDelete = voucher;
+          await this.deleteVoucher();
         }
       });
+    },
+
+    goToCreateVoucher() {
+      navigateTo('/voucher/create');
+    },
+
+    goToEditVoucher(voucher) {
+      navigateTo(`/voucher/${voucher.id}`);
     }
   }
 };
@@ -213,153 +166,136 @@ export default {
     <Toast />
     <div class="col-12">
       <div class="card">
-        <h5>Voucher</h5>
+        <h5>Voucher Management</h5>
         <DataTable
-          v-model:filters="filters1"
-          :value="customers"
-          :paginator="true"
+          v-model:filters="filters"
+          :value="vouchers"
+          :paginator="vouchers.length > 10"
           class="p-datatable-gridlines"
           :rows="10"
           data-key="id"
           :row-hover="true"
           filter-display="menu"
-          :loading="loading1"
-          :filters="filters1"
+          :loading="loading"
           responsive-layout="scroll"
-          :global-filter-fields="['name', 'representative.name', 'balance', 'status']"
+          :global-filter-fields="['name', 'code', 'voucherType', 'expiryDate', 'amount', 'used']"
         >
           <template #header>
             <div class="flex justify-content-between flex-column sm:flex-row">
               <Button
                 type="button" icon="pi pi-plus" label="Add"
                 class="p-button mb-2"
-                @click="clearFilter1()"
+                @click="goToCreateVoucher"
               />
-              <Button
-                type="button" icon="pi pi-filter-slash" label="Clear"
-                class="p-button-outlined mb-2"
-                @click="clearFilter1()"
-              />
-              <span class="p-input-icon-left mb-2">
-                <i class="pi pi-search" />
-                <InputText v-model="filters1.global.value" placeholder="Keyword Search" style="width: 100%" />
-              </span>
+              <div class="flex gap-3">
+                <Button
+                  type="button"
+                  icon="pi pi-filter-slash"
+                  label="Clear"
+                  class="p-button-outlined mb-2"
+                  @click="clearFilter()"
+                />
+                <span class="p-input-icon-left mb-2">
+                  <i class="pi pi-search" />
+                  <InputText
+                    v-model="filters['global'].value"
+                    placeholder="Search voucher..."
+                    style="width: 100%"
+                  />
+                </span>
+              </div>
             </div>
           </template>
+
           <template #empty>
-            No customers found.
+            No voucher found.
           </template>
-          <!-- <template #loading>
-            Loading customers data. Please wait.
-          </template> -->
+
           <Column
-            header="Name" filter-field="representative" :show-filter-match-modes="false"
+            header="Name"
+            field="name"
+            :show-filter-match-modes="false"
             :filter-menu-style="{ width: '14rem' }"
+            sortable
             style="min-width:14rem"
           >
             <template #body="{ data }">
               <div style="display: flex; align-items: center;">
-                <img
-                  :src="`${data.picture}`"
-                  width="32"
-                  height="32"
-                  style="vertical-align: middle; border-radius: 50%; object-fit: cover;"
-                  @error="onImageError($event, data)"
-                  :alt="data.first_name"
-                >
-                <span
-                  v-if="!data.imageLoaded"
-                  class="fallback-avatar"
-                >
-                  {{ getInitials(data.first_name, data.last_name) }}
-                </span>
                 <span style="margin-left: .5em; vertical-align: middle" class="image-text">
-                  {{ data.first_name }} {{ data.last_name }}
+                  {{ data.name }}
                 </span>
               </div>
             </template>
           </Column>
-          <!-- <Column field="name" header="Name" style="min-width:12rem">
-            <template #body="{ data }">
-              {{ data.name }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by name" />
-            </template>
-          </Column> -->
-          <Column header="Email" filter-field="country.name" style="min-width:12rem">
-            <template #body="{ data }">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.email }}</span>
-            </template>
-          </Column>
-          <Column header="Phone number" filter-field="balance" data-type="numeric" style="min-width:10rem">
-            <template #body="{ data }">
-              <span style="margin-left: .5em; vertical-align: middle" class="image-text">{{ data.phone ? `+${data.phone}` : '' }}</span>
-            </template>
-          </Column>
-          <Column field="status" header="Type" :filter-menu-style="{ width: '14rem' }" style="min-width:12rem">
-            <template #body="{ data }">
-              <span :class="`customer-badge status-${data.provider}`">{{ data.provider }}</span>
-            </template>
-            <!-- <template #filter="{ filterModel }">
-              <ClientOnly>
-                <Dropdown
-                  v-model="filterModel.value" :options="statuses" placeholder="Any"
-                  class="p-column-filter"
-                  :show-clear="true"
-                >
-                  <template #value="slotProps">
-                    <span v-if="slotProps.value" :class="`customer-badge status-${slotProps.value}`">{{ slotProps.value }}</span>
-                    <span v-else>{{ slotProps.placeholder }}</span>
-                  </template>
-                  <template #option="slotProps">
-                    <span :class="`customer-badge status-${slotProps.option}`">{{ slotProps.option }}</span>
-                  </template>
-                </Dropdown>
-              </ClientOnly>
-            </template> -->
-          </Column>
+
           <Column
-            field="verified" header="Verified" data-type="boolean"
-            body-class="text-center"
-            style="min-width:8rem"
+            field="code"
+            sortable
+            header="Code"
+            style="min-width:12rem"
           >
             <template #body="{ data }">
-              <i
-                v-if="data.verifying"
-                class="pi pi-spin pi-spinner text-gray-500"
-              />
-              <i
-                v-else
-                class="pi"
-                :class="{
-                  'text-green-500 pi-check-circle': data.is_verified,
-                  'text-pink-500 pi-times-circle': !data.is_verified
-                }"
-              />
-            </template>
-            <template #filter="{ filterModel }">
-              <TriStateCheckbox v-model="filterModel.value" />
+              {{ data.code || "-" }}
             </template>
           </Column>
 
           <Column
-            filter-field="balance"
-            data-type="numeric"
-            style="min-width:1rem; text-align: center;"
+            field="voucherType"
+            sortable
+            header="Voucher Type"
+            style="min-width:12rem"
           >
+            <template #body="{ data }">
+              <p class="capitalize">
+                {{ data.voucherType }}
+              </p>
+            </template>
+          </Column>
+
+          <Column
+            header="Expiry Date"
+            filter-field="expiryDate"
+            field="expiryDate"
+            sortable
+            style="min-width:12rem"
+          >
+            <template #body="{ data }">
+              {{ data.expiryDate }}
+            </template>
+          </Column>
+
+          <Column
+            header="Amount"
+            filter-field="amount"
+            field="amount"
+            sortable
+            style="min-width:8rem"
+          >
+            <template #body="{ data }">
+              {{ data.amount }}
+            </template>
+          </Column>
+
+          <Column
+            header="Used"
+            filter-field="used"
+            field="used"
+            sortable
+            style="min-width:8rem"
+          >
+            <template #body="{ data }">
+              {{ data.used }}
+            </template>
+          </Column>
+
+          <Column body-class="text-center">
             <template #header>
               <span class="text-center w-full">
                 Action
               </span>
             </template>
             <template #body="{ data }">
-              <Menu
-                ref="menu"
-                :model="contextActionItems"
-                :popup="true"
-                class="w-fit px-2"
-              />
+              <Menu ref="menu" :model="overlayMenuItems" :popup="true" class="w-fit px-2" />
               <Button
                 :icon="data.deleting ? 'pi pi-spin pi-spinner' : 'pi pi-ellipsis-v'"
                 class="p-button-rounded p-button-text p-2"
@@ -370,113 +306,59 @@ export default {
         </DataTable>
       </div>
     </div>
+
+    <Dialog
+      v-model:visible="deleteDialogVisible"
+      :style="{ width: '450px' }"
+      header="Confirm Delete"
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="flex align-items-center justify-content-center my-3">
+        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem; color: var(--orange-500)"/>
+        <span v-if="voucherToDelete">
+          Are you sure you want to delete <b>{{ voucherToDelete.name }}</b>?
+        </span>
+      </div>
+
+      <template #footer>
+        <Button
+          label="No"
+          icon="pi pi-times"
+          class="p-button-text"
+        />
+        <Button
+          label="Yes"
+          icon="pi pi-check"
+          class="p-button-danger"
+          @click="deleteVoucher"
+        />
+      </template>
+    </Dialog>
     <ConfirmDialog />
   </div>
 </template>
 
 <style scoped lang="scss">
-	.customer-badge {
-		border-radius: 2px;
-		padding: .25em .5rem;
-		text-transform: uppercase;
-		font-weight: 700;
-		font-size: 12px;
-		letter-spacing: .3px;
+.avatar-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-		&.status-CREDENTIALS {
-			background: #C8E6C9;
-			color: #256029;
-		}
-
-		&.status-unqualified {
-			background: #FFCDD2;
-			color: #C63737;
-		}
-
-		&.status-negotiation {
-			background: #FEEDAF;
-			color: #8A5340;
-		}
-
-		&.status-GOOGLE {
-			background: #B3E5FC;
-			color: #23547B;
-		}
-
-		&.status-renewal {
-			background: #ECCFFF;
-			color: #694382;
-		}
-
-		&.status-proposal {
-			background: #FFD8B2;
-			color: #805B36;
-		}
-	}
-
-	.product-badge {
-		border-radius: 2px;
-		padding: .25em .5rem;
-		text-transform: uppercase;
-		font-weight: 700;
-		font-size: 12px;
-		letter-spacing: .3px;
-
-		&.status-instock {
-			background: #C8E6C9;
-			color: #256029;
-		}
-
-		&.status-outofstock {
-			background: #FFCDD2;
-			color: #C63737;
-		}
-
-		&.status-lowstock {
-			background: #FEEDAF;
-			color: #8A5340;
-		}
-	}
-
-	.order-badge {
-		border-radius: 2px;
-		padding: .25em .5rem;
-		text-transform: uppercase;
-		font-weight: 700;
-		font-size: 12px;
-		letter-spacing: .3px;
-
-		&.order-delivered {
-			background: #C8E6C9;
-			color: #256029;
-		}
-
-		&.order-cancelled {
-			background: #FFCDD2;
-			color: #C63737;
-		}
-
-		&.order-pending {
-			background: #FEEDAF;
-			color: #8A5340;
-		}
-
-		&.order-returned {
-			background: #ECCFFF;
-			color: #694382;
-		}
-	}
-
-  .fallback-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #ccc;
-    color: #fff;
-    font-weight: bold;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.fallback-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>
