@@ -29,6 +29,7 @@ export default defineComponent({
             { label: 'Driver', icon: 'pi pi-fw pi-car', to: '/driver' },
             { label: 'Voucher', icon: 'pi pi-fw pi-ticket', to: '/voucher' },
             { label: 'Package', icon: 'pi pi-fw pi-box', to: '/package' },
+            { label: 'Order', icon: 'pi pi-fw pi-truck', to: '/order' },
             {
               label: 'Sakai Components',
               devComponent: true,

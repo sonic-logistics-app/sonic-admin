@@ -144,7 +144,7 @@ export default {
         <Tag class="mr-2" icon="pi pi-user" value="Primary" />
         <Tag class="mr-2" icon="pi pi-check" severity="success" value="Success" />
         <Tag class="mr-2" icon="pi pi-info-circle" severity="info" value="Info" />
-        <Tag class="mr-2" con="pi pi-exclamation-triangle" severity="warning" value="Warning" />
+        <Tag class="mr-2" icon="pi pi-exclamation-triangle" severity="warning" value="Warning" />
         <Tag icon="pi pi-times" severity="danger" value="Danger" />
       </div>
 
