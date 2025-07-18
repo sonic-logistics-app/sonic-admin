@@ -40,7 +40,7 @@ export default {
   methods: {
     loadOrderDetail() {
       this.loading = true;
-      this.orderService.getOrderDetails(312).then(data => {
+      this.orderService.getOrderDetails(this.$route.params.id).then(data => {
         console.log(data);
         this.order = {
           orderInfo: {
