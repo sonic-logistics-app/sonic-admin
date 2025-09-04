@@ -3,10 +3,10 @@
   "private": true,
   "scripts": {
     "dev": "nuxi dev",
-    "build": "NITRO_PRESET=vercel nuxi build",
+    "build": "nuxi build",
     "generate": "nuxi generate",
     "postinstall": "nuxi prepare",
-    "start": "node .output/server/index.mjs",
+    "start": "NITRO_HOST=0.0.0.0 NITRO_PORT=3400 node .output/server/index.mjs",
     "test": "vitest -c vitest.config.ts",
     "lint": "eslint \"{**/*,*}.{js,ts,tsx,vue}\"",
     "lint:fix": "npm run lint --fix"
