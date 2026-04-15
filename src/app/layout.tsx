@@ -6,6 +6,7 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import { PrimeReactProvider } from "primereact/api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PrimeReactProvider>
-          {children}
-        </PrimeReactProvider>
+        <ErrorBoundary>
+          <PrimeReactProvider>
+            {children}
+          </PrimeReactProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

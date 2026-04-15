@@ -18,6 +18,7 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -43,7 +44,48 @@ export default function OrderDetailPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
+  const generateOrderCode = async () => {
+    try {
+      setGeneratingCode(true);
+      await orderService.generateOrderCode(Number(params.id));
+      toast.current?.show({
+        severity: "success",
+        summary: "Success",
+        detail: "Order verification code generated successfully",
+        life: 3000,
+      });
+      // Reload order to get updated data
+      loadOrder();
+    } catch (error: any) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: error.message || "Failed to generate order code",
+        life: 3000,
+      });
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+      toast.current?.show({
+        severity: "success",
+        summary: "Success",
+        detail: "Order verification code generated successfully",
+        life: 3000,
+      });
+      // Reload order to get updated data
+      loadOrder();
+    } catch (error: any) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: error.message || "Failed to generate order code",
+        life: 3000,
+      });
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
     if (typeof value !== "number") return "";
     const price = value
       .toLocaleString("en-NG", { style: "currency", currency: "NGN" })
@@ -119,6 +161,15 @@ export default function OrderDetailPage() {
                   className="mt-2"
                 />
               </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                label="Generate Code"
+                icon="pi pi-qrcode"
+                onClick={generateOrderCode}
+                loading={generatingCode}
+                disabled={order.order_status === "DELIVERED" || order.order_status === "CANCELLED"}
+              />
             </div>
           </div>
 

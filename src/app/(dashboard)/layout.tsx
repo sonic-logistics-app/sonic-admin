@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import AppTopbar from "@/components/layout/AppTopbar";
 import AppMenu from "@/components/layout/AppMenu";
 import AppFooter from "@/components/layout/AppFooter";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { menuData } from "@/lib/menuData";
 import "@/styles/layout.scss";
 
@@ -77,21 +78,23 @@ export default function DashboardLayout({
   } ${mobileMenuActive ? "layout-mobile-sidebar-active" : ""}`;
 
   return (
-    <div className={containerClass} onClick={onWrapperClick}>
-      <AppTopbar onMenuToggle={onMenuToggle} />
-      
-      <div className="layout-sidebar" onClick={onSidebarClick}>
-        <AppMenu model={menuData} onMenuItemClick={onMenuItemClick} />
-      </div>
+    <ProtectedRoute>
+      <div className={containerClass} onClick={onWrapperClick}>
+        <AppTopbar onMenuToggle={onMenuToggle} />
+        
+        <div className="layout-sidebar" onClick={onSidebarClick}>
+          <AppMenu model={menuData} onMenuItemClick={onMenuItemClick} />
+        </div>
 
-      <div className="layout-main-container">
-        <div className="layout-main">{children}</div>
-        <AppFooter />
-      </div>
+        <div className="layout-main-container">
+          <div className="layout-main">{children}</div>
+          <AppFooter />
+        </div>
 
-      {mobileMenuActive && (
-        <div className="layout-mask p-component-overlay" />
-      )}
-    </div>
+        {mobileMenuActive && (
+          <div className="layout-mask p-component-overlay" />
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }
