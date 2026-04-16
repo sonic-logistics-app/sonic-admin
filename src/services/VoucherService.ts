@@ -1,6 +1,7 @@
-import AuthService from './AuthService';
+import AuthService from "./AuthService";
 
-const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
+const apiUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api/admin";
 const authService = new AuthService();
 
 export interface PaginationParams {
@@ -11,37 +12,54 @@ export interface PaginationParams {
 
 export interface Voucher {
   id: string;
-  name: string;
-  amount: number;
   code: string;
-  expiry_type: string;
-  created_at: string;
+  title: string;
+  description?: string;
+  discount_type: "PERCENTAGE" | "FIXED_AMOUNT";
+  discount_value: number;
+  minimum_order_amount?: number;
+  maximum_discount_amount?: number;
+  usage_limit?: number;
+  used_count?: number;
+  valid_from?: string;
+  valid_until?: string;
+  is_active: boolean;
+  created_at?: string;
   updated_at?: string;
 }
 
 export interface VoucherFormData {
-  name: string;
-  amount: number;
   code: string;
-  expiry_type: string;
+  title: string;
+  description: string;
+  discount_type: "PERCENTAGE" | "FIXED_AMOUNT";
+  discount_value: number;
+  minimum_order_amount: number;
+  maximum_discount_amount: number;
+  usage_limit: number;
+  valid_from: string;
+  valid_until: string;
+  is_active: boolean;
 }
 
 export default class VoucherService {
   // Get all vouchers
   getAllVouchers(params?: PaginationParams) {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
     const queryString = queryParams.toString();
-    const url = queryString ? `${apiUrl}/voucher?${queryString}` : `${apiUrl}/voucher`;
-    
+    const url = queryString
+      ? `${apiUrl}/voucher?${queryString}`
+      : `${apiUrl}/voucher`;
+
     return fetch(url, {
       headers: authService.getAuthHeaders(),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .then((d) => {
         // Backend returns: { message, vouchers: [...] }
         return d.vouchers || [];
@@ -53,7 +71,7 @@ export default class VoucherService {
     return fetch(`${apiUrl}/voucher/${voucherId}`, {
       headers: authService.getAuthHeaders(),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .then((d) => {
         // Backend returns: { message, voucher: {...} }
         return d.voucher;
@@ -63,45 +81,45 @@ export default class VoucherService {
   // Create new voucher
   createVoucher(voucherData: VoucherFormData) {
     return fetch(`${apiUrl}/voucher`, {
-      method: 'POST',
+      method: "POST",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(voucherData)
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      });
+      body: JSON.stringify(voucherData),
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    });
   }
 
   // Update voucher
-  updateVoucher(voucherId: number | string, voucherData: Partial<VoucherFormData>) {
+  updateVoucher(
+    voucherId: number | string,
+    voucherData: Partial<VoucherFormData>,
+  ) {
     return fetch(`${apiUrl}/voucher/${voucherId}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(voucherData)
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      });
+      body: JSON.stringify(voucherData),
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    });
   }
 
   // Delete voucher
   deleteVoucher(voucherId: number | string) {
     return fetch(`${apiUrl}/voucher`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify({ voucher_id: voucherId.toString() })
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      });
+      body: JSON.stringify({ voucher_id: voucherId.toString() }),
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    });
   }
 }

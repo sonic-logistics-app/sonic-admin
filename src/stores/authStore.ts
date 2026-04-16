@@ -1,5 +1,8 @@
-import { create } from 'zustand';
-import AuthService, { UpdateProfileRequest, ChangePasswordRequest } from '@/services/AuthService';
+import { create } from "zustand";
+import AuthService, {
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+} from "@/services/AuthService";
 
 interface User {
   id: number;
@@ -13,13 +16,25 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-  register: (userData: { email: string; password: string; first_name: string; last_name: string }) => Promise<{ success: boolean; message: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; message: string }>;
+  register: (userData: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+  }) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   checkAuth: () => void;
   checkAdminStatus: () => Promise<{ hasAdmin: boolean }>;
-  updateProfile: (profileData: UpdateProfileRequest) => Promise<{ success: boolean; message: string }>;
-  changePassword: (passwordData: ChangePasswordRequest) => Promise<{ success: boolean; message: string }>;
+  updateProfile: (
+    profileData: UpdateProfileRequest,
+  ) => Promise<{ success: boolean; message: string }>;
+  changePassword: (
+    passwordData: ChangePasswordRequest,
+  ) => Promise<{ success: boolean; message: string }>;
   refreshToken: () => Promise<{ success: boolean; message: string }>;
 }
 
@@ -35,16 +50,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await authService.login({ email, password });
-      console.log('Auth store - login response:', response);
-      
+      console.log("Auth store - login response:", response);
+
       // Backend returns: { message, admin: { id, email, accessToken, refreshToken } }
       if (response.admin?.accessToken) {
         set({
           user: {
             id: parseInt(response.admin.id),
             email: response.admin.email,
-            first_name: response.admin.first_name || '',
-            last_name: response.admin.last_name || '',
+            first_name: response.admin.first_name || "",
+            last_name: response.admin.last_name || "",
           },
           token: response.admin.accessToken,
           isAuthenticated: true,
@@ -53,12 +68,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: true, message: response.message };
       } else {
         set({ isLoading: false });
-        return { success: false, message: response.message || 'Login failed' };
+        return { success: false, message: response.message || "Login failed" };
       }
     } catch (error: any) {
       set({ isLoading: false });
-      console.error('Login error:', error);
-      return { success: false, message: error.message || 'Login failed' };
+      console.error("Login error:", error);
+      return { success: false, message: error.message || "Login failed" };
     }
   },
 
@@ -66,8 +81,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await authService.register(userData);
-      console.log('Auth store - register response:', response);
-      
+      console.log("Auth store - register response:", response);
+
       // Backend returns: { message, admin: { id, email, first_name, last_name } }
       // Note: No tokens returned, need to login after registration
       if (response.admin) {
@@ -76,12 +91,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return get().login(userData.email, userData.password);
       } else {
         set({ isLoading: false });
-        return { success: false, message: response.message || 'Registration failed' };
+        return {
+          success: false,
+          message: response.message || "Registration failed",
+        };
       }
     } catch (error: any) {
       set({ isLoading: false });
-      console.error('Register error:', error);
-      return { success: false, message: error.message || 'Registration failed' };
+      console.error("Register error:", error);
+      return {
+        success: false,
+        message: error.message || "Registration failed",
+      };
     }
   },
 
@@ -97,7 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAuth: () => {
     const token = authService.getToken();
     const user = authService.getUser();
-    
+
     if (token && user) {
       set({
         user,
@@ -110,15 +131,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAdminStatus: async () => {
     try {
       const response = await authService.checkStatus();
-      console.log('Auth store - raw response:', response);
-      
-      // Backend returns { hasAdmin: true } directly, not nested in data
-      const hasAdmin = response.hasAdmin ?? response.data?.hasAdmin ?? false;
-      console.log('Auth store - parsed hasAdmin:', hasAdmin);
-      
+      console.log("Auth store - raw response:", response);
+
+      // Backend returns { hasAdmin: true } directly
+      const hasAdmin = response.hasAdmin ?? false;
+      console.log("Auth store - parsed hasAdmin:", hasAdmin);
+
       return { hasAdmin };
     } catch (error) {
-      console.error('Auth store - checkAdminStatus error:', error);
+      console.error("Auth store - checkAdminStatus error:", error);
       return { hasAdmin: false };
     }
   },
@@ -127,26 +148,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await authService.updateProfile(profileData);
-      
+
       // Backend returns: { message, admin: {...} }
       if (response.admin) {
         set({
           user: {
             id: parseInt(response.admin.id),
             email: response.admin.email,
-            first_name: response.admin.first_name || '',
-            last_name: response.admin.last_name || '',
+            first_name: response.admin.first_name || "",
+            last_name: response.admin.last_name || "",
           },
           isLoading: false,
         });
         return { success: true, message: response.message };
       } else {
         set({ isLoading: false });
-        return { success: false, message: response.message || 'Update failed' };
+        return { success: false, message: response.message || "Update failed" };
       }
     } catch (error: any) {
       set({ isLoading: false });
-      return { success: false, message: error.message || 'Update failed' };
+      return { success: false, message: error.message || "Update failed" };
     }
   },
 
@@ -155,19 +176,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const response = await authService.changePassword(passwordData);
       set({ isLoading: false });
-      
+
       // Backend returns: { message }
       return { success: true, message: response.message };
     } catch (error: any) {
       set({ isLoading: false });
-      return { success: false, message: error.message || 'Password change failed' };
+      return {
+        success: false,
+        message: error.message || "Password change failed",
+      };
     }
   },
 
   refreshToken: async () => {
     try {
       const response = await authService.refreshToken();
-      
+
       // Backend returns: { message, accessToken, refreshToken }
       if (response.accessToken) {
         set({
@@ -175,10 +199,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
         return { success: true, message: response.message };
       } else {
-        return { success: false, message: response.message || 'Token refresh failed' };
+        return {
+          success: false,
+          message: response.message || "Token refresh failed",
+        };
       }
     } catch (error: any) {
-      return { success: false, message: error.message || 'Token refresh failed' };
+      return {
+        success: false,
+        message: error.message || "Token refresh failed",
+      };
     }
   },
 }));

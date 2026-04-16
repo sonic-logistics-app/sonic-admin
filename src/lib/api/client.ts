@@ -3,7 +3,8 @@
  * Compliant with design specification
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api/admin";
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -20,13 +21,13 @@ class ApiClient {
   }
 
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = localStorage.getItem('admin_token');
+    const token = localStorage.getItem("admin_token");
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
@@ -44,33 +45,33 @@ class ApiClient {
   }
 
   private async doRefreshToken(): Promise<string> {
-    const refreshToken = localStorage.getItem('admin_refresh_token');
+    const refreshToken = localStorage.getItem("admin_refresh_token");
     if (!refreshToken) {
-      throw new Error('No refresh token available');
+      throw new Error("No refresh token available");
     }
 
     const response = await fetch(`${this.baseURL}/refresh`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
       // Clear tokens on refresh failure
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_refresh_token');
-      localStorage.removeItem('admin_user');
-      throw new Error('Token refresh failed');
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_refresh_token");
+      localStorage.removeItem("admin_user");
+      throw new Error("Token refresh failed");
     }
 
     const data = await response.json();
     const newToken = data.accessToken;
 
-    localStorage.setItem('admin_token', newToken);
+    localStorage.setItem("admin_token", newToken);
     if (data.refreshToken) {
-      localStorage.setItem('admin_refresh_token', data.refreshToken);
+      localStorage.setItem("admin_refresh_token", data.refreshToken);
     }
 
     return newToken;
@@ -90,8 +91,8 @@ class ApiClient {
         return this.handleResponse(retryResponse);
       } catch (error) {
         // Refresh failed, redirect to login
-        window.location.href = '/login';
-        throw new Error('Authentication failed');
+        window.location.href = "/login";
+        throw new Error("Authentication failed");
       }
     }
 
@@ -106,7 +107,7 @@ class ApiClient {
   async get<T = any>(endpoint: string): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'GET',
+      method: "GET",
       headers,
     });
     return this.handleResponse<T>(response);
@@ -115,7 +116,7 @@ class ApiClient {
   async post<T = any>(endpoint: string, data?: any): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -125,7 +126,7 @@ class ApiClient {
   async put<T = any>(endpoint: string, data?: any): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'PUT',
+      method: "PUT",
       headers,
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -136,7 +137,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     const headersWithAuth = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: headersWithAuth,
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -146,7 +147,7 @@ class ApiClient {
   async delete<T = any>(endpoint: string): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers,
     });
     return this.handleResponse<T>(response);

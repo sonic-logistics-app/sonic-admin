@@ -1,6 +1,7 @@
-import AuthService from './AuthService';
+import AuthService from "../../../services/AuthService";
 
-const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
+const apiUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api/admin";
 const authService = new AuthService();
 
 export interface PaginationParams {
@@ -12,18 +13,20 @@ export interface PaginationParams {
 export default class DriverService {
   getAllDrivers(params?: PaginationParams) {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
     const queryString = queryParams.toString();
-    const url = queryString ? `${apiUrl}/driver?${queryString}` : `${apiUrl}/driver`;
-    
+    const url = queryString
+      ? `${apiUrl}/driver?${queryString}`
+      : `${apiUrl}/driver`;
+
     return fetch(url, {
       headers: authService.getAuthHeaders(),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .then((d) => {
         // Backend returns: { message, drivers: [...] }
         return d.drivers || [];
@@ -32,21 +35,21 @@ export default class DriverService {
 
   getDriverById(id: string) {
     return fetch(`${apiUrl}/driver/${id}`, {
-      method: 'GET',
+      method: "GET",
       headers: authService.getAuthHeaders(),
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
-      .then(d => {
+      .then((d) => {
         // Backend returns: { message, driver: {...} }
         return d.driver || d;
       })
-      .catch(error => {
-        console.error('Error fetching driver:', error);
+      .catch((error) => {
+        console.error("Error fetching driver:", error);
         throw error;
       });
   }
@@ -54,22 +57,22 @@ export default class DriverService {
   verifyDriver(driverId: number, verificationData: any) {
     const requestBody = {
       driver_id: driverId.toString(),
-      ...verificationData
+      ...verificationData,
     };
 
     return fetch(`${apiUrl}/driver/verify`, {
-      method: 'PUT',
+      method: "PUT",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
-      .catch(error => {
-        console.error('Error verifying driver:', error);
+      .catch((error) => {
+        console.error("Error verifying driver:", error);
         throw error;
       });
   }
@@ -77,44 +80,44 @@ export default class DriverService {
   rejectDriver(driverId: number, rejectionData: any) {
     const requestBody = {
       driver_id: driverId.toString(),
-      ...rejectionData
+      ...rejectionData,
     };
 
     return fetch(`${apiUrl}/driver/reject`, {
-      method: 'PUT',
+      method: "PUT",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
-      .catch(error => {
-        console.error('Error rejecting driver:', error);
+      .catch((error) => {
+        console.error("Error rejecting driver:", error);
         throw error;
       });
   }
 
   deleteDriver(driverId: number) {
     const requestBody = {
-      driver_id: driverId.toString()
+      driver_id: driverId.toString(),
     };
 
     return fetch(`${apiUrl}/driver`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
-      .catch(error => {
-        console.error('Error deleting driver:', error);
+      .catch((error) => {
+        console.error("Error deleting driver:", error);
         throw error;
       });
   }

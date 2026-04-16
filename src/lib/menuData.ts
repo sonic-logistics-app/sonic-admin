@@ -4,7 +4,7 @@ export const menuData: MenuModel[] = [
   {
     label: "Menu",
     items: [
-      { label: "Dashboard", icon: "pi pi-fw pi-home", to: "/" },
+      { label: "Dashboard", icon: "pi pi-fw pi-home", to: "/dashboard" },
       { label: "Customer", icon: "pi pi-fw pi-user", to: "/user" },
       { label: "Driver", icon: "pi pi-fw pi-car", to: "/driver" },
       { label: "Vendor", icon: "pi pi-fw pi-shop", to: "/vendor" },

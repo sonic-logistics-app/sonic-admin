@@ -1,28 +1,60 @@
-import AuthService from './AuthService';
+/**
+ * Dashboard API Service
+ * Compliant with design specification
+ */
 
-const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
-const authService = new AuthService();
+import { apiClient } from "../client";
+import {
+  DashboardStats,
+  ActivityItem,
+  ChartData,
+  ApiResponse,
+} from "../../types/admin";
 
-export default class DashboardService {
-  getDashboardStats() {
-    return fetch(`${apiUrl}/dashboard/stats`, {
-      headers: authService.getAuthHeaders(),
-    })
-      .then(res => res.json())
-      .then((d) => {
-        // Backend returns: { message, stats: {...} }
-        return d.stats;
-      });
+/**
+ * Dashboard service for stats, activity, and charts
+ */
+export class DashboardService {
+  /**
+   * Get dashboard statistics
+   */
+  async getStats(): Promise<DashboardStats> {
+    const response = await apiClient.get("/dashboard/stats");
+    return response.data || response;
   }
 
-  getRecentOrders() {
-    return fetch(`${apiUrl}/dashboard/latest-order`, {
-      headers: authService.getAuthHeaders(),
-    })
-      .then(res => res.json())
-      .then((d) => {
-        // Backend returns: { message, orders: [...] }
-        return d.orders || [];
-      });
+  /**
+   * Get recent activity feed
+   */
+  async getActivity(limit = 10): Promise<ActivityItem[]> {
+    const response = await apiClient.get(`/dashboard/activity?limit=${limit}`);
+    return response.data || response;
+  }
+
+  /**
+   * Get chart data for trends
+   */
+  async getCharts(period = "30d"): Promise<ChartData> {
+    const response = await apiClient.get(`/dashboard/charts?period=${period}`);
+    return response.data || response;
+  }
+
+  /**
+   * Get combined dashboard data
+   */
+  async getDashboardData(): Promise<{
+    stats: DashboardStats;
+    activity: ActivityItem[];
+    charts: ChartData;
+  }> {
+    const [stats, activity, charts] = await Promise.all([
+      this.getStats(),
+      this.getActivity(),
+      this.getCharts(),
+    ]);
+
+    return { stats, activity, charts };
   }
 }
+
+export default new DashboardService();

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/authStore";
+import AdminAuth from "@/lib/auth/admin-auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,30 +10,24 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, checkAuth } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check auth from localStorage immediately
+    // Check authentication status
+    const checkAuth = () => {
+      const isAuth = AdminAuth.isAuthenticated();
+      setIsInitialized(true);
+
+      if (!isAuth) {
+        router.push("/login");
+      }
+    };
+
     checkAuth();
-    setIsInitialized(true);
-  }, [checkAuth]);
+  }, [router]);
 
-  useEffect(() => {
-    // Only redirect after we've checked localStorage
-    if (isInitialized && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isInitialized, isAuthenticated, router]);
-
-  // Don't render anything until we've checked localStorage
-  // This prevents the flash of login page
+  // Don't render anything until we've checked authentication
   if (!isInitialized) {
-    return null;
-  }
-
-  // If not authenticated after initialization, show nothing while redirecting
-  if (!isAuthenticated) {
     return null;
   }
 

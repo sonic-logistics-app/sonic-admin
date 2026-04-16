@@ -39,7 +39,7 @@ export default function LoginPage() {
     
     // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
-      router.push("/");
+      router.push("/dashboard");
       return;
     }
     
@@ -91,7 +91,7 @@ export default function LoginPage() {
         detail: "Login successful",
         life: 3000,
       });
-      router.push("/");
+      router.push("/dashboard");
     } else {
       toast.current?.show({
         severity: "error",
@@ -131,7 +131,7 @@ export default function LoginPage() {
       });
       setShowRegister(false);
       setNeedsSetup(false);
-      router.push("/");
+      router.push("/dashboard");
     } else {
       toast.current?.show({
         severity: "error",
