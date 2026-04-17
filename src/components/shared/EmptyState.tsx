@@ -1,12 +1,11 @@
 /**
  * EmptyState Component
- * Compliant with design specification
+ * Compliant with UI Replication Guide Pattern 9
  */
 
 "use client";
 
 import React from "react";
-import { Button } from "primereact/button";
 
 interface EmptyStateProps {
   icon?: string;
@@ -31,24 +30,33 @@ export default function EmptyState({
   className = "",
 }: EmptyStateProps) {
   return (
-    <div className={`empty-state text-center py-8 px-4 ${className}`}>
-      <div className="mb-4">
-        <i className={`${icon} text-6xl text-400`} />
+    <div
+      className={`flex flex-col items-center justify-center py-16 px-6 min-h-[400px] bg-gray-50 rounded-2xl text-center ${className}`}
+    >
+      {/* Icon */}
+      <div className="w-16 h-16 mb-4 flex items-center justify-center">
+        <i className={`${icon} text-[64px] text-[#D0D5DD]`} />
       </div>
 
-      <h3 className="text-xl font-semibold text-700 mb-2">{title}</h3>
+      {/* Title */}
+      <h3 className="text-[16px] font-semibold text-[#111827] mb-2">{title}</h3>
 
+      {/* Description */}
       {description && (
-        <p className="text-600 mb-4 max-w-md mx-auto">{description}</p>
+        <p className="text-[13px] text-[#525866] max-w-xs mb-6 leading-relaxed">
+          {description}
+        </p>
       )}
 
+      {/* CTA Button */}
       {action && (
-        <Button
-          label={action.label}
-          icon={action.icon}
+        <button
           onClick={action.onClick}
-          className="p-button-primary"
-        />
+          className="h-10 px-6 rounded-[50px] bg-[#2563EB] text-white text-[13px] font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-2"
+        >
+          {action.icon && <i className={action.icon} />}
+          {action.label}
+        </button>
       )}
     </div>
   );

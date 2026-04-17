@@ -12,6 +12,7 @@ export interface MenuItem {
   disabled?: boolean;
   visible?: boolean | (() => boolean);
   command?: (event: { originalEvent: React.MouseEvent; item: MenuItem }) => void;
+  commandKey?: string;
 }
 
 export interface MenuModel {

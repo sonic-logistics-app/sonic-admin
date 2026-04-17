@@ -2,23 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Card } from "primereact/card";
-import { InputText } from "primereact/inputtext";
-import { Password } from "primereact/password";
-import { Button } from "primereact/button";
-import { Checkbox } from "primereact/checkbox";
-import { Toast } from "primereact/toast";
-import { Dialog } from "primereact/dialog";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/authStore";
+import Toast, { ToastRef } from "@/components/shared/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const toast = useRef<Toast>(null);
+  const toast = useRef<ToastRef>(null);
   const { login, register, checkAuth, checkAdminStatus, isAuthenticated, isLoading } = useAuthStore();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -29,6 +24,7 @@ export default function LoginPage() {
   // Registration form fields
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
+  const [regShowPassword, setRegShowPassword] = useState(false);
   const [regFirstName, setRegFirstName] = useState("");
   const [regLastName, setRegLastName] = useState("");
 
@@ -143,31 +139,31 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex align-items-center justify-content-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-[#FBFBFB]">
       <Toast ref={toast} />
       
-      <div className="surface-card p-4 shadow-2 border-round w-full lg:w-4">
-        <div className="text-center mb-5">
+      <div className="bg-white p-8 shadow-lg rounded-2xl w-full max-w-md border border-[#E1E4EA]">
+        <div className="text-center mb-6">
           <Image
             src="/images/logo-dark.svg"
             alt="Sonic Logo"
             width={80}
             height={60}
-            className="mb-3"
+            className="mb-3 mx-auto"
           />
-          <div className="text-900 text-3xl font-medium mb-3">
+          <div className="text-[#111827] text-3xl font-semibold mb-3">
             Sonic Admin
           </div>
-          <span className="text-600 font-medium line-height-3">
+          <span className="text-[#525866] font-medium text-[13px]">
             {needsSetup ? "Create your admin account" : "Sign in to continue"}
           </span>
         </div>
 
         {needsSetup && (
-          <div className="p-3 mb-4 bg-yellow-50 border-left-3 border-yellow-500">
-            <div className="flex align-items-center">
-              <i className="pi pi-info-circle text-yellow-600 mr-2"></i>
-              <span className="text-yellow-800">
+          <div className="p-3 mb-4 bg-[#FEF3C7] border-l-4 border-[#F59E0B] rounded">
+            <div className="flex items-center gap-2">
+              <i className="pi pi-info-circle text-[#D97706]"></i>
+              <span className="text-[#92400E] text-[12px]">
                 No admin account found. Please create the first admin account.
               </span>
             </div>
@@ -175,10 +171,10 @@ export default function LoginPage() {
         )}
 
         {checkingStatus && (
-          <div className="p-3 mb-4 bg-blue-50 border-left-3 border-blue-500">
-            <div className="flex align-items-center">
-              <i className="pi pi-spinner pi-spin text-blue-600 mr-2"></i>
-              <span className="text-blue-800">
+          <div className="p-3 mb-4 bg-[#DBEAFE] border-l-4 border-[#2563EB] rounded">
+            <div className="flex items-center gap-2">
+              <i className="pi pi-spinner pi-spin text-[#2563EB]"></i>
+              <span className="text-[#1E40AF] text-[12px]">
                 Checking backend connection...
               </span>
             </div>
@@ -186,13 +182,13 @@ export default function LoginPage() {
         )}
 
         {statusError && (
-          <div className="p-3 mb-4 bg-red-50 border-left-3 border-red-500">
-            <div className="flex align-items-center">
-              <i className="pi pi-exclamation-triangle text-red-600 mr-2"></i>
-              <div className="text-red-800">
+          <div className="p-3 mb-4 bg-[#FEE2E2] border-l-4 border-[#DC2626] rounded">
+            <div className="flex items-start gap-2">
+              <i className="pi pi-exclamation-triangle text-[#DC2626] mt-0.5"></i>
+              <div className="text-[#991B1B] text-[12px]">
                 <div className="font-semibold mb-1">Backend Connection Error</div>
-                <div className="text-sm">{statusError}</div>
-                <div className="text-sm mt-2">
+                <div>{statusError}</div>
+                <div className="mt-2">
                   Check browser console (F12) for details.
                 </div>
               </div>
@@ -201,73 +197,91 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleLogin}>
-          <div className="field">
-            <label htmlFor="email" className="block text-900 font-medium mb-2">
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-[#111827] font-medium mb-2 text-[13px]">
               Email
             </label>
-            <InputText
+            <input
               id="email"
               type="email"
               placeholder="Email address"
-              className="w-full"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
 
-          <div className="field">
-            <label htmlFor="password" className="block text-900 font-medium mb-2">
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-[#111827] font-medium mb-2 text-[13px]">
               Password
             </label>
-            <Password
-              id="password"
-              placeholder="Password"
-              className="w-full"
-              inputClassName="w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              feedback={false}
-              toggleMask
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525866] hover:text-[#111827]"
+              >
+                <i className={`pi ${showPassword ? "pi-eye-slash" : "pi-eye"}`}></i>
+              </button>
+            </div>
           </div>
 
-          <div className="flex align-items-center justify-content-between mb-6">
-            <div className="flex align-items-center">
-              <Checkbox
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <input
                 id="rememberme"
+                type="checkbox"
                 checked={rememberMe}
-                onChange={(e) => setRememberMe(e.checked || false)}
-                className="mr-2"
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
               />
-              <label htmlFor="rememberme">Remember me</label>
+              <label htmlFor="rememberme" className="text-[13px] text-[#525866] cursor-pointer">
+                Remember me
+              </label>
             </div>
             <a
-              className="font-medium no-underline ml-2 text-blue-500 text-right cursor-pointer"
-              style={{ color: "var(--primary-color)" }}
+              className="font-medium no-underline text-[#2563EB] text-right cursor-pointer text-[13px] hover:underline"
             >
               Forgot password?
             </a>
           </div>
 
-          <Button
-            label="Sign In"
-            icon="pi pi-user"
-            className="w-full"
+          <button
             type="submit"
-            loading={isLoading}
-          />
+            disabled={isLoading}
+            className="w-full px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <i className="pi pi-spinner pi-spin"></i>
+                Signing in...
+              </>
+            ) : (
+              <>
+                <i className="pi pi-user"></i>
+                Sign In
+              </>
+            )}
+          </button>
         </form>
 
         <div className="text-center mt-4">
-          <span className="text-600 font-medium line-height-3">
+          <span className="text-[#525866] font-medium text-[13px]">
             {needsSetup ? (
               <>
                 Need to create the first admin account?{" "}
                 <a
-                  className="font-medium no-underline cursor-pointer"
-                  style={{ color: "var(--primary-color)" }}
+                  className="font-medium no-underline cursor-pointer text-[#2563EB] hover:underline"
                   onClick={() => setShowRegister(true)}
                 >
                   Create Account
@@ -277,8 +291,7 @@ export default function LoginPage() {
               <>
                 Don't have an account?{" "}
                 <a
-                  className="font-medium no-underline cursor-pointer"
-                  style={{ color: "var(--primary-color)" }}
+                  className="font-medium no-underline cursor-pointer text-[#2563EB] hover:underline"
                 >
                   Contact Administrator
                 </a>
@@ -288,91 +301,132 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Registration Dialog */}
-      <Dialog
-        header="Create Admin Account"
-        visible={showRegister}
-        style={{ width: "450px" }}
-        onHide={() => setShowRegister(false)}
-        modal
-      >
-        <form onSubmit={handleRegister}>
-          <div className="field">
-            <label htmlFor="regFirstName" className="block text-900 font-medium mb-2">
-              First Name
-            </label>
-            <InputText
-              id="regFirstName"
-              placeholder="First Name"
-              className="w-full"
-              value={regFirstName}
-              onChange={(e) => setRegFirstName(e.target.value)}
-              required
-            />
-          </div>
+      {/* Registration Modal */}
+      {showRegister && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setShowRegister(false)}
+          />
 
-          <div className="field">
-            <label htmlFor="regLastName" className="block text-900 font-medium mb-2">
-              Last Name
-            </label>
-            <InputText
-              id="regLastName"
-              placeholder="Last Name"
-              className="w-full"
-              value={regLastName}
-              onChange={(e) => setRegLastName(e.target.value)}
-              required
-            />
-          </div>
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl border border-[#E1E4EA] w-full max-w-md shadow-lg">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-[#E1E4EA]">
+              <h2 className="text-[18px] font-semibold text-[#111827]">
+                Create Admin Account
+              </h2>
+              <button
+                onClick={() => setShowRegister(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+              >
+                <i className="pi pi-times text-[#525866]" />
+              </button>
+            </div>
 
-          <div className="field">
-            <label htmlFor="regEmail" className="block text-900 font-medium mb-2">
-              Email
-            </label>
-            <InputText
-              id="regEmail"
-              type="email"
-              placeholder="Email address"
-              className="w-full"
-              value={regEmail}
-              onChange={(e) => setRegEmail(e.target.value)}
-              required
-            />
-          </div>
+            {/* Content */}
+            <form onSubmit={handleRegister} className="p-6 space-y-4">
+              <div>
+                <label htmlFor="regFirstName" className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  First Name *
+                </label>
+                <input
+                  id="regFirstName"
+                  type="text"
+                  placeholder="First Name"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+                  value={regFirstName}
+                  onChange={(e) => setRegFirstName(e.target.value)}
+                  required
+                />
+              </div>
 
-          <div className="field">
-            <label htmlFor="regPassword" className="block text-900 font-medium mb-2">
-              Password
-            </label>
-            <Password
-              id="regPassword"
-              placeholder="Password"
-              className="w-full"
-              inputClassName="w-full"
-              value={regPassword}
-              onChange={(e) => setRegPassword(e.target.value)}
-              toggleMask
-              required
-            />
-          </div>
+              <div>
+                <label htmlFor="regLastName" className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Last Name *
+                </label>
+                <input
+                  id="regLastName"
+                  type="text"
+                  placeholder="Last Name"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+                  value={regLastName}
+                  onChange={(e) => setRegLastName(e.target.value)}
+                  required
+                />
+              </div>
 
-          <div className="flex justify-content-end gap-2">
-            <Button
-              label="Cancel"
-              icon="pi pi-times"
-              outlined
-              onClick={() => setShowRegister(false)}
-              type="button"
-            />
-            <Button
-              label="Create Account"
-              icon="pi pi-check"
-              type="submit"
-              loading={isLoading}
-            />
+              <div>
+                <label htmlFor="regEmail" className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Email *
+                </label>
+                <input
+                  id="regEmail"
+                  type="email"
+                  placeholder="Email address"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="regPassword" className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Password *
+                </label>
+                <div className="relative">
+                  <input
+                    id="regPassword"
+                    type={regShowPassword ? "text" : "password"}
+                    placeholder="Password"
+                    className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRegShowPassword(!regShowPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525866] hover:text-[#111827]"
+                  >
+                    <i className={`pi ${regShowPassword ? "pi-eye-slash" : "pi-eye"}`}></i>
+                  </button>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E1E4EA]">
+                <button
+                  type="button"
+                  onClick={() => setShowRegister(false)}
+                  className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <i className="pi pi-spinner pi-spin"></i>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="pi pi-check"></i>
+                      Create Account
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }

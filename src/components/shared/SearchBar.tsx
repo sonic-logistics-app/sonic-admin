@@ -1,15 +1,11 @@
 /**
  * SearchBar Component
- * Compliant with design specification
+ * Compliant with UI Replication Guide Pattern 3
  */
 
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { IconField } from "primereact/iconfield";
-import { InputIcon } from "primereact/inputicon";
 
 interface SearchBarProps {
   value?: string;
@@ -72,7 +68,7 @@ export default function SearchBar({
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         const searchInput = document.querySelector(
-          ".search-bar input",
+          ".search-bar-input",
         ) as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
@@ -85,28 +81,31 @@ export default function SearchBar({
   }, []);
 
   return (
-    <div className={`search-bar ${className}`}>
-      <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
-        <InputText
-          value={localValue}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="w-full"
-        />
-        {showClearButton && localValue && (
-          <InputIcon
-            className="pi pi-times cursor-pointer"
-            onClick={handleClear}
-          />
-        )}
-      </IconField>
+    <div className={`relative flex items-center ${className}`}>
+      {/* Search Icon */}
+      <i className="pi pi-search absolute left-3 w-4 h-4 text-[#525866] pointer-events-none" />
 
-      {/* Keyboard shortcut hint */}
-      <div className="text-xs text-500 mt-1">
-        Press {navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}+K to focus
-      </div>
+      {/* Input Field */}
+      <input
+        type="text"
+        value={localValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="search-bar-input h-[38px] pl-10 pr-10 py-2 border border-[#E1E4EA] rounded-lg bg-white text-[13px] text-[#111827] placeholder:text-black/30 focus:outline-none focus:border-[#2563EB] flex-1 max-w-[585px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      />
+
+      {/* Clear Button */}
+      {showClearButton && localValue && !disabled && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-3 w-4 h-4 text-[#525866] hover:text-[#DC2626] transition-colors"
+          aria-label="Clear search"
+        >
+          <i className="pi pi-times text-xs" />
+        </button>
+      )}
     </div>
   );
 }

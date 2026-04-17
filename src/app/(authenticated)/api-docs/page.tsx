@@ -1,8 +1,5 @@
 "use client";
 
-import { Card } from "primereact/card";
-import { Button } from "primereact/button";
-
 export default function APIDocsPage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
   const baseUrl = backendUrl.replace('/api/admin', '');
@@ -12,171 +9,153 @@ export default function APIDocsPage() {
     window.open(swaggerUrl, '_blank');
   };
 
+  const endpoints = [
+    {
+      title: "Authentication",
+      icon: "pi-lock",
+      color: "text-[#2563EB]",
+      items: [
+        "POST /admin/login",
+        "POST /admin/register",
+        "POST /admin/logout",
+        "GET /admin/profile",
+        "PUT /admin/profile",
+        "PUT /admin/change-password",
+        "POST /admin/refresh-token",
+      ],
+    },
+    {
+      title: "Dashboard",
+      icon: "pi-chart-bar",
+      color: "text-[#059669]",
+      items: [
+        "GET /admin/dashboard/stats",
+        "GET /admin/dashboard/latest-order",
+      ],
+    },
+    {
+      title: "User Management",
+      icon: "pi-users",
+      color: "text-[#9c27b0]",
+      items: [
+        "GET /admin/user",
+        "PUT /admin/user/verify",
+        "DELETE /admin/user",
+      ],
+    },
+    {
+      title: "Driver Management",
+      icon: "pi-car",
+      color: "text-[#06b6d4]",
+      items: [
+        "GET /admin/driver",
+        "GET /admin/driver/:userId",
+        "PUT /admin/driver/verify",
+        "PUT /admin/driver/reject",
+        "DELETE /admin/driver",
+      ],
+    },
+    {
+      title: "Vendor Management",
+      icon: "pi-shop",
+      color: "text-[#f97316]",
+      items: [
+        "GET /admin/vendor",
+        "POST /admin/vendor",
+        "GET /admin/vendor/:id",
+        "PUT /admin/vendor/:id",
+        "PUT /admin/vendor/:id/approve",
+        "PUT /admin/vendor/reject",
+        "PUT /admin/vendor/suspend",
+        "PUT /admin/vendor/activate",
+        "DELETE /admin/vendor/:id",
+      ],
+    },
+    {
+      title: "Order Management",
+      icon: "pi-truck",
+      color: "text-[#2563EB]",
+      items: [
+        "GET /admin/order",
+        "GET /admin/order/:orderId",
+        "POST /admin/order/:order_id/generate-code",
+      ],
+    },
+    {
+      title: "Voucher Management",
+      icon: "pi-ticket",
+      color: "text-[#ec4899]",
+      items: [
+        "GET /admin/voucher",
+        "POST /admin/voucher",
+        "GET /admin/voucher/:voucherId",
+        "PUT /admin/voucher/:voucherId",
+        "DELETE /admin/voucher",
+      ],
+    },
+    {
+      title: "FAQ & Support",
+      icon: "pi-question-circle",
+      color: "text-[#6366f1]",
+      items: [
+        "GET /admin/faq",
+        "POST /admin/faq",
+        "GET /admin/faq/:faqId",
+        "PUT /admin/faq/:faqId",
+        "DELETE /admin/faq",
+        "GET /admin/support/contact-info",
+        "PUT /admin/support/contact-info",
+      ],
+    },
+  ];
+
   return (
-    <div className="grid">
-      <div className="col-12">
-        <Card>
-          <div className="text-center">
-            <i className="pi pi-book text-6xl text-blue-500 mb-4"></i>
-            <h2 className="text-900 mb-3">API Documentation</h2>
-            <p className="text-600 mb-4 line-height-3">
-              Interactive API documentation is available via Swagger UI. 
-              Click the button below to access the complete API reference with request/response schemas.
-            </p>
-            
-            <Button
-              label="Open Swagger UI"
-              icon="pi pi-external-link"
-              size="large"
-              onClick={openSwaggerUI}
-              className="mb-4"
-            />
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="bg-white border border-[#E1E4EA] rounded-2xl p-8 text-center">
+        <i className="pi pi-book text-[64px] text-[#2563EB] mb-4 block"></i>
+        <h1 className="text-[28px] font-bold text-[#111827] mb-3">API Documentation</h1>
+        <p className="text-[13px] text-[#525866] mb-6 max-w-2xl mx-auto leading-relaxed">
+          Interactive API documentation is available via Swagger UI. Click the button below to access the complete API reference with request/response schemas.
+        </p>
+        
+        <button
+          onClick={openSwaggerUI}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors"
+        >
+          <i className="pi pi-external-link"></i>
+          Open Swagger UI
+        </button>
+      </div>
 
-            <div className="mt-5 text-left">
-              <h5 className="text-900 mb-3">Available Endpoints</h5>
-              
-              <div className="grid">
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-lock mr-2 text-blue-500"></i>
-                      Authentication
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">POST /admin/login</li>
-                      <li className="mb-2">POST /admin/register</li>
-                      <li className="mb-2">POST /admin/logout</li>
-                      <li className="mb-2">GET /admin/profile</li>
-                      <li className="mb-2">PUT /admin/profile</li>
-                      <li className="mb-2">PUT /admin/change-password</li>
-                      <li className="mb-2">POST /admin/refresh-token</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-chart-bar mr-2 text-green-500"></i>
-                      Dashboard
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/dashboard/stats</li>
-                      <li className="mb-2">GET /admin/dashboard/latest-order</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-users mr-2 text-purple-500"></i>
-                      User Management
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/user</li>
-                      <li className="mb-2">PUT /admin/user/verify</li>
-                      <li className="mb-2">DELETE /admin/user</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-car mr-2 text-cyan-500"></i>
-                      Driver Management
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/driver</li>
-                      <li className="mb-2">GET /admin/driver/:userId</li>
-                      <li className="mb-2">PUT /admin/driver/verify</li>
-                      <li className="mb-2">PUT /admin/driver/reject</li>
-                      <li className="mb-2">DELETE /admin/driver</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-shop mr-2 text-orange-500"></i>
-                      Vendor Management
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/vendor</li>
-                      <li className="mb-2">POST /admin/vendor</li>
-                      <li className="mb-2">GET /admin/vendor/:id</li>
-                      <li className="mb-2">PUT /admin/vendor/:id</li>
-                      <li className="mb-2">PUT /admin/vendor/:id/approve</li>
-                      <li className="mb-2">PUT /admin/vendor/reject</li>
-                      <li className="mb-2">PUT /admin/vendor/suspend</li>
-                      <li className="mb-2">PUT /admin/vendor/activate</li>
-                      <li className="mb-2">DELETE /admin/vendor/:id</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-truck mr-2 text-blue-500"></i>
-                      Order Management
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/order</li>
-                      <li className="mb-2">GET /admin/order/:orderId</li>
-                      <li className="mb-2">POST /admin/order/:order_id/generate-code</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-ticket mr-2 text-pink-500"></i>
-                      Voucher Management
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/voucher</li>
-                      <li className="mb-2">POST /admin/voucher</li>
-                      <li className="mb-2">GET /admin/voucher/:voucherId</li>
-                      <li className="mb-2">PUT /admin/voucher/:voucherId</li>
-                      <li className="mb-2">DELETE /admin/voucher</li>
-                    </ul>
-                  </Card>
-                </div>
-
-                <div className="col-12 md:col-6">
-                  <Card className="mb-3">
-                    <h6 className="text-900 mb-2">
-                      <i className="pi pi-question-circle mr-2 text-indigo-500"></i>
-                      FAQ & Support
-                    </h6>
-                    <ul className="list-none p-0 m-0 text-600">
-                      <li className="mb-2">GET /admin/faq</li>
-                      <li className="mb-2">POST /admin/faq</li>
-                      <li className="mb-2">GET /admin/faq/:faqId</li>
-                      <li className="mb-2">PUT /admin/faq/:faqId</li>
-                      <li className="mb-2">DELETE /admin/faq</li>
-                      <li className="mb-2">GET /admin/support/contact-info</li>
-                      <li className="mb-2">PUT /admin/support/contact-info</li>
-                    </ul>
-                  </Card>
-                </div>
-              </div>
+      {/* Endpoints Grid */}
+      <div>
+        <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Available Endpoints</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {endpoints.map((section, idx) => (
+            <div key={idx} className="bg-white border border-[#E1E4EA] rounded-lg p-5">
+              <h3 className="text-[14px] font-semibold text-[#111827] mb-3 flex items-center gap-2">
+                <i className={`pi ${section.icon} ${section.color}`}></i>
+                {section.title}
+              </h3>
+              <ul className="space-y-2">
+                {section.items.map((item, itemIdx) => (
+                  <li key={itemIdx} className="text-[12px] text-[#525866] font-mono bg-[#F9FAFB] px-3 py-2 rounded">
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <div className="mt-4 p-3 bg-blue-50 border-round">
-              <div className="flex align-items-center">
-                <i className="pi pi-info-circle text-blue-600 mr-2"></i>
-                <span className="text-blue-900">
-                  All endpoints support pagination with <code>page</code>, <code>limit</code>, and <code>search</code> query parameters.
-                </span>
-              </div>
-            </div>
-          </div>
-        </Card>
+      {/* Info Box */}
+      <div className="bg-[#DBEAFE] border border-[#2563EB] rounded-lg p-4 flex items-start gap-3">
+        <i className="pi pi-info-circle text-[#2563EB] text-[16px] mt-1 flex-shrink-0"></i>
+        <p className="text-[13px] text-[#1e40af]">
+          All endpoints support pagination with <code className="bg-white px-2 py-1 rounded text-[11px] font-mono">page</code>, <code className="bg-white px-2 py-1 rounded text-[11px] font-mono">limit</code>, and <code className="bg-white px-2 py-1 rounded text-[11px] font-mono">search</code> query parameters.
+        </p>
       </div>
     </div>
   );

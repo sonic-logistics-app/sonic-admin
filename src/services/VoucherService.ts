@@ -12,34 +12,20 @@ export interface PaginationParams {
 
 export interface Voucher {
   id: string;
+  name: string;
+  amount: number;
   code: string;
-  title: string;
-  description?: string;
-  discount_type: "PERCENTAGE" | "FIXED_AMOUNT";
-  discount_value: number;
-  minimum_order_amount?: number;
-  maximum_discount_amount?: number;
-  usage_limit?: number;
-  used_count?: number;
-  valid_from?: string;
-  valid_until?: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  expiry_type: string;
+  created_at: string;
+  updated_at: string;
+  used: number;
 }
 
 export interface VoucherFormData {
   code: string;
-  title: string;
-  description: string;
-  discount_type: "PERCENTAGE" | "FIXED_AMOUNT";
-  discount_value: number;
-  minimum_order_amount: number;
-  maximum_discount_amount: number;
-  usage_limit: number;
-  valid_from: string;
-  valid_until: string;
-  is_active: boolean;
+  name: string;
+  amount: number;
+  expiry_type: string;
 }
 
 export default class VoucherService {
@@ -61,8 +47,14 @@ export default class VoucherService {
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, vouchers: [...] }
-        return d.vouchers || [];
+        console.log("🔍 RAW VOUCHER LIST RESPONSE:", JSON.stringify(d, null, 2));
+        console.log("🔍 Number of vouchers:", d.data?.vouchers?.length || 0);
+        if (d.data?.vouchers && d.data.vouchers.length > 0) {
+          console.log("🔍 First voucher sample:", JSON.stringify(d.data.vouchers[0], null, 2));
+          console.log("🔍 Voucher keys:", Object.keys(d.data.vouchers[0]));
+        }
+        // Backend returns: { success, message, data: { vouchers: [...] }, meta: {...} }
+        return d.data?.vouchers || [];
       });
   }
 
@@ -73,8 +65,12 @@ export default class VoucherService {
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, voucher: {...} }
-        return d.voucher;
+        console.log("🔍 RAW VOUCHER DETAIL RESPONSE:", JSON.stringify(d, null, 2));
+        if (d.data) {
+          console.log("🔍 Voucher keys:", Object.keys(d.data));
+        }
+        // Backend returns: { success, message, data: {...} }
+        return d.data;
       });
   }
 

@@ -2,37 +2,128 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card } from "primereact/card";
-import { Button } from "primereact/button";
-import { Toast } from "primereact/toast";
-import { Tag } from "primereact/tag";
-import { Divider } from "primereact/divider";
-import { Timeline } from "primereact/timeline";
 import OrderService from "@/services/OrderService";
+import StatusBadge from "@/components/shared/StatusBadge";
+import Toast, { ToastRef } from "@/components/shared/Toast";
 
-export default function OrderDetailPage() {
+interface Order {
+  id: number;
+  order_id: string;
+  public_id?: string;
+  order_status: string;
+  order_type: string;
+  payment_status: string;
+  dispatch_status?: string;
+  currency: string;
+  price_fees: number;
+  discount: number;
+  delivery_fee?: number;
+  items_subtotal?: number;
+  service_fee?: number;
+  tax?: number;
+  refund_amount?: number | null;
+  price_breakdown?: {
+    gross: number;
+    commission_rate: number;
+    commission: number;
+    vendor_share: number;
+    service_fee: number;
+    tax: number;
+    total: number;
+  };
+  verification_code?: string;
+  cancel_reason?: string | null;
+  rejection_reason?: string | null;
+  rejection_notes?: string | null;
+  vendor_notes?: string | null;
+  proof_delivery?: string;
+  dispatch_fail_reason?: string | null;
+  dispatch_attempt_count?: number;
+  dispatch_radius_m?: number;
+  prep_time_minutes?: number;
+  vendor_rating?: number;
+  vendor_review?: string;
+  cancel_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  accepted_at?: string;
+  preparing_at?: string;
+  ready_at?: string;
+  vendor_accepted_at?: string;
+  vendor_ready_at?: string;
+  driver_assigned_at?: string;
+  delivered_at?: string;
+  paid_at?: string;
+  firebase_dispatched_at?: string;
+  dispatch_last_attempt_at?: string;
+  receiver_address: {
+    id: number;
+    public_id: string;
+    receiver_label: string;
+    receiver_name: string;
+    receiver_phone: string;
+    dropoff_address: string;
+    landmark_address: string | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    user_id: number;
+    location_id: number;
+  } | string;
+  sender_address: string | null;
+  delivery_address?: string;
+  package: string | null;
+  user: {
+    id: number;
+    public_id?: string;
+    first_name: string | null;
+    last_name: string | null;
+    email?: string;
+    phone: string | null;
+    picture: string | null;
+  };
+  driver: {
+    id: number;
+    public_id?: string;
+    first_name: string | null;
+    last_name: string | null;
+    email?: string;
+    phone: string | null;
+    picture: string | null;
+    status?: string;
+  } | null;
+  vendor?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone: string | null;
+    address?: string;
+    business_type?: string;
+  };
+}
+
+export default function OrderDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const toast = useRef<Toast>(null);
+  const toast = useRef<ToastRef>(null);
   const orderService = new OrderService();
 
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generatingCode, setGeneratingCode] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
-      loadOrder();
-    }
+    loadOrder();
   }, [params.id]);
 
   const loadOrder = async () => {
     try {
       setLoading(true);
-      const data = await orderService.getOrderDetails(Number(params.id));
+      const orderId = parseInt(params.id as string);
+      const data = await orderService.getOrderById(orderId);
       setOrder(data);
     } catch (error) {
-      console.error("Failed to load order:", error);
+      console.error("❌ Failed to load order:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -44,246 +135,394 @@ export default function OrderDetailPage() {
     }
   };
 
-  const generateOrderCode = async () => {
-    try {
-      setGeneratingCode(true);
-      await orderService.generateOrderCode(Number(params.id));
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Order verification code generated successfully",
-        life: 3000,
-      });
-      // Reload order to get updated data
-      loadOrder();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: error.message || "Failed to generate order code",
-        life: 3000,
-      });
-    } finally {
-      setGeneratingCode(false);
-    }
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
-  const formatCurrency = (value: number) => {
-    if (typeof value !== "number") return "";
-    const price = value
-      .toLocaleString("en-NG", { style: "currency", currency: "NGN" })
-      .split("");
-    price.splice(1, 0, " ");
-    return price.join("");
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+    }).format(amount);
   };
 
-  const getSeverity = (status: string): "success" | "info" | "warning" | "danger" | undefined => {
-    switch (status) {
-      case "PENDING":
-        return "warning";
-      case "CONFIRMED":
-        return "info";
-      case "IN_TRANSIT":
-        return "info";
-      case "DELIVERED":
-        return "success";
-      case "CANCELLED":
-        return "danger";
-      case "IN_PAYMENT":
-        return "info";
-      case "PICKUP":
-        return "warning";
-      default:
-        return undefined;
-    }
+  const getInitials = (first: string | null, last: string | null) => {
+    return ((first?.charAt(0) || "") + (last?.charAt(0) || "")).toUpperCase() || "?";
   };
 
   if (loading) {
     return (
-      <div className="flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
-        <i className="pi pi-spin pi-spinner" style={{ fontSize: "3rem" }} />
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
+          <p className="text-[#525866]">Loading order details...</p>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="card">
-        <h5>Order not found</h5>
-        <Button label="Back to List" icon="pi pi-arrow-left" onClick={() => router.push("/order")} />
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
+        <p className="text-[#525866]">Order not found</p>
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8]"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
 
-  const timelineEvents = [
-    { status: "Order Placed", date: order.created_at, icon: "pi pi-shopping-cart" },
-    { status: "Confirmed", date: order.confirmed_at, icon: "pi pi-check" },
-    { status: "In Transit", date: order.in_transit_at, icon: "pi pi-truck" },
-    { status: "Delivered", date: order.delivered_at, icon: "pi pi-check-circle" },
-  ].filter((event) => event.date);
-
   return (
-    <div className="grid">
+    <>
       <Toast ref={toast} />
 
-      <div className="col-12">
-        <Card>
-          <div className="flex justify-content-between align-items-center mb-4">
-            <div className="flex align-items-center gap-3">
-              <Button
-                icon="pi pi-arrow-left"
-                rounded
-                text
-                onClick={() => router.push("/order")}
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[24px] font-bold text-[#111827]">Order Details</h1>
+            <p className="text-[13px] text-[#525866] mt-1">{order.order_id}</p>
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB]"
+          >
+            Back
+          </button>
+        </div>
+
+        {/* Order Status Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Order Status
+            </label>
+            <StatusBadge status={order.order_status} />
+          </div>
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Payment Status
+            </label>
+            <StatusBadge status={order.payment_status} />
+          </div>
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Order Type
+            </label>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
+              {order.order_type}
+            </span>
+          </div>
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Dispatch Status
+            </label>
+            {order.dispatch_status ? (
+              <StatusBadge status={order.dispatch_status} />
+            ) : (
+              <span className="text-[11px] text-[#525866]">N/A</span>
+            )}
+          </div>
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Total Amount
+            </label>
+            <p className="text-[16px] font-bold text-[#111827]">
+              {formatCurrency(order.price_fees)}
+            </p>
+          </div>
+        </div>
+
+        {/* Customer Information */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Customer Information</h2>
+          <div className="flex items-start gap-4">
+            {order.user.picture ? (
+              <img
+                src={order.user.picture}
+                alt={order.user.first_name || "Customer"}
+                className="w-16 h-16 rounded-full object-cover"
               />
-              <div>
-                <h5 className="m-0">Order #{order.order_id}</h5>
-                <Tag
-                  value={order.order_status}
-                  severity={getSeverity(order.order_status)}
-                  className="mt-2"
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-[20px] font-semibold">
+                {getInitials(order.user.first_name, order.user.last_name)}
+              </div>
+            )}
+            <div className="flex-1">
+              <p className="text-[15px] font-semibold text-[#111827]">
+                {order.user.first_name} {order.user.last_name}
+              </p>
+              <p className="text-[13px] text-[#525866] mt-1">
+                Phone: {order.user.phone || "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Pickup Location</h2>
+            <p className="text-[13px] text-[#525866]">
+              {order.sender_address || "N/A"}
+            </p>
+          </div>
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Delivery Location</h2>
+            <div className="space-y-2">
+              <p className="text-[13px] text-[#525866]">
+                {typeof order.receiver_address === 'string' 
+                  ? order.receiver_address 
+                  : order.receiver_address?.dropoff_address || "N/A"}
+              </p>
+              {typeof order.receiver_address === 'object' && order.receiver_address?.receiver_name && (
+                <>
+                  <p className="text-[13px] text-[#525866]">
+                    <span className="font-semibold">Recipient:</span> {order.receiver_address.receiver_name}
+                  </p>
+                  <p className="text-[13px] text-[#525866]">
+                    <span className="font-semibold">Phone:</span> {order.receiver_address.receiver_phone}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Driver Information */}
+        {order.driver && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Driver Information</h2>
+            <div className="flex items-start gap-4">
+              {order.driver.picture ? (
+                <img
+                  src={order.driver.picture}
+                  alt={order.driver.first_name || "Driver"}
+                  className="w-16 h-16 rounded-full object-cover"
                 />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-[#9c27b0] text-white flex items-center justify-center text-[20px] font-semibold">
+                  {getInitials(order.driver.first_name, order.driver.last_name)}
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-[15px] font-semibold text-[#111827]">
+                  {order.driver.first_name} {order.driver.last_name}
+                </p>
+                <p className="text-[13px] text-[#525866] mt-1">
+                  Phone: {order.driver.phone || "N/A"}
+                </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                label="Generate Code"
-                icon="pi pi-qrcode"
-                onClick={generateOrderCode}
-                loading={generatingCode}
-                disabled={order.order_status === "DELIVERED" || order.order_status === "CANCELLED"}
-              />
+          </div>
+        )}
+
+        {/* Vendor Information */}
+        {order.vendor && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Vendor Information</h2>
+            <div>
+              <p className="text-[15px] font-semibold text-[#111827]">
+                {order.vendor.name}
+              </p>
+              <p className="text-[13px] text-[#525866] mt-1">
+                Phone: {order.vendor.phone || "N/A"}
+              </p>
+              {order.vendor.email && (
+                <p className="text-[13px] text-[#525866]">
+                  Email: {order.vendor.email}
+                </p>
+              )}
+              {order.vendor.business_type && (
+                <p className="text-[13px] text-[#525866]">
+                  Type: {order.vendor.business_type}
+                </p>
+              )}
             </div>
           </div>
+        )}
 
-          <Divider />
-
-          <div className="grid">
-            <div className="col-12 md:col-6">
-              <Card title="Customer Information" className="h-full">
-                <div className="field">
-                  <label className="font-semibold">Name</label>
-                  <p>
-                    {order.user?.first_name} {order.user?.last_name}
-                  </p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Email</label>
-                  <p>{order.user?.email || "N/A"}</p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Phone</label>
-                  <p>{order.user?.phone_number || "N/A"}</p>
-                </div>
-              </Card>
-            </div>
-
-            <div className="col-12 md:col-6">
-              <Card title="Driver Information" className="h-full">
-                <div className="field">
-                  <label className="font-semibold">Name</label>
-                  <p>
-                    {order.driver?.first_name} {order.driver?.last_name}
-                  </p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Email</label>
-                  <p>{order.driver?.email || "N/A"}</p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Phone</label>
-                  <p>{order.driver?.phone_number || "N/A"}</p>
-                </div>
-              </Card>
-            </div>
-
-            <div className="col-12">
-              <Card title="Package Details">
-                <div className="grid">
-                  <div className="col-12 md:col-4">
-                    <label className="font-semibold">Delivery Type</label>
-                    <p>{order.package?.delivery_type || "N/A"}</p>
-                  </div>
-                  <div className="col-12 md:col-4">
-                    <label className="font-semibold">Weight</label>
-                    <p>{order.package?.weight || "N/A"}</p>
-                  </div>
-                  <div className="col-12 md:col-4">
-                    <label className="font-semibold">Dimensions</label>
-                    <p>{order.package?.dimensions || "N/A"}</p>
-                  </div>
-                  <div className="col-12">
-                    <label className="font-semibold">Description</label>
-                    <p>{order.package?.description || "N/A"}</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <div className="col-12 md:col-6">
-              <Card title="Pickup Location">
-                <p>{order.pickup_address || "N/A"}</p>
-              </Card>
-            </div>
-
-            <div className="col-12 md:col-6">
-              <Card title="Delivery Location">
-                <p>{order.delivery_address || "N/A"}</p>
-              </Card>
-            </div>
-
-            <div className="col-12 md:col-6">
-              <Card title="Payment Information">
-                <div className="field">
-                  <label className="font-semibold">Total Amount</label>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(order.price_fees)}
-                  </p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Payment Method</label>
-                  <p>{order.payment_method || "N/A"}</p>
-                </div>
-                <div className="field">
-                  <label className="font-semibold">Payment Status</label>
-                  <Tag
-                    value={order.payment_status || "Pending"}
-                    severity={order.payment_status === "PAID" ? "success" : "warning"}
-                  />
-                </div>
-              </Card>
-            </div>
-
-            <div className="col-12 md:col-6">
-              <Card title="Order Timeline">
-                {timelineEvents.length > 0 ? (
-                  <Timeline
-                    value={timelineEvents}
-                    content={(item) => (
-                      <div>
-                        <p className="font-semibold">{item.status}</p>
-                        <p className="text-sm text-500">
-                          {new Date(item.date).toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    marker={(item) => (
-                      <span
-                        className="flex w-2rem h-2rem align-items-center justify-content-center text-white border-circle z-1 shadow-1"
-                        style={{ backgroundColor: "var(--primary-color)" }}
-                      >
-                        <i className={item.icon} />
-                      </span>
-                    )}
-                  />
-                ) : (
-                  <p>No timeline data available</p>
-                )}
-              </Card>
+        {/* Price Breakdown */}
+        {order.price_breakdown && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Price Breakdown</h2>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Items Subtotal</span>
+                <span className="text-[13px] font-semibold text-[#111827]">
+                  {formatCurrency(order.price_breakdown.gross)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Commission ({(order.price_breakdown.commission_rate * 100).toFixed(0)}%)</span>
+                <span className="text-[13px] font-semibold text-[#111827]">
+                  {formatCurrency(order.price_breakdown.commission)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Service Fee</span>
+                <span className="text-[13px] font-semibold text-[#111827]">
+                  {formatCurrency(order.price_breakdown.service_fee)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Tax</span>
+                <span className="text-[13px] font-semibold text-[#111827]">
+                  {formatCurrency(order.price_breakdown.tax)}
+                </span>
+              </div>
+              <div className="border-t border-[#E1E4EA] pt-3 flex justify-between items-center">
+                <span className="text-[13px] font-semibold text-[#111827]">Total</span>
+                <span className="text-[16px] font-bold text-[#111827]">
+                  {formatCurrency(order.price_breakdown.total)}
+                </span>
+              </div>
             </div>
           </div>
-        </Card>
+        )}
+
+        {/* Order Timeline */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Order Timeline</h2>
+          <div className="space-y-3">
+            {order.created_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Order Created</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.created_at)}</span>
+              </div>
+            )}
+            {order.confirmed_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Confirmed</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.confirmed_at)}</span>
+              </div>
+            )}
+            {order.accepted_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Vendor Accepted</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.accepted_at)}</span>
+              </div>
+            )}
+            {order.preparing_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Preparing</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.preparing_at)}</span>
+              </div>
+            )}
+            {order.ready_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Ready for Pickup</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.ready_at)}</span>
+              </div>
+            )}
+            {order.driver_assigned_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Driver Assigned</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.driver_assigned_at)}</span>
+              </div>
+            )}
+            {order.delivered_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Delivered</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.delivered_at)}</span>
+              </div>
+            )}
+            {order.paid_at && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] text-[#525866]">Payment Received</span>
+                <span className="text-[13px] text-[#111827]">{formatDate(order.paid_at)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Order Details */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Order Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                Package Type
+              </label>
+              <p className="text-[13px] text-[#111827]">{order.package || "N/A"}</p>
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                Currency
+              </label>
+              <p className="text-[13px] text-[#111827]">{order.currency}</p>
+            </div>
+            {order.verification_code && (
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Verification Code
+                </label>
+                <p className="text-[13px] font-mono bg-[#F3F4F6] px-2 py-1 rounded text-[#111827]">
+                  {order.verification_code}
+                </p>
+              </div>
+            )}
+            {order.prep_time_minutes && (
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Prep Time
+                </label>
+                <p className="text-[13px] text-[#111827]">{order.prep_time_minutes} minutes</p>
+              </div>
+            )}
+            {order.vendor_notes && (
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Vendor Notes
+                </label>
+                <p className="text-[13px] text-[#111827]">{order.vendor_notes}</p>
+              </div>
+            )}
+            {order.vendor_rating && (
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Vendor Rating
+                </label>
+                <p className="text-[13px] text-[#111827]">⭐ {order.vendor_rating}/5</p>
+              </div>
+            )}
+            {order.vendor_review && (
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Vendor Review
+                </label>
+                <p className="text-[13px] text-[#111827]">{order.vendor_review}</p>
+              </div>
+            )}
+            {order.cancel_reason && (
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Cancellation Reason
+                </label>
+                <p className="text-[13px] text-[#DC2626]">{order.cancel_reason}</p>
+              </div>
+            )}
+            {order.rejection_reason && (
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Rejection Reason
+                </label>
+                <p className="text-[13px] text-[#DC2626]">{order.rejection_reason}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -10,8 +10,8 @@ export default class DashboardService {
     })
       .then(res => res.json())
       .then((d) => {
-        // Backend returns: { message, stats: {...} }
-        return d.stats;
+        // Backend returns: { success, message, data: {user, driver, order} }
+        return d.data;
       });
   }
 
@@ -21,8 +21,19 @@ export default class DashboardService {
     })
       .then(res => res.json())
       .then((d) => {
-        // Backend returns: { message, orders: [...] }
-        return d.orders || [];
+        // Backend returns: { success, message, data: [...] }
+        return d.data || [];
+      });
+  }
+
+  getChartData(period: string = '6months') {
+    return fetch(`${apiUrl}/dashboard/chart-data?period=${period}`, {
+      headers: authService.getAuthHeaders(),
+    })
+      .then(res => res.json())
+      .then((d) => {
+        // Backend returns: { success, message, data: {labels, datasets} }
+        return d.data;
       });
   }
 }

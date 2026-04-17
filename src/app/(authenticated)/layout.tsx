@@ -2,19 +2,17 @@
 
 import { useState, useEffect } from "react";
 import AppMenu from "@/components/layout/AppMenu";
-import AppFooter from "@/components/layout/AppFooter";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { menuData } from "@/lib/menuData";
 
-export default function DashboardLayout({
+export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [menuActive, setMenuActive] = useState(false);
-  const [staticMenuInactive, setStaticMenuInactive] = useState(false);
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
 
   const onWrapperClick = () => {
@@ -43,7 +41,7 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <KeyboardShortcuts />
-      <div className="flex min-h-screen bg-gray-50" onClick={onWrapperClick}>
+      <div className="flex h-screen overflow-hidden" onClick={onWrapperClick}>
         {/* Mobile hamburger */}
         <button
           type="button"
@@ -58,33 +56,28 @@ export default function DashboardLayout({
 
         {/* Sidebar */}
         <div
-          className={`fixed left-0 top-0 bottom-0 w-64 bg-white shadow-lg transform transition-transform duration-300 z-40 ${
+          className={`fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-[#E1E4EA] flex-shrink-0 transform transition-transform duration-300 z-40 ${
             mobileMenuActive ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 ${staticMenuInactive ? "lg:-translate-x-full" : ""}`}
+          } lg:translate-x-0 lg:relative lg:transform-none`}
           onClick={onSidebarClick}
         >
           <AppMenu model={menuData} onMenuItemClick={onMenuItemClick} />
         </div>
 
         {/* Main Content */}
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            staticMenuInactive ? "lg:ml-0" : "lg:ml-64"
-          }`}
-        >
-          <div className="min-h-screen">
-            <div className="p-6">
+        <div className="flex-1 flex flex-col overflow-hidden w-full">
+          <main className="flex-1 overflow-y-auto bg-[#FBFBFB] w-full">
+            <div className="px-3 py-4 md:px-5 md:py-5 flex flex-col gap-4 w-full">
               <Breadcrumb />
               {children}
             </div>
-            <AppFooter />
-          </div>
+          </main>
         </div>
 
         {/* Mobile Overlay */}
         {mobileMenuActive && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/30 z-30 lg:hidden"
             onClick={() => setMobileMenuActive(false)}
           />
         )}

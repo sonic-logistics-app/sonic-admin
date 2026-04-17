@@ -1,18 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog } from "primereact/dialog";
-import { Button } from "primereact/button";
-import { InputText } from "primereact/inputtext";
-import { Dropdown } from "primereact/dropdown";
-import { InputNumber } from "primereact/inputnumber";
-import { Calendar } from "primereact/calendar";
-import { Checkbox } from "primereact/checkbox";
-import { Toast } from "primereact/toast";
-import VoucherService, {
-  Voucher,
-  VoucherFormData,
-} from "@/services/VoucherService";
+import VoucherService, { Voucher } from "@/services/VoucherService";
+import { ToastRef } from "@/components/shared/Toast";
 
 interface VoucherFormDialogProps {
   visible: boolean;
@@ -20,26 +10,14 @@ interface VoucherFormDialogProps {
   voucher: Voucher | null;
   onHide: () => void;
   onSave: () => void;
-  toast: React.RefObject<Toast | null>;
+  toast: React.RefObject<ToastRef | null>;
 }
 
-const discountTypes = [
-  { label: "Percentage", value: "PERCENTAGE" },
-  { label: "Fixed Amount", value: "FIXED_AMOUNT" },
-];
-
-const defaultFormData: VoucherFormData = {
+const defaultFormData = {
   code: "",
-  title: "",
-  description: "",
-  discount_type: "PERCENTAGE",
-  discount_value: 0,
-  minimum_order_amount: 0,
-  maximum_discount_amount: 0,
-  usage_limit: 0,
-  valid_from: "",
-  valid_until: "",
-  is_active: true,
+  name: "",
+  amount: 0,
+  expiry_type: "fixed",
 };
 
 export default function VoucherFormDialog({
@@ -52,28 +30,19 @@ export default function VoucherFormDialog({
 }: VoucherFormDialogProps) {
   const voucherService = new VoucherService();
 
-  const [formData, setFormData] = useState<VoucherFormData>({
-    ...defaultFormData,
-  });
+  const [formData, setFormData] = useState(defaultFormData);
 
   useEffect(() => {
     if (visible) {
       if (editMode && voucher) {
         setFormData({
           code: voucher.code,
-          title: voucher.title,
-          description: voucher.description || "",
-          discount_type: voucher.discount_type,
-          discount_value: voucher.discount_value,
-          minimum_order_amount: voucher.minimum_order_amount || 0,
-          maximum_discount_amount: voucher.maximum_discount_amount || 0,
-          usage_limit: voucher.usage_limit || 0,
-          valid_from: voucher.valid_from || "",
-          valid_until: voucher.valid_until || "",
-          is_active: voucher.is_active,
+          name: voucher.name,
+          amount: voucher.amount,
+          expiry_type: voucher.expiry_type,
         });
       } else {
-        setFormData({ ...defaultFormData });
+        setFormData(defaultFormData);
       }
     }
   }, [visible, editMode, voucher]);
@@ -109,232 +78,111 @@ export default function VoucherFormDialog({
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <Dialog
-      header={editMode ? "Edit Voucher" : "Create New Voucher"}
-      visible={visible}
-      style={{ width: "600px" }}
-      onHide={onHide}
-      modal
-    >
-      <div className="grid">
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label htmlFor="code" className="block text-900 font-medium mb-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onHide}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl border border-[#E1E4EA] w-full max-w-md shadow-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#E1E4EA]">
+          <h2 className="text-[18px] font-semibold text-[#111827]">
+            {editMode ? "Edit Voucher" : "Create New Voucher"}
+          </h2>
+          <button
+            onClick={onHide}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+          >
+            <i className="pi pi-times text-[#525866]" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
               Voucher Code *
             </label>
-            <InputText
-              id="code"
+            <input
+              type="text"
               value={formData.code}
               onChange={(e) =>
                 setFormData({ ...formData, code: e.target.value })
               }
-              className="w-full"
-              placeholder="Enter voucher code"
-              required
+              placeholder="e.g., WELCOME2024"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
             />
           </div>
-        </div>
 
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label htmlFor="title" className="block text-900 font-medium mb-2">
-              Title *
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Voucher Name *
             </label>
-            <InputText
-              id="title"
-              value={formData.title}
+            <input
+              type="text"
+              value={formData.name}
               onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
+                setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full"
-              placeholder="Enter voucher title"
-              required
+              placeholder="e.g., Welcome Bonus"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
             />
           </div>
-        </div>
 
-        <div className="col-12">
-          <div className="field">
-            <label
-              htmlFor="description"
-              className="block text-900 font-medium mb-2"
-            >
-              Description
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Amount (NGN) *
             </label>
-            <InputText
-              id="description"
-              value={formData.description}
+            <input
+              type="number"
+              value={formData.amount}
               onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+                setFormData({ ...formData, amount: parseInt(e.target.value) || 0 })
               }
-              className="w-full"
-              placeholder="Enter voucher description"
+              placeholder="e.g., 5000"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+              min="0"
             />
           </div>
-        </div>
 
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="discountType"
-              className="block text-900 font-medium mb-2"
-            >
-              Discount Type *
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Expiry Type *
             </label>
-            <Dropdown
-              id="discountType"
-              value={formData.discount_type}
-              options={discountTypes}
+            <input
+              type="text"
+              value={formData.expiry_type}
               onChange={(e) =>
-                setFormData({ ...formData, discount_type: e.value })
+                setFormData({ ...formData, expiry_type: e.target.value })
               }
-              className="w-full"
-              placeholder="Select discount type"
+              placeholder="e.g., fixed 31/12/2026 or relative 30d"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
             />
           </div>
         </div>
 
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="discountValue"
-              className="block text-900 font-medium mb-2"
-            >
-              Discount Value *
-            </label>
-            <InputNumber
-              id="discountValue"
-              value={formData.discount_value}
-              onValueChange={(e) =>
-                setFormData({ ...formData, discount_value: e.value || 0 })
-              }
-              className="w-full"
-              placeholder="Enter discount value"
-              min={0}
-              max={formData.discount_type === "PERCENTAGE" ? 100 : undefined}
-            />
-          </div>
-        </div>
-
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="validFrom"
-              className="block text-900 font-medium mb-2"
-            >
-              Valid From *
-            </label>
-            <Calendar
-              id="validFrom"
-              value={formData.valid_from ? new Date(formData.valid_from) : null}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  valid_from: e.value?.toISOString() || "",
-                })
-              }
-              className="w-full"
-              showIcon
-              dateFormat="yy-mm-dd"
-            />
-          </div>
-        </div>
-
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="validUntil"
-              className="block text-900 font-medium mb-2"
-            >
-              Valid Until *
-            </label>
-            <Calendar
-              id="validUntil"
-              value={
-                formData.valid_until ? new Date(formData.valid_until) : null
-              }
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  valid_until: e.value?.toISOString() || "",
-                })
-              }
-              className="w-full"
-              showIcon
-              dateFormat="yy-mm-dd"
-            />
-          </div>
-        </div>
-
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="minOrder"
-              className="block text-900 font-medium mb-2"
-            >
-              Minimum Order Amount
-            </label>
-            <InputNumber
-              id="minOrder"
-              value={formData.minimum_order_amount}
-              onValueChange={(e) =>
-                setFormData({ ...formData, minimum_order_amount: e.value || 0 })
-              }
-              className="w-full"
-              placeholder="Enter minimum order amount"
-              min={0}
-              mode="currency"
-              currency="NGN"
-            />
-          </div>
-        </div>
-
-        <div className="col-12 md:col-6">
-          <div className="field">
-            <label
-              htmlFor="usageLimit"
-              className="block text-900 font-medium mb-2"
-            >
-              Usage Limit
-            </label>
-            <InputNumber
-              id="usageLimit"
-              value={formData.usage_limit}
-              onValueChange={(e) =>
-                setFormData({ ...formData, usage_limit: e.value || 0 })
-              }
-              className="w-full"
-              placeholder="Enter usage limit (0 = unlimited)"
-              min={0}
-            />
-          </div>
-        </div>
-
-        <div className="col-12">
-          <div className="field-checkbox">
-            <Checkbox
-              id="isActive"
-              checked={formData.is_active}
-              onChange={(e) =>
-                setFormData({ ...formData, is_active: e.checked || false })
-              }
-            />
-            <label htmlFor="isActive" className="ml-2">
-              Active
-            </label>
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 p-6 border-t border-[#E1E4EA]">
+          <button
+            onClick={onHide}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors"
+          >
+            {editMode ? "Update" : "Create"}
+          </button>
         </div>
       </div>
-
-      <div className="flex justify-content-end gap-2 mt-4">
-        <Button label="Cancel" icon="pi pi-times" outlined onClick={onHide} />
-        <Button
-          label={editMode ? "Update" : "Create"}
-          icon="pi pi-check"
-          onClick={handleSave}
-        />
-      </div>
-    </Dialog>
+    </div>
   );
 }

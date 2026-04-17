@@ -1,28 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card } from "primereact/card";
-import { InputText } from "primereact/inputtext";
-import { InputTextarea } from "primereact/inputtextarea";
-import { Button } from "primereact/button";
-import { Toast } from "primereact/toast";
 import SupportService, { ContactInfo } from "@/services/SupportService";
+import Toast, { ToastRef } from "@/components/shared/Toast";
+import Button from "@/components/shared/Button";
+import BusinessHoursInput from "@/components/shared/BusinessHoursInput";
 
 export default function SupportPage() {
-  const toast = useRef<Toast>(null);
+  const toast = useRef<ToastRef>(null);
   const supportService = new SupportService();
 
-  const [loading, setLoading] = useState(false);
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
+  const [formData, setFormData] = useState<Partial<ContactInfo>>({});
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [contactInfo, setContactInfo] = useState<ContactInfo>({
-    phone: "",
-    email: "",
-    address: "",
-    city: "",
-    businessHours: "",
-    saturdayHours: "",
-    sundayHours: "",
-  });
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     loadContactInfo();
@@ -32,11 +24,10 @@ export default function SupportPage() {
     try {
       setLoading(true);
       const data = await supportService.getContactInfo();
-      if (data) {
-        setContactInfo(data);
-      }
+      setContactInfo(data);
+      setFormData(data);
     } catch (error) {
-      console.error("Failed to load contact info:", error);
+      console.error("❌ Failed to load contact info:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -50,8 +41,20 @@ export default function SupportPage() {
 
   const handleSave = async () => {
     try {
+      if (!formData.phone?.trim() || !formData.email?.trim()) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Validation Error",
+          detail: "Phone and email are required",
+          life: 3000,
+        });
+        return;
+      }
+
       setSaving(true);
-      await supportService.updateContactInfo(contactInfo);
+      const updated = await supportService.updateContactInfo(formData);
+      setContactInfo(updated);
+      setIsEditing(false);
       toast.current?.show({
         severity: "success",
         summary: "Success",
@@ -70,239 +73,217 @@ export default function SupportPage() {
     }
   };
 
-  const handleInputChange = (field: keyof ContactInfo, value: string) => {
-    setContactInfo(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleCancel = () => {
+    setFormData(contactInfo || {});
+    setIsEditing(false);
   };
 
   if (loading) {
     return (
-      <div className="flex align-items-center justify-content-center min-h-screen">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <i className="pi pi-spinner pi-spin text-4xl text-blue-500 mb-3"></i>
-          <p className="text-600">Loading contact information...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
+          <p className="text-[#525866]">Loading contact information...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="grid">
+    <>
       <Toast ref={toast} />
 
-      <div className="col-12">
-        <div className="card">
-          <div className="flex align-items-center justify-content-between mb-4">
-            <h5 className="m-0">Support Contact Information</h5>
-            <Button
-              label="Save Changes"
-              icon="pi pi-save"
-              onClick={handleSave}
-              loading={saving}
-            />
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[24px] font-bold text-[#111827]">Support Settings</h1>
+            <p className="text-[13px] text-[#525866] mt-1">Manage contact information and business hours</p>
           </div>
+          {!isEditing && (
+            <Button onClick={() => setIsEditing(true)}>
+              <i className="pi pi-pencil mr-2" />
+              Edit
+            </Button>
+          )}
+        </div>
 
-          <div className="grid">
-            <div className="col-12 md:col-6">
-              <div className="field">
-                <label htmlFor="phone" className="block text-900 font-medium mb-2">
-                  Phone Number *
-                </label>
-                <InputText
-                  id="phone"
-                  value={contactInfo.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter phone number"
+        {/* Contact Information */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-6">Contact Information</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Phone */}
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                Phone Number *
+              </label>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={formData.phone || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="e.g., +234 800 123 4567"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 />
-              </div>
+              ) : (
+                <p className="text-[13px] text-[#111827] py-2">{contactInfo?.phone || "N/A"}</p>
+              )}
             </div>
 
-            <div className="col-12 md:col-6">
-              <div className="field">
-                <label htmlFor="email" className="block text-900 font-medium mb-2">
-                  Email Address *
-                </label>
-                <InputText
-                  id="email"
+            {/* Email */}
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                Email Address *
+              </label>
+              {isEditing ? (
+                <input
                   type="email"
-                  value={contactInfo.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter email address"
+                  value={formData.email || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="e.g., support@sonic.com"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 />
-              </div>
+              ) : (
+                <p className="text-[13px] text-[#111827] py-2">{contactInfo?.email || "N/A"}</p>
+              )}
             </div>
 
-            <div className="col-12 md:col-6">
-              <div className="field">
-                <label htmlFor="address" className="block text-900 font-medium mb-2">
-                  Address
-                </label>
-                <InputText
-                  id="address"
-                  value={contactInfo.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter address"
+            {/* Address */}
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                Physical Address
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.address || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  placeholder="e.g., 123 Lekki Phase 1, Lagos"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 />
-              </div>
+              ) : (
+                <p className="text-[13px] text-[#111827] py-2">{contactInfo?.address || "N/A"}</p>
+              )}
             </div>
 
-            <div className="col-12 md:col-6">
-              <div className="field">
-                <label htmlFor="city" className="block text-900 font-medium mb-2">
-                  City
-                </label>
-                <InputText
-                  id="city"
-                  value={contactInfo.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter city"
+            {/* City */}
+            <div>
+              <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                City
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.city || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                  placeholder="e.g., Lagos"
+                  className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 />
-              </div>
+              ) : (
+                <p className="text-[13px] text-[#111827] py-2">{contactInfo?.city || "N/A"}</p>
+              )}
             </div>
-
-            <div className="col-12 md:col-4">
-              <div className="field">
-                <label htmlFor="businessHours" className="block text-900 font-medium mb-2">
-                  Business Hours
-                </label>
-                <InputText
-                  id="businessHours"
-                  value={contactInfo.businessHours}
-                  onChange={(e) => handleInputChange('businessHours', e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., 9:00 AM - 6:00 PM"
-                />
-              </div>
-            </div>
-
-            <div className="col-12 md:col-4">
-              <div className="field">
-                <label htmlFor="saturdayHours" className="block text-900 font-medium mb-2">
-                  Saturday Hours
-                </label>
-                <InputText
-                  id="saturdayHours"
-                  value={contactInfo.saturdayHours}
-                  onChange={(e) => handleInputChange('saturdayHours', e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., 10:00 AM - 4:00 PM"
-                />
-              </div>
-            </div>
-
-            <div className="col-12 md:col-4">
-              <div className="field">
-                <label htmlFor="sundayHours" className="block text-900 font-medium mb-2">
-                  Sunday Hours
-                </label>
-                <InputText
-                  id="sundayHours"
-                  value={contactInfo.sundayHours}
-                  onChange={(e) => handleInputChange('sundayHours', e.target.value)}
-                  className="w-full"
-                  placeholder="e.g., Closed or 12:00 PM - 4:00 PM"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-content-end mt-4">
-            <Button
-              label="Save Changes"
-              icon="pi pi-save"
-              onClick={handleSave}
-              loading={saving}
-            />
           </div>
         </div>
-      </div>
 
-      {/* Contact Information Preview */}
-      <div className="col-12">
-        <Card title="Contact Information Preview" className="mt-4">
-          <div className="grid">
-            <div className="col-12 md:col-6">
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-phone text-blue-500 mr-2"></i>
-                  <strong>Phone:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.phone || "Not set"}
-                </p>
-              </div>
+        {/* Business Hours */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-6">Business Hours</h2>
 
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-envelope text-blue-500 mr-2"></i>
-                  <strong>Email:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.email || "Not set"}
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-map-marker text-blue-500 mr-2"></i>
-                  <strong>Address:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.address || "Not set"}
-                </p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Weekday Hours */}
+            <div>
+              {isEditing ? (
+                <BusinessHoursInput
+                  value={formData.businessHours || ""}
+                  onChange={(value) =>
+                    setFormData({ ...formData, businessHours: value })
+                  }
+                  label="Monday - Friday"
+                  placeholder="Select hours"
+                />
+              ) : (
+                <>
+                  <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                    Monday - Friday
+                  </label>
+                  <p className="text-[13px] text-[#111827] py-2">{contactInfo?.businessHours || "N/A"}</p>
+                </>
+              )}
             </div>
 
-            <div className="col-12 md:col-6">
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-building text-blue-500 mr-2"></i>
-                  <strong>City:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.city || "Not set"}
-                </p>
-              </div>
+            {/* Saturday Hours */}
+            <div>
+              {isEditing ? (
+                <BusinessHoursInput
+                  value={formData.saturdayHours || ""}
+                  onChange={(value) =>
+                    setFormData({ ...formData, saturdayHours: value })
+                  }
+                  label="Saturday"
+                  placeholder="Select hours"
+                />
+              ) : (
+                <>
+                  <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                    Saturday
+                  </label>
+                  <p className="text-[13px] text-[#111827] py-2">{contactInfo?.saturdayHours || "N/A"}</p>
+                </>
+              )}
+            </div>
 
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-clock text-blue-500 mr-2"></i>
-                  <strong>Business Hours:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.businessHours || "Not set"}
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-calendar text-green-500 mr-2"></i>
-                  <strong>Saturday Hours:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.saturdayHours || "Not set"}
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <div className="flex align-items-center mb-2">
-                  <i className="pi pi-calendar text-red-500 mr-2"></i>
-                  <strong>Sunday Hours:</strong>
-                </div>
-                <p className="ml-4 text-600">
-                  {contactInfo.sundayHours || "Not set"}
-                </p>
-              </div>
+            {/* Sunday Hours */}
+            <div>
+              {isEditing ? (
+                <BusinessHoursInput
+                  value={formData.sundayHours || ""}
+                  onChange={(value) =>
+                    setFormData({ ...formData, sundayHours: value })
+                  }
+                  label="Sunday"
+                  placeholder="Select hours"
+                />
+              ) : (
+                <>
+                  <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                    Sunday
+                  </label>
+                  <p className="text-[13px] text-[#111827] py-2">{contactInfo?.sundayHours || "N/A"}</p>
+                </>
+              )}
             </div>
           </div>
-        </Card>
+        </div>
+
+        {/* Actions */}
+        {isEditing && (
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

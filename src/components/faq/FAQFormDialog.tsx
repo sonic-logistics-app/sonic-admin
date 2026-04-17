@@ -1,11 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog } from "primereact/dialog";
-import { InputText } from "primereact/inputtext";
-import { InputTextarea } from "primereact/inputtextarea";
-import { Button } from "primereact/button";
-import { Toast } from "primereact/toast";
 import FAQService, { FAQ, FAQFormData } from "@/services/FAQService";
 
 interface FAQFormDialogProps {
@@ -14,8 +9,24 @@ interface FAQFormDialogProps {
   faq: FAQ | null;
   onHide: () => void;
   onSave: () => void;
-  toast: React.RefObject<Toast | null>;
+  toast: React.RefObject<any>;
 }
+
+const defaultFormData: FAQFormData = {
+  question: "",
+  answer: "",
+  category: "General",
+};
+
+const categories = [
+  "General",
+  "Account",
+  "Orders",
+  "Payment",
+  "Vendors",
+  "Drivers",
+  "Support",
+];
 
 export default function FAQFormDialog({
   visible,
@@ -27,11 +38,8 @@ export default function FAQFormDialog({
 }: FAQFormDialogProps) {
   const faqService = new FAQService();
 
-  const [formData, setFormData] = useState<FAQFormData>({
-    question: "",
-    answer: "",
-    category: "",
-  });
+  const [formData, setFormData] = useState<FAQFormData>(defaultFormData);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -39,20 +47,28 @@ export default function FAQFormDialog({
         setFormData({
           question: faq.question,
           answer: faq.answer,
-          category: faq.category || "",
+          category: faq.category,
         });
       } else {
-        setFormData({
-          question: "",
-          answer: "",
-          category: "",
-        });
+        setFormData(defaultFormData);
       }
     }
   }, [visible, editMode, faq]);
 
   const handleSave = async () => {
     try {
+      if (!formData.question.trim() || !formData.answer.trim()) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Validation Error",
+          detail: "Question and answer are required",
+          life: 3000,
+        });
+        return;
+      }
+
+      setLoading(true);
+
       if (editMode && faq) {
         await faqService.updateFAQ(faq.id, formData);
         toast.current?.show({
@@ -70,6 +86,7 @@ export default function FAQFormDialog({
           life: 3000,
         });
       }
+      onHide();
       onSave();
     } catch (error: any) {
       toast.current?.show({
@@ -78,80 +95,105 @@ export default function FAQFormDialog({
         detail: error.message || "Failed to save FAQ",
         life: 3000,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <Dialog
-      header={editMode ? "Edit FAQ" : "Create New FAQ"}
-      visible={visible}
-      style={{ width: "700px" }}
-      onHide={onHide}
-      modal
-    >
-      <div className="grid">
-        <div className="col-12">
-          <div className="field">
-            <label htmlFor="question" className="block text-900 font-medium mb-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onHide}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl border border-[#E1E4EA] w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#E1E4EA] sticky top-0 bg-white">
+          <h2 className="text-[18px] font-semibold text-[#111827]">
+            {editMode ? "Edit FAQ" : "Create New FAQ"}
+          </h2>
+          <button
+            onClick={onHide}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+          >
+            <i className="pi pi-times text-[#525866]" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+              Category *
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
               Question *
             </label>
-            <InputText
-              id="question"
+            <input
+              type="text"
               value={formData.question}
-              onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-              className="w-full"
-              placeholder="Enter the question"
-              required
+              onChange={(e) =>
+                setFormData({ ...formData, question: e.target.value })
+              }
+              placeholder="e.g., How do I track my order?"
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
             />
           </div>
-        </div>
 
-        <div className="col-12">
-          <div className="field">
-            <label htmlFor="answer" className="block text-900 font-medium mb-2">
+          <div>
+            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
               Answer *
             </label>
-            <InputTextarea
-              id="answer"
+            <textarea
               value={formData.answer}
-              onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-              className="w-full"
-              placeholder="Enter the answer"
-              rows={5}
-              required
+              onChange={(e) =>
+                setFormData({ ...formData, answer: e.target.value })
+              }
+              placeholder="Enter the detailed answer..."
+              rows={6}
+              className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB] resize-none"
             />
           </div>
         </div>
 
-        <div className="col-12">
-          <div className="field">
-            <label htmlFor="category" className="block text-900 font-medium mb-2">
-              Category
-            </label>
-            <InputText
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full"
-              placeholder="Enter category (e.g., general, account, billing)"
-            />
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 p-6 border-t border-[#E1E4EA] sticky bottom-0 bg-white">
+          <button
+            onClick={onHide}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+          >
+            {loading ? "Saving..." : editMode ? "Update" : "Create"}
+          </button>
         </div>
       </div>
-
-      <div className="flex justify-content-end gap-2 mt-4">
-        <Button
-          label="Cancel"
-          icon="pi pi-times"
-          outlined
-          onClick={onHide}
-        />
-        <Button
-          label={editMode ? "Update" : "Create"}
-          icon="pi pi-check"
-          onClick={handleSave}
-        />
-      </div>
-    </Dialog>
+    </div>
   );
 }

@@ -14,30 +14,35 @@ export interface ContactInfo {
 }
 
 export default class SupportService {
-  // Get contact info
   getContactInfo() {
     return fetch(`${apiUrl}/support/contact-info`, {
       headers: authService.getAuthHeaders(),
     })
       .then(res => res.json())
       .then((d) => {
-        // Backend returns: { message, contactInfo: {...} }
-        return d.contactInfo;
+        console.log("🔍 RAW CONTACT INFO RESPONSE:", JSON.stringify(d, null, 2));
+        if (d.data) {
+          console.log("🔍 Contact info keys:", Object.keys(d.data));
+        }
+        return d.data;
       });
   }
 
-  // Update contact info
-  updateContactInfo(contactData: ContactInfo) {
+  updateContactInfo(contactData: Partial<ContactInfo>) {
     return fetch(`${apiUrl}/support/contact-info`, {
       method: 'PUT',
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(contactData)
+      body: JSON.stringify(contactData),
     })
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         return res.json();
+      })
+      .then((d) => {
+        console.log("🔍 UPDATE CONTACT INFO RESPONSE:", JSON.stringify(d, null, 2));
+        return d.data;
       });
   }
 }

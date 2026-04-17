@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MenuItem } from "@/types/menu";
-import { Badge } from "primereact/badge";
-import { Ripple } from "primereact/ripple";
 
 interface AppSubmenuProps {
   items: MenuItem[];
@@ -45,7 +43,7 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
   if (!items) return null;
 
   return (
-    <ul className="space-y-1">
+    <ul className="flex flex-col gap-1">
       {items.map((item, i) => {
         if (!isVisible(item)) return null;
 
@@ -53,7 +51,7 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
           return (
             <li
               key={`separator${i}`}
-              className="border-t border-gray-200 my-2"
+              className="border-t border-[#E1E4EA] my-2"
               style={item.style}
               role="separator"
             />
@@ -64,11 +62,7 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
         const hasSubmenu = item.items && item.items.length > 0;
 
         return (
-          <li
-            key={item.label || i}
-            className={`${root ? "mb-4" : ""}`}
-            role="none"
-          >
+          <li key={item.label || i} role="none">
             {root ? (
               <>
                 {item.items && (
@@ -83,43 +77,42 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
                 {item.to ? (
                   <Link
                     href={item.to}
-                    className={`flex items-center px-3 py-2.5 text-[15px] rounded-lg transition-colors duration-200 ${
-                      isActive 
-                        ? "bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-700" 
-                        : "text-gray-700 hover:bg-gray-100"
+                    className={`flex items-center gap-3 px-4 py-3 text-[14px] rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-gray-50 border-l-2 border-[#2563EB] font-semibold text-[#111827]"
+                        : item.label === "Logout"
+                        ? "text-[#DC2626] hover:bg-[#FEE2E2]"
+                        : "text-[#525866] hover:bg-gray-50"
                     } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={item.style}
                     target={item.target}
                     role="menuitem"
                     onClick={(e) => handleMenuItemClick(e, item, i)}
                   >
-                    {item.icon && <i className={`${item.icon} mr-3 text-lg`} />}
+                    {item.icon && <i className={`${item.icon} w-5 h-5 flex-shrink-0 text-[18px] leading-5 ${item.label === "Logout" ? "text-[#DC2626]" : ""}`} />}
                     <span className="flex-1">{item.label}</span>
                     {hasSubmenu && (
-                      <i className="pi pi-angle-down text-sm" />
+                      <i className="pi pi-angle-down text-xs" />
                     )}
-                    {item.badge && <Badge value={item.badge} className="ml-2" />}
                   </Link>
                 ) : (
-                  <a
-                    href={item.url || "#"}
-                    className={`flex items-center px-3 py-2.5 text-[15px] rounded-lg transition-colors duration-200 ${
-                      isActive 
-                        ? "bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-700" 
-                        : "text-gray-700 hover:bg-gray-100"
+                  <button
+                    onClick={(e) => handleMenuItemClick(e, item, i)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-lg transition-colors text-left ${
+                      item.label === "Logout"
+                        ? "text-[#DC2626] hover:bg-[#FEE2E2]"
+                        : "text-[#525866] hover:bg-gray-50"
                     } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     style={item.style}
-                    target={item.target}
                     role="menuitem"
-                    onClick={(e) => handleMenuItemClick(e, item, i)}
+                    disabled={item.disabled}
                   >
-                    {item.icon && <i className={`${item.icon} mr-3 text-lg`} />}
+                    {item.icon && <i className={`${item.icon} w-5 h-5 flex-shrink-0 text-[18px] leading-5 ${item.label === "Logout" ? "text-[#DC2626]" : ""}`} />}
                     <span className="flex-1">{item.label}</span>
                     {hasSubmenu && (
-                      <i className="pi pi-angle-down text-sm" />
+                      <i className="pi pi-angle-down text-xs" />
                     )}
-                    {item.badge && <Badge value={item.badge} className="ml-2" />}
-                  </a>
+                  </button>
                 )}
                 {hasSubmenu && activeIndex === i && (
                   <div className="ml-4 mt-1">

@@ -3,11 +3,11 @@ import AuthService from './AuthService';
 const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
 const authService = new AuthService();
 
-export interface PaginationParams {
+export interface FAQFilterParams {
+  category?: string;
+  search?: string;
   page?: number;
   limit?: number;
-  search?: string;
-  category?: string;
 }
 
 export interface FAQ {
@@ -16,7 +16,7 @@ export interface FAQ {
   answer: string;
   category: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
 }
 
 export interface FAQFormData {
@@ -26,46 +26,53 @@ export interface FAQFormData {
 }
 
 export default class FAQService {
-  // Get all FAQs
-  getAllFAQs(params?: PaginationParams) {
+  getAllFAQs(params?: FAQFilterParams) {
     const queryParams = new URLSearchParams();
-    
+
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.search) queryParams.append('search', params.search);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.category) queryParams.append('category', params.category);
-    
+
     const queryString = queryParams.toString();
-    const url = queryString ? `${apiUrl}/faq?${queryString}` : `${apiUrl}/faq`;
-    
+    const url = queryString
+      ? `${apiUrl}/faq?${queryString}`
+      : `${apiUrl}/faq`;
+
     return fetch(url, {
       headers: authService.getAuthHeaders(),
     })
       .then(res => res.json())
       .then((d) => {
-        // Backend returns: { message, faqs: [...] }
-        return d.faqs || [];
+        console.log("🔍 RAW FAQ LIST RESPONSE:", JSON.stringify(d, null, 2));
+        console.log("🔍 Number of FAQs:", d.data?.length || 0);
+        if (d.data && d.data.length > 0) {
+          console.log("🔍 First FAQ sample:", JSON.stringify(d.data[0], null, 2));
+          console.log("🔍 FAQ keys:", Object.keys(d.data[0]));
+        }
+        return d.data || [];
       });
   }
 
-  // Get FAQ by ID
-  getFAQById(faqId: number | string) {
+  getFAQById(faqId: string) {
     return fetch(`${apiUrl}/faq/${faqId}`, {
       headers: authService.getAuthHeaders(),
     })
       .then(res => res.json())
       .then((d) => {
-        // Backend returns: { message, faq: {...} }
-        return d.faq;
+        console.log("🔍 RAW FAQ DETAIL RESPONSE:", JSON.stringify(d, null, 2));
+        if (d.data) {
+          console.log("🔍 FAQ keys:", Object.keys(d.data));
+        }
+        return d.data;
       });
   }
 
-  // Create new FAQ
   createFAQ(faqData: FAQFormData) {
     return fetch(`${apiUrl}/faq`, {
       method: 'POST',
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(faqData)
+      body: JSON.stringify(faqData),
     })
       .then(res => {
         if (!res.ok) {
@@ -75,12 +82,11 @@ export default class FAQService {
       });
   }
 
-  // Update FAQ
-  updateFAQ(faqId: number | string, faqData: Partial<FAQFormData>) {
+  updateFAQ(faqId: string, faqData: Partial<FAQFormData>) {
     return fetch(`${apiUrl}/faq/${faqId}`, {
       method: 'PUT',
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify(faqData)
+      body: JSON.stringify(faqData),
     })
       .then(res => {
         if (!res.ok) {
@@ -90,12 +96,11 @@ export default class FAQService {
       });
   }
 
-  // Delete FAQ
-  deleteFAQ(faqId: number | string) {
+  deleteFAQ(faqId: string) {
     return fetch(`${apiUrl}/faq`, {
       method: 'DELETE',
       headers: authService.getAuthHeaders(),
-      body: JSON.stringify({ faq_id: faqId.toString() })
+      body: JSON.stringify({ faq_id: faqId }),
     })
       .then(res => {
         if (!res.ok) {

@@ -4,10 +4,12 @@ interface DashboardStatsData {
   totalOrder: number;
   totalCustomer: number;
   totalDriver: number;
+  totalVendor: number;
   orderDifference: number;
   orderGrowthRate: number;
   customerLastWeek: number;
   driverLastWeek: number;
+  vendorLastWeek: number;
 }
 
 interface DashboardStatsProps {
@@ -18,104 +20,107 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ stats, loading, error }: DashboardStatsProps) {
   return (
-    <>
-      <div className="col-12 lg:col-6 xl:col-3">
-        <div className="card mb-0">
-          <div className="flex justify-content-between mb-3">
-            <div>
-              <span className="block text-500 font-medium mb-3">
-                Total Orders All Time
-              </span>
-              <div className="text-900 font-medium text-xl">
-                {loading ? "Loading..." : error ? "Error" : stats.totalOrder}
-              </div>
-            </div>
-            <div
-              className="flex align-items-center justify-content-center bg-blue-100 border-round"
-              style={{ width: "2.5rem", height: "2.5rem" }}
-            >
-              <i className="pi pi-truck text-blue-500 text-xl" />
-            </div>
+    <div className="grid grid-cols-4 gap-3 w-full">
+      {/* Total Orders Card */}
+      <div className="flex flex-col justify-center gap-3 p-4 rounded-2xl border border-[#E1E4EA] bg-white hover:border-[#2563EB] transition-colors cursor-pointer">
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex flex-col gap-1 flex-1 overflow-hidden">
+            <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
+              TOTAL ORDERS
+            </h3>
+            <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
+              {loading ? "..." : error ? "Error" : stats.totalOrder.toLocaleString()}
+            </p>
           </div>
+          <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#DBEAFE] flex items-center justify-center flex-shrink-0">
+            <i className="pi pi-truck w-5 h-5 text-[#2563EB]" />
+          </div>
+        </div>
+        <p className="text-[#525866] text-[11px]">
           <span
-            className={`font-medium ${
+            className={`font-semibold ${
               stats.orderDifference > 0
-                ? "text-green-500"
+                ? "text-[#059669]"
                 : stats.orderDifference < 0
-                ? "text-red-500"
-                : "text-gray-500"
+                ? "text-[#DC2626]"
+                : "text-[#525866]"
             }`}
           >
             {stats.orderDifference > 0 && "+"}
             {stats.orderGrowthRate.toFixed(1)}%
-          </span>
-          <span className="text-500"> since last week</span>
-        </div>
+          </span>{" "}
+          since last week
+        </p>
       </div>
 
-      <div className="col-12 lg:col-6 xl:col-3">
-        <div className="card mb-0">
-          <div className="flex justify-content-between mb-3">
-            <div>
-              <span className="block text-500 font-medium mb-3">Customers</span>
-              <div className="text-900 font-medium text-xl">
-                {loading ? "Loading..." : error ? "Error" : stats.totalCustomer}
-              </div>
-            </div>
-            <div
-              className="flex align-items-center justify-content-center bg-orange-100 border-round"
-              style={{ width: "2.5rem", height: "2.5rem" }}
-            >
-              <i className="pi pi-user text-orange-500 text-xl" />
-            </div>
+      {/* Customers Card */}
+      <div className="flex flex-col justify-center gap-3 p-4 rounded-2xl border border-[#E1E4EA] bg-white hover:border-[#2563EB] transition-colors cursor-pointer">
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex flex-col gap-1 flex-1 overflow-hidden">
+            <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
+              CUSTOMERS
+            </h3>
+            <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
+              {loading ? "..." : error ? "Error" : stats.totalCustomer.toLocaleString()}
+            </p>
           </div>
-          <span className="text-green-500 font-medium">
+          <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#D1FAE5] flex items-center justify-center flex-shrink-0">
+            <i className="pi pi-user w-5 h-5 text-[#059669]" />
+          </div>
+        </div>
+        <p className="text-[#525866] text-[11px]">
+          <span className="font-semibold text-[#059669]">
             {stats.customerLastWeek}
-          </span>
-          <span className="text-500"> newly registered in the last week</span>
-        </div>
+          </span>{" "}
+          new this week
+        </p>
       </div>
 
-      <div className="col-12 lg:col-6 xl:col-3">
-        <div className="card mb-0">
-          <div className="flex justify-content-between mb-3">
-            <div>
-              <span className="block text-500 font-medium mb-3">Drivers</span>
-              <div className="text-900 font-medium text-xl">
-                {loading ? "Loading..." : error ? "Error" : stats.totalDriver}
-              </div>
-            </div>
-            <div
-              className="flex align-items-center justify-content-center bg-cyan-100 border-round"
-              style={{ width: "2.5rem", height: "2.5rem" }}
-            >
-              <i className="pi pi-users text-cyan-500 text-xl" />
-            </div>
+      {/* Drivers Card */}
+      <div className="flex flex-col justify-center gap-3 p-4 rounded-2xl border border-[#E1E4EA] bg-white hover:border-[#2563EB] transition-colors cursor-pointer">
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex flex-col gap-1 flex-1 overflow-hidden">
+            <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
+              DRIVERS
+            </h3>
+            <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
+              {loading ? "..." : error ? "Error" : stats.totalDriver.toLocaleString()}
+            </p>
           </div>
-          <span className="text-green-500 font-medium">
+          <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#CFFAFE] flex items-center justify-center flex-shrink-0">
+            <i className="pi pi-users w-5 h-5 text-[#0891B2]" />
+          </div>
+        </div>
+        <p className="text-[#525866] text-[11px]">
+          <span className="font-semibold text-[#059669]">
             {stats.driverLastWeek}
-          </span>
-          <span className="text-500"> newly registered in the last week</span>
-        </div>
+          </span>{" "}
+          new this week
+        </p>
       </div>
 
-      <div className="col-12 lg:col-6 xl:col-3">
-        <div className="card mb-0">
-          <div className="flex justify-content-between mb-3">
-            <div>
-              <span className="block text-500 font-medium mb-3">Vendors</span>
-              <div className="text-900 font-medium text-xl">0</div>
-            </div>
-            <div
-              className="flex align-items-center justify-content-center bg-purple-100 border-round"
-              style={{ width: "2.5rem", height: "2.5rem" }}
-            >
-              <i className="pi pi-shop text-purple-500 text-xl" />
-            </div>
+      {/* Vendors Card */}
+      <div className="flex flex-col justify-center gap-3 p-4 rounded-2xl border border-[#E1E4EA] bg-white hover:border-[#2563EB] transition-colors cursor-pointer">
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex flex-col gap-1 flex-1 overflow-hidden">
+            <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
+              VENDORS
+            </h3>
+            <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
+              {loading ? "..." : error ? "Error" : stats.totalVendor.toLocaleString()}
+            </p>
           </div>
-          <span className="text-gray-500 font-medium">Coming soon</span>
+          <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#EDE9FE] flex items-center justify-center flex-shrink-0">
+            <i className="pi pi-shop w-5 h-5 text-[#7C3AED]" />
+          </div>
         </div>
+        <p className="text-[#525866] text-[11px]">
+          <span className="font-semibold text-[#059669]">
+            {stats.vendorLastWeek}
+          </span>{" "}
+          new this week
+        </p>
       </div>
-    </>
+    </div>
   );
 }
