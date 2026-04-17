@@ -142,17 +142,10 @@ export default function OrderListPage() {
     try {
       setLoading(true);
       const data = await orderService.getAllOrders();
-      console.log("🔍 RAW ORDER DATA FROM BACKEND:", JSON.stringify(data, null, 2));
-      console.log("🔍 Number of orders:", data.length);
-      if (data.length > 0) {
-        console.log("🔍 First order sample:", JSON.stringify(data[0], null, 2));
-        console.log("🔍 Order keys:", Object.keys(data[0]));
-      }
       setOrders(data);
       setFilteredOrders(data);
       setPagination((prev) => ({ ...prev, total: data.length }));
     } catch (error) {
-      console.error("❌ Failed to load orders:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

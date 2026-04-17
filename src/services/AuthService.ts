@@ -62,7 +62,6 @@ export default class AuthService {
     });
 
     const data = await response.json();
-    console.log('Login response:', data);
     
     // Backend returns: { message, admin: { id, email, accessToken, refreshToken } }
     if (data.admin?.accessToken) {
@@ -95,7 +94,6 @@ export default class AuthService {
     });
 
     const data = await response.json();
-    console.log('Register response:', data);
     
     // Backend returns: { message, admin: { id, email, first_name, last_name } }
     // Note: Register doesn't return tokens, need to login after
@@ -104,17 +102,14 @@ export default class AuthService {
 
   async checkStatus(): Promise<StatusResponse> {
     const url = `${apiUrl}/status`;
-    console.log('Checking status at:', url);
     
     try {
       const response = await fetch(url);
       const data = await response.json();
-      console.log('Status response:', data);
       
       // Backend returns: { hasAdmin: true/false }
       return data;
     } catch (error) {
-      console.error('Error in checkStatus:', error);
       throw error;
     }
   }
@@ -192,7 +187,6 @@ export default class AuthService {
         headers: this.getAuthHeaders(),
       });
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       this.clearLocalStorage();
     }

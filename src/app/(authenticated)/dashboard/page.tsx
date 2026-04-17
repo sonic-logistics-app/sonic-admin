@@ -101,7 +101,6 @@ export default function DashboardPage() {
 
       // Handle missing or invalid data gracefully
       if (!stats) {
-        console.warn("No stats data received from API");
         setDashboardStats({
           totalOrder: 0,
           totalCustomer: 0,
@@ -192,7 +191,6 @@ export default function DashboardPage() {
       });
     } catch (err: any) {
       setError("Failed to load dashboard stats");
-      console.error("Dashboard stats error:", err);
       // Set default values on error
       setDashboardStats({
         totalOrder: 0,
@@ -242,17 +240,16 @@ export default function DashboardPage() {
       }));
       setRecentOrders(formattedOrders);
     } catch (err) {
-      console.error("Failed to load recent orders:", err);
+      // silently fail for recent orders
     }
   };
 
   const loadChartData = async () => {
     try {
       const data = await dashboardService.getChartData("6months");
-      console.log("📊 Chart Data from Backend:", JSON.stringify(data, null, 2));
       setChartData(data);
     } catch (err) {
-      console.error("Failed to load chart data:", err);
+      // silently fail for chart data
     }
   };
 

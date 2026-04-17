@@ -129,12 +129,10 @@ export default function VendorListPage() {
     try {
       setLoading(true);
       const data = await vendorService.getAllVendors();
-      console.log("🔍 RAW VENDOR DATA FROM BACKEND:", JSON.stringify(data, null, 2));
       setVendors(data);
       setFilteredVendors(data);
       setPagination((prev) => ({ ...prev, total: data.length }));
     } catch (error) {
-      console.error("❌ Failed to load vendors:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

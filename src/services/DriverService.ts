@@ -120,7 +120,6 @@ export default class DriverService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 CREATE DRIVER RESPONSE:", JSON.stringify(d, null, 2));
         return d;
       });
   }
@@ -165,11 +164,9 @@ export default class DriverService {
       })
       .then(d => {
         // Backend returns: { success, message, driver: {...} }
-        console.log("🔍 RAW DRIVER DETAIL RESPONSE:", JSON.stringify(d, null, 2));
         return d.driver || d;
       })
       .catch(error => {
-        console.error('Error fetching driver:', error);
         throw error;
       });
   }
@@ -192,7 +189,6 @@ export default class DriverService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error verifying driver:', error);
         throw error;
       });
   }
@@ -215,7 +211,6 @@ export default class DriverService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error rejecting driver:', error);
         throw error;
       });
   }
@@ -237,7 +232,6 @@ export default class DriverService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error deleting driver:', error);
         throw error;
       });
   }

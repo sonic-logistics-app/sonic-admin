@@ -66,7 +66,6 @@ export default function VoucherListPage() {
       setFilteredVouchers(data || []);
       setPagination((prev) => ({ ...prev, total: (data || []).length }));
     } catch (error) {
-      console.error("Failed to load vouchers:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

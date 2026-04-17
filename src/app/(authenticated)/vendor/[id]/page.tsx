@@ -80,10 +80,8 @@ export default function VendorDetailsPage() {
     try {
       setLoading(true);
       const data = await vendorService.getVendorById(params.id as string);
-      console.log("🔍 VENDOR DETAILS:", JSON.stringify(data, null, 2));
       setVendor(data);
     } catch (error) {
-      console.error("❌ Failed to load vendor details:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

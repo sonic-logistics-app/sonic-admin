@@ -50,7 +50,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await authService.login({ email, password });
-      console.log("Auth store - login response:", response);
 
       // Backend returns: { message, admin: { id, email, accessToken, refreshToken } }
       if (response.admin?.accessToken) {
@@ -72,7 +71,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error: any) {
       set({ isLoading: false });
-      console.error("Login error:", error);
       return { success: false, message: error.message || "Login failed" };
     }
   },
@@ -81,7 +79,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await authService.register(userData);
-      console.log("Auth store - register response:", response);
 
       // Backend returns: { message, admin: { id, email, first_name, last_name } }
       // Note: No tokens returned, need to login after registration
@@ -98,7 +95,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error: any) {
       set({ isLoading: false });
-      console.error("Register error:", error);
       return {
         success: false,
         message: error.message || "Registration failed",
@@ -131,15 +127,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAdminStatus: async () => {
     try {
       const response = await authService.checkStatus();
-      console.log("Auth store - raw response:", response);
 
       // Backend returns { hasAdmin: true } directly
       const hasAdmin = response.hasAdmin ?? false;
-      console.log("Auth store - parsed hasAdmin:", hasAdmin);
 
       return { hasAdmin };
     } catch (error) {
-      console.error("Auth store - checkAdminStatus error:", error);
       return { hasAdmin: false };
     }
   },

@@ -44,7 +44,6 @@ export default function ProfilePage() {
         last_name: data.last_name,
       });
     } catch (error) {
-      console.error("❌ Failed to load profile:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

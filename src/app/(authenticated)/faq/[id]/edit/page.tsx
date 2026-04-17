@@ -48,7 +48,6 @@ export default function FAQEditPage() {
         });
       }
     } catch (error) {
-      console.error("❌ Failed to load FAQ:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

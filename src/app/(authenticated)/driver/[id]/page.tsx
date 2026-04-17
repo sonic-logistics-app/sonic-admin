@@ -155,7 +155,6 @@ export default function DriverDetailsPage() {
     try {
       setLoading(true);
       const data = await driverService.getDriverById(params.id as string);
-      console.log("🔍 DRIVER DETAILS:", JSON.stringify(data, null, 2));
       
       const formattedDriver = {
         ...data,
@@ -164,7 +163,6 @@ export default function DriverDetailsPage() {
       
       setDriver(formattedDriver);
     } catch (error) {
-      console.error("❌ Failed to load driver details:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

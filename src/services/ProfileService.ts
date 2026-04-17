@@ -31,10 +31,6 @@ export default class ProfileService {
     })
       .then(res => res.json())
       .then((d) => {
-        console.log("🔍 RAW PROFILE RESPONSE:", JSON.stringify(d, null, 2));
-        if (d.data) {
-          console.log("🔍 Profile keys:", Object.keys(d.data));
-        }
         return d.data;
       });
   }
@@ -52,7 +48,6 @@ export default class ProfileService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 UPDATE PROFILE RESPONSE:", JSON.stringify(d, null, 2));
         return d.data;
       });
   }
@@ -70,7 +65,6 @@ export default class ProfileService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 CHANGE PASSWORD RESPONSE:", JSON.stringify(d, null, 2));
         return d;
       });
   }

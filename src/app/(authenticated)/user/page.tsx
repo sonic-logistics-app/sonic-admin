@@ -109,23 +109,15 @@ export default function UserListPage() {
       setLoading(true);
       const data = await customerService.getAllCustomers();
       
-      // Log the raw data from backend
-      console.log("🔍 RAW DATA FROM BACKEND:", JSON.stringify(data, null, 2));
-      console.log("🔍 Number of customers:", data.length);
-      console.log("🔍 First customer sample:", data[0]);
-      
       const formattedCustomers = data.map((customer: any) => ({
         ...customer,
         name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "No Name",
       }));
       
-      console.log("✅ FORMATTED CUSTOMERS:", JSON.stringify(formattedCustomers.slice(0, 3), null, 2));
-      
       setCustomers(formattedCustomers);
       setFilteredCustomers(formattedCustomers);
       setPagination((prev) => ({ ...prev, total: formattedCustomers.length }));
     } catch (error) {
-      console.error("❌ Failed to load customers:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

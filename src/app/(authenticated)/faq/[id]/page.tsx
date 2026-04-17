@@ -26,7 +26,6 @@ export default function FAQDetailsPage() {
       const data = await faqService.getFAQById(faqId);
       setFAQ(data);
     } catch (error) {
-      console.error("❌ Failed to load FAQ:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

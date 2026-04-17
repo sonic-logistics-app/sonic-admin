@@ -44,12 +44,6 @@ export default class FAQService {
     })
       .then(res => res.json())
       .then((d) => {
-        console.log("🔍 RAW FAQ LIST RESPONSE:", JSON.stringify(d, null, 2));
-        console.log("🔍 Number of FAQs:", d.data?.length || 0);
-        if (d.data && d.data.length > 0) {
-          console.log("🔍 First FAQ sample:", JSON.stringify(d.data[0], null, 2));
-          console.log("🔍 FAQ keys:", Object.keys(d.data[0]));
-        }
         return d.data || [];
       });
   }
@@ -60,10 +54,6 @@ export default class FAQService {
     })
       .then(res => res.json())
       .then((d) => {
-        console.log("🔍 RAW FAQ DETAIL RESPONSE:", JSON.stringify(d, null, 2));
-        if (d.data) {
-          console.log("🔍 FAQ keys:", Object.keys(d.data));
-        }
         return d.data;
       });
   }

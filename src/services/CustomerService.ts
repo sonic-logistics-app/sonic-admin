@@ -84,7 +84,6 @@ export default class CustomerService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 CREATE USER RESPONSE:", JSON.stringify(d, null, 2));
         return d;
       });
   }

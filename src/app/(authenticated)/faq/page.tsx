@@ -75,12 +75,10 @@ export default function FAQListPage() {
     try {
       setLoading(true);
       const data = await faqService.getAllFAQs();
-      console.log("✅ FAQs loaded:", data.length);
       setFAQs(data || []);
       setFilteredFAQs(data || []);
       setPagination((prev) => ({ ...prev, total: (data || []).length }));
     } catch (error) {
-      console.error("❌ Failed to load FAQs:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

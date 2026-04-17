@@ -31,7 +31,6 @@ export default class SeedService {
     })
       .then(res => res.json())
       .then((d) => {
-        console.log("🔍 RAW SEED STATUS RESPONSE:", JSON.stringify(d, null, 2));
         return d.data;
       });
   }
@@ -49,7 +48,6 @@ export default class SeedService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 SEED FULL RESPONSE:", JSON.stringify(d, null, 2));
         return d.data;
       });
   }
@@ -66,7 +64,6 @@ export default class SeedService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 CLEANUP RESPONSE:", JSON.stringify(d, null, 2));
         return d;
       });
   }

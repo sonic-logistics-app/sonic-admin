@@ -27,7 +27,6 @@ export default function SupportPage() {
       setContactInfo(data);
       setFormData(data);
     } catch (error) {
-      console.error("❌ Failed to load contact info:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

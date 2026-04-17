@@ -127,24 +127,17 @@ export default function DriverListPage() {
     try {
       setLoading(true);
       
-      // Log the raw data from backend
       const data = await driverService.getAllDrivers();
-      console.log("🔍 RAW DRIVER DATA FROM BACKEND:", JSON.stringify(data, null, 2));
-      console.log("🔍 Number of drivers:", data.length);
-      console.log("🔍 First driver sample:", data[0]);
       
       const formattedDrivers = data.map((driver: any) => ({
         ...driver,
         name: `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "No Name",
       }));
       
-      console.log("✅ FORMATTED DRIVERS:", JSON.stringify(formattedDrivers.slice(0, 3), null, 2));
-      
       setDrivers(formattedDrivers);
       setFilteredDrivers(formattedDrivers);
       setPagination((prev) => ({ ...prev, total: formattedDrivers.length }));
     } catch (error) {
-      console.error("❌ Failed to load drivers:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

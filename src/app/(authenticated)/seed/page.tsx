@@ -38,7 +38,6 @@ export default function SeedPage() {
       const data = await seedService.getSeedStatus();
       setSeedStatus(data);
     } catch (error) {
-      console.error("❌ Failed to load seed status:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

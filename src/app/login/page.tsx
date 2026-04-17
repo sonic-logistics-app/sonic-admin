@@ -51,15 +51,11 @@ export default function LoginPage() {
     setStatusError("");
     
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
-    console.log('Backend URL:', backendUrl);
-    console.log('Checking admin status...');
     
     checkAdminStatus().then(({ hasAdmin }) => {
-      console.log('Admin status response:', { hasAdmin });
       setNeedsSetup(!hasAdmin);
       setCheckingStatus(false);
     }).catch((error) => {
-      console.error('Error checking admin status:', error);
       setStatusError(`Failed to connect to backend at ${backendUrl}`);
       // If check fails, assume we need setup
       setNeedsSetup(true);

@@ -123,7 +123,6 @@ export default function OrderDetailsPage() {
       const data = await orderService.getOrderById(orderId);
       setOrder(data);
     } catch (error) {
-      console.error("❌ Failed to load order:", error);
       toast.current?.show({
         severity: "error",
         summary: "Error",

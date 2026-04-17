@@ -69,11 +69,9 @@ export default class OrderService {
       })
       .then(d => {
         // Backend returns: { success, message, data: {...} }
-        console.log("🔍 RAW ORDER DETAIL RESPONSE:", JSON.stringify(d, null, 2));
         return d.data || d;
       })
       .catch(error => {
-        console.error('Error fetching order:', error);
         throw error;
       });
   }

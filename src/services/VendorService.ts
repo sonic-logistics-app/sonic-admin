@@ -105,11 +105,9 @@ export default class VendorService {
       })
       .then(d => {
         // Backend returns: { success, message, data: {...} }
-        console.log("🔍 RAW VENDOR DETAIL RESPONSE:", JSON.stringify(d, null, 2));
         return d.data || d;
       })
       .catch(error => {
-        console.error('Error fetching vendor:', error);
         throw error;
       });
   }
@@ -126,7 +124,6 @@ export default class VendorService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error approving vendor:', error);
         throw error;
       });
   }
@@ -146,7 +143,6 @@ export default class VendorService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error rejecting vendor:', error);
         throw error;
       });
   }
@@ -166,7 +162,6 @@ export default class VendorService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error suspending vendor:', error);
         throw error;
       });
   }
@@ -184,7 +179,6 @@ export default class VendorService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error activating vendor:', error);
         throw error;
       });
   }
@@ -201,7 +195,6 @@ export default class VendorService {
         return res.json();
       })
       .catch(error => {
-        console.error('Error deleting vendor:', error);
         throw error;
       });
   }
@@ -269,7 +262,6 @@ export default class VendorService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 CREATE VENDOR RESPONSE:", JSON.stringify(d, null, 2));
         return d;
       });
   }

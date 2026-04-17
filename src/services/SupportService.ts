@@ -20,10 +20,6 @@ export default class SupportService {
     })
       .then(res => res.json())
       .then((d) => {
-        console.log("🔍 RAW CONTACT INFO RESPONSE:", JSON.stringify(d, null, 2));
-        if (d.data) {
-          console.log("🔍 Contact info keys:", Object.keys(d.data));
-        }
         return d.data;
       });
   }
@@ -41,7 +37,6 @@ export default class SupportService {
         return res.json();
       })
       .then((d) => {
-        console.log("🔍 UPDATE CONTACT INFO RESPONSE:", JSON.stringify(d, null, 2));
         return d.data;
       });
   }
