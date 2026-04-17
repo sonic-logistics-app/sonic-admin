@@ -77,6 +77,9 @@ export default class AuthService {
       if (data.admin.refreshToken) {
         localStorage.setItem('admin_refresh_token', data.admin.refreshToken);
       }
+
+      // Set cookie so middleware can read it server-side (localStorage is not accessible in middleware)
+      document.cookie = `admin_token=${data.admin.accessToken}; path=/; SameSite=Lax`;
     }
 
     return data;
@@ -199,6 +202,8 @@ export default class AuthService {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_refresh_token');
     localStorage.removeItem('admin_user');
+    // Clear the auth cookie
+    document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   }
 
   getToken(): string | null {

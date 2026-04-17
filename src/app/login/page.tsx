@@ -29,15 +29,22 @@ export default function LoginPage() {
   const [regLastName, setRegLastName] = useState("");
 
   useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
     // Check auth immediately on mount
     checkAuth();
-    setCheckingAuth(false);
     
     // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
       router.push("/dashboard");
       return;
     }
+
+    setCheckingAuth(false);
     
     // Check if admin account exists
     setCheckingStatus(true);
@@ -58,11 +65,15 @@ export default function LoginPage() {
       setNeedsSetup(true);
       setCheckingStatus(false);
     });
-  }, [isAuthenticated, checkAuth, checkAdminStatus, router]);
+  }, []);
 
   // Don't render login page while checking if user is already authenticated
   if (checkingAuth || isAuthenticated) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FBFBFB]">
+        <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl" />
+      </div>
+    );
   }
 
   const handleLogin = async (e: React.FormEvent) => {
