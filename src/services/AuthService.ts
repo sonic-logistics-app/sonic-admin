@@ -1,5 +1,19 @@
 const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
 
+// Response time monitoring
+const monitorResponseTime = (startTime: number) => {
+  const responseTime = Date.now() - startTime;
+  
+  // Dispatch custom event for connection status monitoring
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('connection-status-update', {
+      detail: { responseTime }
+    }));
+  }
+  
+  return responseTime;
+};
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -53,6 +67,8 @@ export interface ChangePasswordRequest {
 
 export default class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
+    const startTime = Date.now();
+    
     const response = await fetch(`${apiUrl}/login`, {
       method: 'POST',
       headers: {
@@ -61,6 +77,7 @@ export default class AuthService {
       body: JSON.stringify(credentials),
     });
 
+    monitorResponseTime(startTime);
     const data = await response.json();
     
     // Backend returns: { message, admin: { id, email, accessToken, refreshToken } }

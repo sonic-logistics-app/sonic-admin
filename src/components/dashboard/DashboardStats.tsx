@@ -1,5 +1,7 @@
 "use client";
 
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+
 interface DashboardStatsData {
   totalOrder: number;
   totalCustomer: number;
@@ -19,6 +21,10 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({ stats, loading, error }: DashboardStatsProps) {
+  if (loading) {
+    return <SkeletonLoader type="stats" />;
+  }
+
   return (
     <div className="grid grid-cols-4 gap-3 w-full">
       {/* Total Orders Card */}
@@ -29,7 +35,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
               TOTAL ORDERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
-              {loading ? "..." : error ? "Error" : stats.totalOrder.toLocaleString()}
+              {error ? "Error" : stats.totalOrder.toLocaleString()}
             </p>
           </div>
           <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#DBEAFE] flex items-center justify-center flex-shrink-0">
@@ -61,7 +67,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
               CUSTOMERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
-              {loading ? "..." : error ? "Error" : stats.totalCustomer.toLocaleString()}
+              {error ? "Error" : stats.totalCustomer.toLocaleString()}
             </p>
           </div>
           <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#D1FAE5] flex items-center justify-center flex-shrink-0">
@@ -84,7 +90,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
               DRIVERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
-              {loading ? "..." : error ? "Error" : stats.totalDriver.toLocaleString()}
+              {error ? "Error" : stats.totalDriver.toLocaleString()}
             </p>
           </div>
           <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#CFFAFE] flex items-center justify-center flex-shrink-0">
@@ -107,7 +113,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
               VENDORS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
-              {loading ? "..." : error ? "Error" : stats.totalVendor.toLocaleString()}
+              {error ? "Error" : stats.totalVendor.toLocaleString()}
             </p>
           </div>
           <div className="w-[36px] h-[36px] md:w-[40px] md:h-[40px] rounded-full bg-[#EDE9FE] flex items-center justify-center flex-shrink-0">

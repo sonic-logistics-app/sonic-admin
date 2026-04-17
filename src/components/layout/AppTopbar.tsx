@@ -78,7 +78,7 @@ export default function AppTopbar({ onMenuToggle }: AppTopbarProps) {
     <div className="flex items-center justify-between px-6 py-4 bg-white">
       <Link href="/dashboard" className="flex items-center space-x-3">
         <Image
-          src="/images/logo-dark.svg"
+          src="/sonic-logo.svg"
           alt="Logo"
           width={47}
           height={35}

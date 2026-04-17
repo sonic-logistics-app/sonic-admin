@@ -5,6 +5,7 @@ import AppMenu from "@/components/layout/AppMenu";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ConnectionStatus from "@/components/shared/ConnectionStatus";
 import { menuData } from "@/lib/menuData";
 
 export default function AuthenticatedLayout({
@@ -41,6 +42,7 @@ export default function AuthenticatedLayout({
   return (
     <ProtectedRoute>
       <KeyboardShortcuts />
+      <ConnectionStatus />
       <div className="flex h-screen overflow-hidden" onClick={onWrapperClick}>
         {/* Mobile hamburger */}
         <button

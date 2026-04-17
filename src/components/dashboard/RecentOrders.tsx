@@ -2,6 +2,7 @@
 
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 interface RecentOrder {
   id: number;
@@ -62,14 +63,18 @@ export default function RecentOrders({ orders, loading, onRowClick }: RecentOrde
   return (
     <div className="mb-6 w-full">
       <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Recent Orders</h2>
-      <DataTable
-        data={orders.slice(0, 5)}
-        columns={columns}
-        loading={loading}
-        onRowClick={(rowData) => onRowClick({ data: rowData })}
-        emptyMessage="No recent orders"
-        className="w-full"
-      />
+      {loading ? (
+        <SkeletonLoader type="table" rows={5} />
+      ) : (
+        <DataTable
+          data={orders.slice(0, 5)}
+          columns={columns}
+          loading={false}
+          onRowClick={(rowData) => onRowClick({ data: rowData })}
+          emptyMessage="No recent orders"
+          className="w-full"
+        />
+      )}
     </div>
   );
 }

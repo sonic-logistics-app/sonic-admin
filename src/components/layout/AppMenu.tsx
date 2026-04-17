@@ -20,32 +20,29 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
     router.push("/login");
   };
 
-  // Process menu items to handle logout command
+  // Separate logout item from other menu items
   const processedModel = model.map(section => ({
     ...section,
-    items: section.items.map(item => ({
+    items: section.items.filter(item => item.commandKey !== "logout").map(item => ({
       ...item,
       command: item.commandKey === "logout" ? handleLogout : item.command,
     }))
-  }));
+  })).filter(section => section.items.length > 0); // Remove empty sections
 
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Logo Section */}
-      <div className="px-5 py-3 flex-shrink-0 border-b border-[#E1E4EA]">
-        <Link href="/dashboard" className="flex items-center gap-3 no-underline">
+      <div className="px-5 py-4 flex-shrink-0 border-b border-[#E1E4EA]">
+        <Link href="/dashboard" className="flex items-end gap-3 no-underline">
           <Image
-            src="/images/logo-dark.svg"
+            src="/sonic-logo.svg"
             alt="Logo"
-            width={40}
-            height={40}
+            width={120}
+            height={80}
             className="rounded-md"
             priority
           />
-          <div className="flex flex-col">
-            <span className="text-[16px] font-semibold text-[#111827]">Sonic Admin</span>
-            <span className="text-[11px] text-[#525866]">Admin Portal</span>
-          </div>
+          <span className="text-[12px] font-semibold text-[#111827] pb-1">Admin</span>
         </Link>
       </div>
 
@@ -56,6 +53,17 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
           root={true}
           onMenuItemClick={onMenuItemClick}
         />
+      </div>
+
+      {/* Logout Button at Bottom */}
+      <div className="px-3 py-4 border-t border-[#E1E4EA]">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-lg transition-colors text-left text-[#DC2626] hover:bg-[#FEE2E2]"
+        >
+          <i className="pi pi-sign-out w-5 h-5 flex-shrink-0 text-[18px] leading-5 text-[#DC2626]" />
+          <span className="flex-1">Logout</span>
+        </button>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import ProfileService, { AdminProfile } from "@/services/ProfileService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import Button from "@/components/shared/Button";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 export default function ProfilePage() {
   const toast = useRef<ToastRef>(null);
@@ -159,10 +160,50 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4"></div>
-          <p className="text-[#525866]">Loading profile...</p>
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton */}
+        <div className="animate-pulse">
+          <div className="h-8 bg-[#F3F4F6] rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-[#F3F4F6] rounded w-1/3"></div>
+        </div>
+
+        {/* Profile Information Skeleton */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <div className="animate-pulse">
+            <div className="flex items-center justify-between mb-6">
+              <div className="h-6 bg-[#F3F4F6] rounded w-1/4"></div>
+              <div className="h-10 bg-[#F3F4F6] rounded w-20"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i}>
+                  <div className="h-3 bg-[#F3F4F6] rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-[#E5E7EB] rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Security Skeleton */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <div className="animate-pulse">
+            <div className="flex items-center justify-between mb-6">
+              <div className="h-6 bg-[#F3F4F6] rounded w-1/6"></div>
+              <div className="h-10 bg-[#F3F4F6] rounded w-32"></div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-4 bg-[#F3F4F6] rounded w-2/3"></div>
+              <div className="bg-[#F3F4F6] rounded-lg p-3">
+                <div className="h-3 bg-[#E5E7EB] rounded w-1/3 mb-2"></div>
+                <div className="space-y-1">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-3 bg-[#E5E7EB] rounded w-1/2"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

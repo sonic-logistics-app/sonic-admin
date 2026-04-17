@@ -1,39 +1,39 @@
-import AuthService from './AuthService';
+import BaseApiService from './BaseApiService';
 
-const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
-const authService = new AuthService();
-
-export default class DashboardService {
-  getDashboardStats() {
-    return fetch(`${apiUrl}/dashboard/stats`, {
-      headers: authService.getAuthHeaders(),
-    })
-      .then(res => res.json())
-      .then((d) => {
-        // Backend returns: { success, message, data: {user, driver, order} }
-        return d.data;
-      });
+export default class DashboardService extends BaseApiService {
+  async getDashboardStats() {
+    const response = await this.apiCall('/dashboard/stats', {
+      headers: this.getAuthHeaders(),
+      cache: true,
+      cacheTTL: 60000 // Cache for 1 minute
+    });
+    return response.data;
   }
 
-  getRecentOrders() {
-    return fetch(`${apiUrl}/dashboard/latest-order`, {
-      headers: authService.getAuthHeaders(),
-    })
-      .then(res => res.json())
-      .then((d) => {
-        // Backend returns: { success, message, data: [...] }
-        return d.data || [];
-      });
+  async getRecentOrders() {
+    const response = await this.apiCall('/dashboard/latest-order', {
+      headers: this.getAuthHeaders(),
+      cache: true,
+      cacheTTL: 30000 // Cache for 30 seconds
+    });
+    return response.data || [];
   }
 
-  getChartData(period: string = '6months') {
-    return fetch(`${apiUrl}/dashboard/chart-data?period=${period}`, {
-      headers: authService.getAuthHeaders(),
-    })
-      .then(res => res.json())
-      .then((d) => {
-        // Backend returns: { success, message, data: {labels, datasets} }
-        return d.data;
-      });
+  async getChartData(period: string = '6months') {
+    const response = await this.apiCall(`/dashboard/chart-data?period=${period}`, {
+      headers: this.getAuthHeaders(),
+      cache: true,
+      cacheTTL: 300000 // Cache for 5 minutes
+    });
+    return response.data;
+  }
+
+  // Load all dashboard data in parallel
+  async getAllDashboardData(period: string = '6months') {
+    return this.parallelCalls({
+      stats: () => this.getDashboardStats(),
+      orders: () => this.getRecentOrders(),
+      chartData: () => this.getChartData(period)
+    });
   }
 }

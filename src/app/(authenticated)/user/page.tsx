@@ -9,6 +9,9 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { useOptimisticUpdate } from "@/hooks/useOptimisticUpdate";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Customer {
   id: number;
@@ -49,9 +52,11 @@ export default function UserListPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const [otpVerifiedFilter, setOtpVerifiedFilter] = useState<string>("");
+  const { data: optimisticCustomers, optimisticUpdate, resetData } = useOptimisticUpdate<Customer>(customers);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
     title: string;
@@ -77,7 +82,7 @@ export default function UserListPage() {
 
   useEffect(() => {
     // Filter customers based on search query and filters
-    let filtered = customers;
+    let filtered = optimisticCustomers;
 
     if (isVerifiedFilter !== "") {
       filtered = filtered.filter(c => c.is_verified === (isVerifiedFilter === "true"));
@@ -91,18 +96,18 @@ export default function UserListPage() {
       filtered = filtered.filter(c => c.otp_verified === (otpVerifiedFilter === "true"));
     }
 
-    if (searchQuery.trim() !== "") {
+    if (debouncedSearchQuery.trim() !== "") {
       filtered = filtered.filter(
         (customer) =>
-          customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (customer.phone && customer.phone.includes(searchQuery))
+          customer.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+          (customer.email && customer.email.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
+          (customer.phone && customer.phone.includes(debouncedSearchQuery))
       );
     }
 
     setFilteredCustomers(filtered);
     setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [searchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, customers]);
+  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, optimisticCustomers]);
 
   const loadCustomers = async () => {
     try {
@@ -116,6 +121,7 @@ export default function UserListPage() {
       
       setCustomers(formattedCustomers);
       setFilteredCustomers(formattedCustomers);
+      resetData(formattedCustomers);
       setPagination((prev) => ({ ...prev, total: formattedCustomers.length }));
     } catch (error) {
       toast.current?.show({
@@ -130,23 +136,29 @@ export default function UserListPage() {
   };
 
   const handleVerify = async (customer: Customer) => {
-    try {
-      await customerService.verifyCustomer(customer.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: `Customer ${customer.name} verified successfully`,
-        life: 3000,
-      });
-      loadCustomers();
-    } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to verify customer",
-        life: 3000,
-      });
-    }
+    await optimisticUpdate(
+      (currentData) => currentData.map(c => 
+        c.id === customer.id ? { ...c, is_verified: true } : c
+      ),
+      () => customerService.verifyCustomer(customer.id),
+      (result, newData) => {
+        toast.current?.show({
+          severity: "success",
+          summary: "Success",
+          detail: `Customer ${customer.name} verified successfully`,
+          life: 3000,
+        });
+        return newData;
+      },
+      (error) => {
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to verify customer",
+          life: 3000,
+        });
+      }
+    );
   };
 
   const confirmVerify = (customer: Customer) => {
@@ -170,23 +182,27 @@ export default function UserListPage() {
   };
 
   const handleDelete = async (customer: Customer) => {
-    try {
-      await customerService.deleteCustomer(customer.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: `Customer ${customer.name} deleted successfully`,
-        life: 3000,
-      });
-      loadCustomers();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Delete Failed",
-        detail: error.message || "Failed to delete customer",
-        life: 3000,
-      });
-    }
+    await optimisticUpdate(
+      (currentData) => currentData.filter(c => c.id !== customer.id),
+      () => customerService.deleteCustomer(customer.id),
+      (result, newData) => {
+        toast.current?.show({
+          severity: "success",
+          summary: "Success",
+          detail: `Customer ${customer.name} deleted successfully`,
+          life: 3000,
+        });
+        return newData;
+      },
+      (error: any) => {
+        toast.current?.show({
+          severity: "error",
+          summary: "Delete Failed",
+          detail: error.message || "Failed to delete customer",
+          life: 3000,
+        });
+      }
+    );
   };
 
   const getInitials = (first: string | null, last: string | null) => {
@@ -381,15 +397,19 @@ export default function UserListPage() {
         </div>
 
         {/* Data Table */}
-        <DataTable
-          data={paginatedData}
-          columns={columns}
-          loading={loading}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          onRowClick={handleRowClick}
-          emptyMessage="No customers found"
-        />
+        {loading ? (
+          <SkeletonLoader type="table" rows={10} />
+        ) : (
+          <DataTable
+            data={paginatedData}
+            columns={columns}
+            loading={false}
+            pagination={pagination}
+            onPaginationChange={setPagination}
+            onRowClick={handleRowClick}
+            emptyMessage="No customers found"
+          />
+        )}
       </div>
 
       {/* User Details Modal */}

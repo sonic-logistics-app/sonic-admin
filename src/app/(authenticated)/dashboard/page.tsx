@@ -87,20 +87,112 @@ export default function DashboardPage() {
   const dashboardService = new DashboardService();
 
   useEffect(() => {
-    loadStats();
-    loadRecentOrders();
-    loadChartData();
+    loadDashboardData();
   }, []);
 
-  const loadStats = async () => {
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const stats = await dashboardService.getDashboardStats();
+      // Use the new parallel loading method
+      const { stats, orders, chartData } = await dashboardService.getAllDashboardData("6months");
 
-      // Handle missing or invalid data gracefully
-      if (!stats) {
+      // Handle stats
+      if (stats) {
+
+        // Handle missing or invalid data gracefully
+        if (!stats) {
+          setDashboardStats({
+            totalOrder: 0,
+            totalCustomer: 0,
+            totalDriver: 0,
+            totalVendor: 0,
+            ordersByStatus: [],
+            orderLastWeek: 0,
+            orderThisWeek: 0,
+            orderDifference: 0,
+            orderGrowthRate: 0,
+            customerLastWeek: 0,
+            driverLastWeek: 0,
+            vendorLastWeek: 0,
+            totalRevenue: 0,
+            revenueThisWeek: 0,
+            revenueLastWeek: 0,
+            revenueGrowth: 0,
+            completionRate: 0,
+            avgOrderValue: 0,
+            deliveredToday: 0,
+            activeDrivers: 0,
+            activeVendors: 0,
+            verifiedUsers: 0,
+            activeUsers30d: 0,
+          });
+        } else {
+          const statusOrder = [
+            "PENDING",
+            "CONFIRMED",
+            "IN_TRANSIT",
+            "PICKUP",
+            "DELIVERED",
+            "CANCELLED",
+            "IN_PAYMENT",
+          ];
+
+          // Build status map from API data
+          const statusMap: Record<string, number> = {};
+          if (stats.order?.status && Array.isArray(stats.order.status)) {
+            stats.order.status.forEach((item: any) => {
+              if (item.order_status && typeof item.total === 'number') {
+                statusMap[item.order_status] = item.total;
+              }
+            });
+          }
+
+          const orderedStatusTotals = statusOrder.map((status) => ({
+            status: status,
+            total: statusMap[status] || 0,
+          }));
+
+          const orderLastWeek = stats.order?.total_last_week || 0;
+          const orderThisWeek = stats.order?.total_this_week || 0;
+          const orderDifference = orderThisWeek - orderLastWeek;
+          const orderGrowthRate =
+            orderLastWeek > 0
+              ? (orderDifference / orderLastWeek) * 100
+              : orderThisWeek > 0
+              ? 100
+              : 0;
+
+          setDashboardStats({
+            totalOrder: stats.order?.total || 0,
+            totalCustomer: stats.user?.total || 0,
+            totalDriver: stats.driver?.total || 0,
+            totalVendor: stats.vendor?.total || 0,
+            ordersByStatus: orderedStatusTotals,
+            orderLastWeek,
+            orderThisWeek,
+            orderDifference,
+            orderGrowthRate,
+            customerLastWeek: stats.user?.total_this_week || 0,
+            driverLastWeek: stats.driver?.total_this_week || 0,
+            vendorLastWeek: stats.vendor?.total_this_week || 0,
+            totalRevenue: stats.revenue?.total || 0,
+            revenueThisWeek: stats.revenue?.this_week || 0,
+            revenueLastWeek: stats.revenue?.last_week || 0,
+            revenueGrowth: stats.revenue?.growth_percentage || 0,
+            completionRate: stats.performance?.completion_rate || 0,
+            avgOrderValue: stats.performance?.avg_order_value || 0,
+            deliveredToday: stats.performance?.delivered_today || 0,
+            activeDrivers: stats.system?.active_drivers || 0,
+            activeVendors: stats.system?.active_vendors || 0,
+            verifiedUsers: stats.system?.verified_users || 0,
+            activeUsers30d: stats.system?.active_users_30d || 0,
+          });
+        }
+      } else {
+        setError("Failed to load dashboard stats");
+        // Set default values on error
         setDashboardStats({
           totalOrder: 0,
           totalCustomer: 0,
@@ -126,130 +218,35 @@ export default function DashboardPage() {
           verifiedUsers: 0,
           activeUsers30d: 0,
         });
-        return;
       }
 
-      const statusOrder = [
-        "PENDING",
-        "CONFIRMED",
-        "IN_TRANSIT",
-        "PICKUP",
-        "DELIVERED",
-        "CANCELLED",
-        "IN_PAYMENT",
-      ];
-
-      // Build status map from API data
-      const statusMap: Record<string, number> = {};
-      if (stats.order?.status && Array.isArray(stats.order.status)) {
-        stats.order.status.forEach((item: any) => {
-          if (item.order_status && typeof item.total === 'number') {
-            statusMap[item.order_status] = item.total;
-          }
-        });
+      // Handle recent orders
+      if (orders) {
+        const formattedOrders = orders.map((order: any) => ({
+          id: order.id,
+          order_id: order.order_id,
+          status: order.order_status,
+          total_payment: order.price_fees,
+          package_category: order.package?.delivery_type ?? "-",
+          fullname_customer: `${order.user?.first_name ?? ""} ${
+            order.user?.last_name ?? ""
+          }`.trim(),
+          fullname_driver: `${order.driver?.first_name ?? ""} ${
+            order.driver?.last_name ?? ""
+          }`.trim(),
+        }));
+        setRecentOrders(formattedOrders);
       }
 
-      const orderedStatusTotals = statusOrder.map((status) => ({
-        status: status,
-        total: statusMap[status] || 0,
-      }));
+      // Handle chart data
+      if (chartData) {
+        setChartData(chartData);
+      }
 
-      const orderLastWeek = stats.order?.total_last_week || 0;
-      const orderThisWeek = stats.order?.total_this_week || 0;
-      const orderDifference = orderThisWeek - orderLastWeek;
-      const orderGrowthRate =
-        orderLastWeek > 0
-          ? (orderDifference / orderLastWeek) * 100
-          : orderThisWeek > 0
-          ? 100
-          : 0;
-
-      setDashboardStats({
-        totalOrder: stats.order?.total || 0,
-        totalCustomer: stats.user?.total || 0,
-        totalDriver: stats.driver?.total || 0,
-        totalVendor: stats.vendor?.total || 0,
-        ordersByStatus: orderedStatusTotals,
-        orderLastWeek,
-        orderThisWeek,
-        orderDifference,
-        orderGrowthRate,
-        customerLastWeek: stats.user?.total_this_week || 0,
-        driverLastWeek: stats.driver?.total_this_week || 0,
-        vendorLastWeek: stats.vendor?.total_this_week || 0,
-        totalRevenue: stats.revenue?.total || 0,
-        revenueThisWeek: stats.revenue?.this_week || 0,
-        revenueLastWeek: stats.revenue?.last_week || 0,
-        revenueGrowth: stats.revenue?.growth_percentage || 0,
-        completionRate: stats.performance?.completion_rate || 0,
-        avgOrderValue: stats.performance?.avg_order_value || 0,
-        deliveredToday: stats.performance?.delivered_today || 0,
-        activeDrivers: stats.system?.active_drivers || 0,
-        activeVendors: stats.system?.active_vendors || 0,
-        verifiedUsers: stats.system?.verified_users || 0,
-        activeUsers30d: stats.system?.active_users_30d || 0,
-      });
     } catch (err: any) {
-      setError("Failed to load dashboard stats");
-      // Set default values on error
-      setDashboardStats({
-        totalOrder: 0,
-        totalCustomer: 0,
-        totalDriver: 0,
-        totalVendor: 0,
-        ordersByStatus: [],
-        orderLastWeek: 0,
-        orderThisWeek: 0,
-        orderDifference: 0,
-        orderGrowthRate: 0,
-        customerLastWeek: 0,
-        driverLastWeek: 0,
-        vendorLastWeek: 0,
-        totalRevenue: 0,
-        revenueThisWeek: 0,
-        revenueLastWeek: 0,
-        revenueGrowth: 0,
-        completionRate: 0,
-        avgOrderValue: 0,
-        deliveredToday: 0,
-        activeDrivers: 0,
-        activeVendors: 0,
-        verifiedUsers: 0,
-        activeUsers30d: 0,
-      });
+      setError("Failed to load dashboard data");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadRecentOrders = async () => {
-    try {
-      const orders = await dashboardService.getRecentOrders();
-      const formattedOrders = orders.map((order: any) => ({
-        id: order.id,
-        order_id: order.order_id,
-        status: order.order_status,
-        total_payment: order.price_fees,
-        package_category: order.package?.delivery_type ?? "-",
-        fullname_customer: `${order.user?.first_name ?? ""} ${
-          order.user?.last_name ?? ""
-        }`.trim(),
-        fullname_driver: `${order.driver?.first_name ?? ""} ${
-          order.driver?.last_name ?? ""
-        }`.trim(),
-      }));
-      setRecentOrders(formattedOrders);
-    } catch (err) {
-      // silently fail for recent orders
-    }
-  };
-
-  const loadChartData = async () => {
-    try {
-      const data = await dashboardService.getChartData("6months");
-      setChartData(data);
-    } catch (err) {
-      // silently fail for chart data
     }
   };
 

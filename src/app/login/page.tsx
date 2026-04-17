@@ -152,13 +152,13 @@ export default function LoginPage() {
       <div className="bg-white p-8 shadow-lg rounded-2xl w-full max-w-md border border-[#E1E4EA]">
         <div className="text-center mb-6">
           <Image
-            src="/images/logo-dark.svg"
+            src="/sonic-logo.svg"
             alt="Sonic Logo"
-            width={80}
-            height={60}
+            width={200}
+            height={100}
             className="mb-3 mx-auto"
           />
-          <div className="text-[#111827] text-3xl font-semibold mb-3">
+          <div className="text-[#111827] text-2xl font-semibold mb-3">
             Sonic Admin
           </div>
           <span className="text-[#525866] font-medium text-[13px]">

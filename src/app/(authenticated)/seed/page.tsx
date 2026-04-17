@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import SeedService, { SeedStatus } from "@/services/SeedService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 export default function SeedPage() {
   const toast = useRef<ToastRef>(null);
@@ -145,10 +146,57 @@ export default function SeedPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2563EB] mx-auto mb-4" />
-          <p className="text-[#525866]">Loading seed status...</p>
+      <div className="flex flex-col gap-6">
+        {/* Header Skeleton */}
+        <div className="animate-pulse">
+          <div className="h-8 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-[#F3F4F6] rounded w-1/2"></div>
+        </div>
+
+        {/* Current Test Data Skeleton */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-[#F3F4F6] rounded w-1/4 mb-4"></div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-[#F3F4F6] rounded-lg p-4">
+                  <div className="h-3 bg-[#E5E7EB] rounded w-3/4 mb-3"></div>
+                  <div className="h-6 bg-[#E5E7EB] rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* About Seed Data Skeleton */}
+        <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-[#F3F4F6] rounded w-1/4 mb-4"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-[#F3F4F6] rounded w-full"></div>
+              <div className="space-y-2 ml-4">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="h-3 bg-[#F3F4F6] rounded w-5/6"></div>
+                ))}
+              </div>
+              <div className="h-4 bg-[#F3F4F6] rounded w-3/4 mt-4"></div>
+              <div className="space-y-2 ml-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-3 bg-[#F3F4F6] rounded w-4/5"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions Skeleton */}
+        <div className="flex gap-3">
+          <div className="animate-pulse">
+            <div className="h-10 bg-[#F3F4F6] rounded-lg w-32"></div>
+          </div>
+          <div className="animate-pulse">
+            <div className="h-10 bg-[#F3F4F6] rounded-lg w-40"></div>
+          </div>
         </div>
       </div>
     );
@@ -251,11 +299,11 @@ export default function SeedPage() {
             <ul className="list-disc list-inside space-y-2 ml-2">
               <li>50 test users (85% verified)</li>
               <li>20 test drivers with complete documentation</li>
-              <li>27 test vendors (restaurants, pharmacies, groceries)</li>
-              <li>~90 test orders with realistic status distribution</li>
-              <li>~237 test payments</li>
+              <li>45 test vendors across 9 categories (restaurants, pharmacies, groceries, gadgets, flowers, baby care, personal care, beverages, shops)</li>
+              <li>50-250 test orders with realistic status distribution (1-5 orders per user)</li>
+              <li>1 payment record per order</li>
               <li>5 test vouchers</li>
-              <li>35 FAQs across 7 categories</li>
+              <li>30 FAQs across multiple categories</li>
             </ul>
             <p className="mt-4"><span className="font-semibold text-[#111827]">Test Data Identification:</span></p>
             <ul className="list-disc list-inside space-y-2 ml-2">
