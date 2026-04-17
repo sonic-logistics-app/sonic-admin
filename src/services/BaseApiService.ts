@@ -45,10 +45,10 @@ class BaseApiService {
 
   protected async apiCall<T>(
     endpoint: string,
-    options: RequestInit & ApiOptions = {}
+    options: RequestInit & { enableCache?: boolean; cacheTTL?: number; retries?: number; timeout?: number } = {}
   ): Promise<T> {
     const {
-      cache = false,
+      enableCache = false,
       cacheTTL = 30000,
       retries = 3,
       timeout = 10000,
@@ -59,7 +59,7 @@ class BaseApiService {
     const cacheKey = `${url}_${JSON.stringify(fetchOptions)}`;
     
     // Check cache first for GET requests
-    if (cache && (!fetchOptions.method || fetchOptions.method === 'GET')) {
+    if (enableCache && (!fetchOptions.method || fetchOptions.method === 'GET')) {
       const cached = apiCache.get<T>(cacheKey);
       if (cached) {
         return cached;
@@ -88,7 +88,7 @@ class BaseApiService {
       const data = await response.json();
       
       // Cache successful GET responses
-      if (cache && (!fetchOptions.method || fetchOptions.method === 'GET')) {
+      if (enableCache && (!fetchOptions.method || fetchOptions.method === 'GET')) {
         apiCache.set(cacheKey, data);
       }
 
