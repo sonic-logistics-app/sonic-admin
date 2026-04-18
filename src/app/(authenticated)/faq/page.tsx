@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import FAQService, { FAQ } from "@/services/FAQService";
+import FAQService, { FAQ } from "@/lib/api/admin/faq";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function FAQListPage() {
   const router = useRouter();
@@ -15,9 +17,10 @@ export default function FAQListPage() {
   const faqService = new FAQService();
 
   const [faqs, setFAQs] = useState<FAQ[]>([]);
-  const [filteredFAQs, setFilteredFAQs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -32,60 +35,32 @@ export default function FAQListPage() {
     onConfirm: () => {},
     variant: "primary",
   });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
-  const categories = [
-    "General",
-    "Account",
-    "Orders",
-    "Payment",
-    "Vendors",
-    "Drivers",
-    "Support",
-  ];
+  const categories = ["General", "Account", "Orders", "Payment", "Vendors", "Drivers", "Support"];
 
   useEffect(() => {
-    loadFAQs();
-  }, []);
+    loadFAQs(pagination.page, debouncedSearch, categoryFilter);
+  }, [pagination.page, debouncedSearch, categoryFilter]);
 
   useEffect(() => {
-    let filtered = faqs;
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, categoryFilter]);
 
-    if (categoryFilter !== "") {
-      filtered = filtered.filter(faq => faq.category === categoryFilter);
-    }
-
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (faq) =>
-          faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setFilteredFAQs(filtered);
-    setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [searchQuery, categoryFilter, faqs]);
-
-  const loadFAQs = async () => {
+  const loadFAQs = async (page: number, search: string, category: string) => {
     try {
       setLoading(true);
-      const data = await faqService.getAllFAQs();
-      setFAQs(data || []);
-      setFilteredFAQs(data || []);
-      setPagination((prev) => ({ ...prev, total: (data || []).length }));
-    } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load FAQs",
-        life: 3000,
+      const result = await faqService.getAllFAQs({
+        page, limit: pagination.limit,
+        search: search || undefined,
+        category: category || undefined,
       });
+      setFAQs(result.data || []);
+      setPagination((prev) => ({ ...prev, total: result.meta.total }));
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load FAQs", life: 3000 });
     } finally {
+      setInitialLoad(false);
       setLoading(false);
     }
   };
@@ -103,20 +78,10 @@ export default function FAQListPage() {
   const handleDelete = async (faq: FAQ) => {
     try {
       await faqService.deleteFAQ(faq.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "FAQ deleted successfully",
-        life: 3000,
-      });
-      loadFAQs();
+      toast.current?.show({ severity: "success", summary: "Success", detail: "FAQ deleted successfully", life: 3000 });
+      loadFAQs(pagination.page, debouncedSearch, categoryFilter);
     } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Delete Failed",
-        detail: error.message || "Failed to delete FAQ",
-        life: 3000,
-      });
+      toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete FAQ", life: 3000 });
     }
   };
 
@@ -128,10 +93,7 @@ export default function FAQListPage() {
     });
   };
 
-  const paginatedData = filteredFAQs.slice(
-    (pagination.page - 1) * pagination.limit,
-    pagination.page * pagination.limit
-  );
+  // Server handles pagination
 
   const columns = [
     {
@@ -221,7 +183,7 @@ export default function FAQListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">FAQ Management</h1>
@@ -234,36 +196,31 @@ export default function FAQListPage() {
         {/* Search and Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[250px]">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search FAQs by question or answer..."
-            />
+            <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search FAQs by question or answer..." />
           </div>
-
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Categories</option>
             {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
         </div>
 
         {/* Data Table */}
-        <DataTable
-          data={paginatedData}
-          columns={columns}
-          loading={loading}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          emptyMessage="No FAQs found"
-        />
+        {initialLoad && loading ? (
+          <SkeletonLoader type="table" rows={10} />
+        ) : (
+          <DataTable
+            data={faqs}
+            columns={columns}
+            loading={false}
+            pagination={pagination}
+            onPaginationChange={(newPagination) => setPagination(newPagination)}
+            emptyMessage="No FAQs found"
+            className="flex-1 min-h-0"
+          />
+        )}
       </div>
     </>
   );

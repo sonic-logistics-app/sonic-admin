@@ -20,6 +20,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Slim custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
 /* Force Chart.js canvas to respect container height */
 .p-chart,
 .p-chart canvas {

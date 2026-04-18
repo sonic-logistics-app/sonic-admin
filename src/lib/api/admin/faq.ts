@@ -26,26 +26,29 @@ export interface FAQFormData {
   category: string;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number };
+}
+
 export default class FAQService {
   // Get all FAQs
-  getAllFAQs(params?: PaginationParams) {
+  getAllFAQs(params?: PaginationParams): Promise<PaginatedResponse<FAQ>> {
     const queryParams = new URLSearchParams();
 
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("page", (params?.page ?? 1).toString());
+    queryParams.append("limit", (params?.limit ?? 20).toString());
     if (params?.search) queryParams.append("search", params.search);
     if (params?.category) queryParams.append("category", params.category);
 
-    const queryString = queryParams.toString();
-    const url = queryString ? `${apiUrl}/faq?${queryString}` : `${apiUrl}/faq`;
-
-    return fetch(url, {
+    return fetch(`${apiUrl}/faq?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, faqs: [...] }
-        return d.faqs || [];
+        const faqs = d.data || d.faqs || [];
+        const meta = d.meta || { total: faqs.length, page: params?.page ?? 1, limit: params?.limit ?? 20 };
+        return { data: faqs, meta };
       });
   }
 

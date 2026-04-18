@@ -8,6 +8,16 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  status?: string;
+  category?: string;
+  kyc_status?: string;
+  is_accepting_orders?: string;
+  is_open?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number };
 }
 
 export interface Vendor {
@@ -58,25 +68,26 @@ export interface VendorFormData {
 
 export default class VendorService {
   // Get all vendors
-  getAllVendors(params?: PaginationParams) {
+  getAllVendors(params?: PaginationParams): Promise<PaginatedResponse<any>> {
     const queryParams = new URLSearchParams();
 
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("page", (params?.page ?? 1).toString());
+    queryParams.append("limit", (params?.limit ?? 20).toString());
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.category) queryParams.append("category", params.category);
+    if (params?.kyc_status) queryParams.append("kyc_status", params.kyc_status);
+    if (params?.is_accepting_orders) queryParams.append("is_accepting_orders", params.is_accepting_orders);
+    if (params?.is_open) queryParams.append("is_open", params.is_open);
 
-    const queryString = queryParams.toString();
-    const url = queryString
-      ? `${apiUrl}/vendor?${queryString}`
-      : `${apiUrl}/vendor`;
-
-    return fetch(url, {
+    return fetch(`${apiUrl}/vendor?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, vendors: [...] }
-        return d.vendors || [];
+        const vendors = d.data?.vendors || d.vendors || [];
+        const meta = d.meta || { total: vendors.length, page: params?.page ?? 1, limit: params?.limit ?? 20 };
+        return { data: vendors, meta };
       });
   }
 

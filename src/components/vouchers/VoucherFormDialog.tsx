@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import VoucherService, { Voucher } from "@/services/VoucherService";
+import VoucherService, { Voucher } from "@/lib/api/admin/vouchers";
 import { ToastRef } from "@/components/shared/Toast";
 
 interface VoucherFormDialogProps {

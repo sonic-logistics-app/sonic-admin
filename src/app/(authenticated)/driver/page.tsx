@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import DriverService from "@/services/DriverService";
+import DriverService from "@/lib/api/admin/drivers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -57,12 +59,15 @@ export default function DriverListPage() {
   const driverService = new DriverService();
 
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
+  const [allDrivers, setAllDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [kycStatusFilter, setKycStatusFilter] = useState<string>("");
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
+  const [isRejectedFilter, setIsRejectedFilter] = useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -79,64 +84,42 @@ export default function DriverListPage() {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
   });
 
+  // Fetch on page / search / filter change — all server-side
   useEffect(() => {
-    loadDrivers();
-  }, []);
+    loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
+  }, [pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
 
+  // Reset to page 1 when search or filters change
   useEffect(() => {
-    // Filter drivers based on search query and filters
-    let filtered = drivers;
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
 
-    if (statusFilter !== "") {
-      filtered = filtered.filter(d => d.status === statusFilter);
-    }
-
-    if (kycStatusFilter !== "") {
-      filtered = filtered.filter(d => d.kyc_status === kycStatusFilter);
-    }
-
-    if (isVerifiedFilter !== "") {
-      filtered = filtered.filter(d => {
-        const isVerified = Object.values(d.verificationStatus).every(status => status === "VERIFIED");
-        return isVerified === (isVerifiedFilter === "true");
-      });
-    }
-
-    if (providerFilter !== "") {
-      filtered = filtered.filter(d => d.provider === providerFilter);
-    }
-
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (driver) =>
-          driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (driver.email && driver.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (driver.phone && driver.phone.includes(searchQuery))
-      );
-    }
-
-    setFilteredDrivers(filtered);
-    setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [searchQuery, statusFilter, kycStatusFilter, isVerifiedFilter, providerFilter, drivers]);
-
-  const loadDrivers = async () => {
+  const loadDrivers = async (page: number, search: string, status: string, kycStatus: string, isVerified: string, isRejected: string, provider: string) => {
     try {
       setLoading(true);
-      
-      const data = await driverService.getAllDrivers();
-      
-      const formattedDrivers = data.map((driver: any) => ({
+      const result = await driverService.getAllDrivers({
+        page,
+        limit: pagination.limit,
+        search: search || undefined,
+        status: status || undefined,
+        kyc_status: kycStatus || undefined,
+        is_verified: isVerified || undefined,
+        is_rejected: isRejected || undefined,
+        provider: provider || undefined,
+      });
+
+      const formatted = result.data.map((driver: any) => ({
         ...driver,
         name: `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "No Name",
       }));
-      
-      setDrivers(formattedDrivers);
-      setFilteredDrivers(formattedDrivers);
-      setPagination((prev) => ({ ...prev, total: formattedDrivers.length }));
+
+      setAllDrivers(formatted);
+      setDrivers(formatted);
+      setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
       toast.current?.show({
         severity: "error",
@@ -145,6 +128,7 @@ export default function DriverListPage() {
         life: 3000,
       });
     } finally {
+      setInitialLoad(false);
       setLoading(false);
     }
   };
@@ -168,7 +152,7 @@ export default function DriverListPage() {
         detail: `Driver ${driver.name} deleted successfully`,
         life: 3000,
       });
-      loadDrivers();
+      loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
     } catch (error: any) {
       toast.current?.show({
         severity: "error",
@@ -212,11 +196,7 @@ export default function DriverListPage() {
     return "PENDING";
   };
 
-  // Get paginated data
-  const paginatedData = filteredDrivers.slice(
-    (pagination.page - 1) * pagination.limit,
-    pagination.page * pagination.limit
-  );
+  // Get paginated data — server handles pagination, use drivers directly
 
   const columns = [
     {
@@ -331,7 +311,7 @@ export default function DriverListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Driver Management</h1>
@@ -353,11 +333,11 @@ export default function DriverListPage() {
               placeholder="Search drivers by name, email, or phone..."
             />
           </div>
-          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All Status</option>
             <option value="OFFLINE">Offline</option>
@@ -370,7 +350,7 @@ export default function DriverListPage() {
           <select
             value={kycStatusFilter}
             onChange={(e) => setKycStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All KYC Status</option>
             <option value="not_uploaded">Not Uploaded</option>
@@ -383,17 +363,27 @@ export default function DriverListPage() {
           <select
             value={isVerifiedFilter}
             onChange={(e) => setIsVerifiedFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
-            <option value="">All Verification Status</option>
-            <option value="true">Verified</option>
-            <option value="false">Unverified</option>
+            <option value="">All Verification</option>
+            <option value="true">Fully Verified</option>
+            <option value="false">Not Verified</option>
+          </select>
+
+          <select
+            value={isRejectedFilter}
+            onChange={(e) => setIsRejectedFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+          >
+            <option value="">All Rejection Status</option>
+            <option value="true">Rejected</option>
+            <option value="false">Not Rejected</option>
           </select>
 
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All Providers</option>
             <option value="CREDENTIALS">Email/Password</option>
@@ -402,17 +392,20 @@ export default function DriverListPage() {
             <option value="FACEBOOK">Facebook</option>
           </select>
         </div>
-
-        {/* Data Table */}
-        <DataTable
-          data={paginatedData}
-          columns={columns}
-          loading={loading}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          onRowClick={handleRowClick}
-          emptyMessage="No drivers found"
-        />
+        {initialLoad && loading ? (
+          <SkeletonLoader type="table" rows={10} />
+        ) : (
+          <DataTable
+            data={drivers}
+            columns={columns}
+            loading={false}
+            pagination={pagination}
+            onPaginationChange={(newPagination) => setPagination(newPagination)}
+            onRowClick={handleRowClick}
+            emptyMessage="No drivers found"
+            className="flex-1 min-h-0"
+          />
+        )}
       </div>
     </>
   );

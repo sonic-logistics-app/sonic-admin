@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import CustomerService from "@/services/CustomerService";
+import CustomerService from "@/lib/api/admin/customers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -47,15 +47,15 @@ export default function UserListPage() {
   const customerService = new CustomerService();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
-  const [providerFilter, setProviderFilter] = useState<string>("");
   const [otpVerifiedFilter, setOtpVerifiedFilter] = useState<string>("");
+  const [providerFilter, setProviderFilter] = useState<string>("");
   const { data: optimisticCustomers, optimisticUpdate, resetData } = useOptimisticUpdate<Customer>(customers);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -72,72 +72,56 @@ export default function UserListPage() {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
   });
 
+  // Fetch when page, search, or filters change
   useEffect(() => {
-    loadCustomers();
-  }, []);
+    loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
+  }, [pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
 
+  // Reset to page 1 when search or filters change
   useEffect(() => {
-    // Filter customers based on search query and filters
-    let filtered = optimisticCustomers;
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
 
-    if (isVerifiedFilter !== "") {
-      filtered = filtered.filter(c => c.is_verified === (isVerifiedFilter === "true"));
-    }
-
-    if (providerFilter !== "") {
-      filtered = filtered.filter(c => c.provider === providerFilter);
-    }
-
-    if (otpVerifiedFilter !== "") {
-      filtered = filtered.filter(c => c.otp_verified === (otpVerifiedFilter === "true"));
-    }
-
-    if (debouncedSearchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (customer) =>
-          customer.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-          (customer.email && customer.email.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
-          (customer.phone && customer.phone.includes(debouncedSearchQuery))
-      );
-    }
-
-    setFilteredCustomers(filtered);
-    setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, optimisticCustomers]);
-
-  const loadCustomers = async () => {
+  const loadCustomers = async (page: number, search: string, isVerified: string, provider: string, otpVerified: string) => {
     try {
       setLoading(true);
-      const data = await customerService.getAllCustomers();
-      
-      const formattedCustomers = data.map((customer: any) => ({
+      const result = await customerService.getAllCustomers({
+        page,
+        limit: pagination.limit,
+        search: search || undefined,
+        is_verified: isVerified || undefined,
+        provider: provider || undefined,
+        otp_verified: otpVerified || undefined,
+      });
+
+      const formattedCustomers = result.data.map((customer: any) => ({
         ...customer,
         name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "No Name",
       }));
-      
+
       setCustomers(formattedCustomers);
-      setFilteredCustomers(formattedCustomers);
       resetData(formattedCustomers);
-      setPagination((prev) => ({ ...prev, total: formattedCustomers.length }));
+      setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: "Failed to load customers",
+        detail: "Failed to load users",
         life: 3000,
       });
     } finally {
+      setInitialLoad(false);
       setLoading(false);
     }
   };
 
   const handleVerify = async (customer: Customer) => {
     await optimisticUpdate(
-      (currentData) => currentData.map(c => 
+      (currentData) => currentData.map(c =>
         c.id === customer.id ? { ...c, is_verified: true } : c
       ),
       () => customerService.verifyCustomer(customer.id),
@@ -145,7 +129,7 @@ export default function UserListPage() {
         toast.current?.show({
           severity: "success",
           summary: "Success",
-          detail: `Customer ${customer.name} verified successfully`,
+          detail: `User ${customer.name} verified successfully`,
           life: 3000,
         });
         return newData;
@@ -154,7 +138,7 @@ export default function UserListPage() {
         toast.current?.show({
           severity: "error",
           summary: "Error",
-          detail: "Failed to verify customer",
+          detail: "Failed to verify user",
           life: 3000,
         });
       }
@@ -189,7 +173,7 @@ export default function UserListPage() {
         toast.current?.show({
           severity: "success",
           summary: "Success",
-          detail: `Customer ${customer.name} deleted successfully`,
+          detail: `User ${customer.name} deleted successfully`,
           life: 3000,
         });
         return newData;
@@ -198,7 +182,7 @@ export default function UserListPage() {
         toast.current?.show({
           severity: "error",
           summary: "Delete Failed",
-          detail: error.message || "Failed to delete customer",
+          detail: error.message || "Failed to delete user",
           life: 3000,
         });
       }
@@ -222,12 +206,6 @@ export default function UserListPage() {
     setSelectedCustomer(customer);
     setShowDetailsModal(true);
   };
-
-  // Get paginated data
-  const paginatedData = filteredCustomers.slice(
-    (pagination.page - 1) * pagination.limit,
-    pagination.page * pagination.limit
-  );
 
   const columns = [
     {
@@ -340,10 +318,10 @@ export default function UserListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-[#111827]">Customer Management</h1>
+          <h1 className="text-[24px] font-bold text-[#111827]">User Management</h1>
           <button
             onClick={() => router.push("/user/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
@@ -353,20 +331,20 @@ export default function UserListPage() {
           </button>
         </div>
 
-        {/* Search Bar and Filters */}
+        {/* Search Bar */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[250px]">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search customers by name, email, or phone..."
+              placeholder="Search users by name, email, or phone..."
             />
           </div>
-          
+
           <select
             value={isVerifiedFilter}
             onChange={(e) => setIsVerifiedFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All Verification Status</option>
             <option value="true">Verified</option>
@@ -376,7 +354,7 @@ export default function UserListPage() {
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All Providers</option>
             <option value="CREDENTIALS">Email/Password</option>
@@ -388,7 +366,7 @@ export default function UserListPage() {
           <select
             value={otpVerifiedFilter}
             onChange={(e) => setOtpVerifiedFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
           >
             <option value="">All OTP Status</option>
             <option value="true">OTP Verified</option>
@@ -397,17 +375,20 @@ export default function UserListPage() {
         </div>
 
         {/* Data Table */}
-        {loading ? (
+        {initialLoad && loading ? (
           <SkeletonLoader type="table" rows={10} />
         ) : (
           <DataTable
-            data={paginatedData}
+            data={optimisticCustomers}
             columns={columns}
             loading={false}
             pagination={pagination}
-            onPaginationChange={setPagination}
+            onPaginationChange={(newPagination) => {
+              setPagination(newPagination);
+            }}
             onRowClick={handleRowClick}
-            emptyMessage="No customers found"
+            emptyMessage="No users found"
+            className="flex-1 min-h-0"
           />
         )}
       </div>

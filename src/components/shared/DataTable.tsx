@@ -31,6 +31,7 @@ interface DataTableProps<T = any> {
   onRowClick?: (rowData: T) => void;
   emptyMessage?: string;
   className?: string;
+  tableMaxHeight?: string;
 }
 
 /**
@@ -45,6 +46,7 @@ export default function DataTable<T extends Record<string, any>>({
   onRowClick,
   emptyMessage = "No data found",
   className = "",
+  tableMaxHeight = "calc(100vh - 300px)",
 }: DataTableProps<T>) {
   const [sortField, setSortField] = useState<string | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined);
@@ -128,13 +130,13 @@ export default function DataTable<T extends Record<string, any>>({
     : data.length;
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full flex flex-col min-h-0 flex-1 ${className}`}>
       {/* Desktop Table View */}
-      <div className="hidden md:block rounded-2xl border border-[#E1E4EA] bg-white overflow-hidden w-full">
-        <div className="overflow-x-auto w-full">
+      <div className="hidden md:flex flex-col flex-1 min-h-0 rounded-2xl border border-[#E1E4EA] bg-white overflow-hidden w-full">
+        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 w-full">
           <table className="w-full">
-            {/* Header */}
-            <thead className="bg-white border-b border-[#E1E4EA]">
+            {/* Header — sticky */}
+            <thead className="bg-white border-b border-[#E1E4EA] sticky top-0 z-10">
               <tr>
                 {columns.map((col) => (
                   <th
@@ -207,7 +209,7 @@ export default function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {pagination && onPaginationChange && pagination.total > 0 && (
-        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-4 flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Pagination Info */}
           <div className="text-[13px] text-[#525866]">
             Showing {startEntry} to {endEntry} of {pagination.total} entries

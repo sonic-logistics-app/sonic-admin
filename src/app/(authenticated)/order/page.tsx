@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import OrderService from "@/services/OrderService";
+import OrderService from "@/lib/api/admin/orders";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Order {
   id: number;
@@ -62,97 +64,55 @@ export default function OrderListPage() {
   const orderService = new OrderService();
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
   const [dispatchStatusFilter, setDispatchStatusFilter] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [minPriceFilter, setMinPriceFilter] = useState<string>("");
   const [maxPriceFilter, setMaxPriceFilter] = useState<string>("");
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
+  const debouncedMinPrice = useDebounce(minPriceFilter, 600);
+  const debouncedMaxPrice = useDebounce(maxPriceFilter, 600);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice);
+  }, [pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
 
   useEffect(() => {
-    // Filter orders based on search query and filters
-    let filtered = orders;
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
 
-    if (statusFilter !== "") {
-      filtered = filtered.filter(o => o.order_status === statusFilter);
-    }
-
-    if (orderTypeFilter !== "") {
-      filtered = filtered.filter(o => o.order_type === orderTypeFilter);
-    }
-
-    if (paymentStatusFilter !== "") {
-      filtered = filtered.filter(o => o.payment_status === paymentStatusFilter);
-    }
-
-    if (dispatchStatusFilter !== "") {
-      filtered = filtered.filter(o => {
-        // Dispatch status would need to be added to the response
-        // For now, we'll filter based on driver assignment
-        if (dispatchStatusFilter === "ASSIGNED") return o.driver !== null;
-        if (dispatchStatusFilter === "IDLE") return o.driver === null;
-        return true;
-      });
-    }
-
-    if (minPriceFilter !== "") {
-      const minPrice = parseFloat(minPriceFilter);
-      filtered = filtered.filter(o => o.price_fees >= minPrice);
-    }
-
-    if (maxPriceFilter !== "") {
-      const maxPrice = parseFloat(maxPriceFilter);
-      filtered = filtered.filter(o => o.price_fees <= maxPrice);
-    }
-
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (order) =>
-          order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (order.receiver_address && typeof order.receiver_address === 'object' && order.receiver_address.dropoff_address && order.receiver_address.dropoff_address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.sender_address && typeof order.sender_address === 'string' && order.sender_address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.user && order.user.first_name && order.user.first_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.user && order.user.last_name && order.user.last_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.user && order.user.phone && order.user.phone.includes(searchQuery)) ||
-          (order.driver && order.driver.first_name && order.driver.first_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.driver && order.driver.last_name && order.driver.last_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.driver && order.driver.phone && order.driver.phone.includes(searchQuery)) ||
-          (order.vendor && order.vendor.name && order.vendor.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (order.vendor && order.vendor.phone && order.vendor.phone.includes(searchQuery))
-      );
-    }
-
-    setFilteredOrders(filtered);
-    setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [searchQuery, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, minPriceFilter, maxPriceFilter, orders]);
-
-  const loadOrders = async () => {
+  const loadOrders = async (
+    page: number, search: string, status: string, orderType: string,
+    paymentStatus: string, dispatchStatus: string, dateFrom: string,
+    dateTo: string, minPrice: string, maxPrice: string
+  ) => {
     try {
       setLoading(true);
-      const data = await orderService.getAllOrders();
-      setOrders(data);
-      setFilteredOrders(data);
-      setPagination((prev) => ({ ...prev, total: data.length }));
-    } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load orders",
-        life: 3000,
+      const result = await orderService.getAllOrders({
+        page, limit: pagination.limit,
+        search: search || undefined,
+        status: status || undefined,
+        order_type: orderType || undefined,
+        payment_status: paymentStatus || undefined,
+        dispatch_status: dispatchStatus || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+        min_price: minPrice || undefined,
+        max_price: maxPrice || undefined,
       });
+      setOrders(result.data);
+      setPagination((prev) => ({ ...prev, total: result.meta.total }));
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load orders", life: 3000 });
     } finally {
+      setInitialLoad(false);
       setLoading(false);
     }
   };
@@ -177,11 +137,7 @@ export default function OrderListPage() {
     return ((first?.charAt(0) || "") + (last?.charAt(0) || "")).toUpperCase() || "?";
   };
 
-  // Get paginated data
-  const paginatedData = filteredOrders.slice(
-    (pagination.page - 1) * pagination.limit,
-    pagination.page * pagination.limit
-  );
+  // Server handles pagination — use orders directly
 
   const columns = [
     {
@@ -295,10 +251,32 @@ export default function OrderListPage() {
     <>
       <Toast ref={toast} />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Order Management</h1>
+          <div className="flex items-center gap-3">
+            {/* Date range */}
+            <div className="flex items-center rounded-lg border border-[#E1E4EA] overflow-hidden bg-white">
+              <span className="px-3 text-[12px] font-medium text-[#525866] bg-[#F9FAFB] border-r border-[#E1E4EA] flex items-center py-2">Date</span>
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none bg-white" />
+              <span className="px-2 text-[12px] text-[#9CA3AF]">→</span>
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none border-l border-[#E1E4EA] bg-white" />
+            </div>
+            {/* Price range */}
+            <div className="flex items-center rounded-lg border border-[#E1E4EA] overflow-hidden bg-white">
+              <span className="px-3 text-[12px] font-medium text-[#525866] bg-[#F9FAFB] border-r border-[#E1E4EA] flex items-center py-2">₦</span>
+              <input type="number" value={minPriceFilter} onChange={(e) => setMinPriceFilter(e.target.value)}
+                placeholder="Min"
+                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none w-[80px] bg-white" />
+              <span className="px-2 text-[12px] text-[#9CA3AF]">→</span>
+              <input type="number" value={maxPriceFilter} onChange={(e) => setMaxPriceFilter(e.target.value)}
+                placeholder="Max"
+                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none border-l border-[#E1E4EA] w-[80px] bg-white" />
+            </div>
+          </div>
         </div>
 
         {/* Search Bar and Filters */}
@@ -307,87 +285,61 @@ export default function OrderListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search by order ID, address, customer, driver, or vendor..."
+              placeholder="Search by order ID, customer, driver, or vendor..."
             />
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Status</option>
             <option value="PENDING">Pending</option>
-            <option value="IN_PAYMENT">In Payment</option>
             <option value="CONFIRMED">Confirmed</option>
-            <option value="ACCEPTED">Accepted</option>
             <option value="PREPARING">Preparing</option>
             <option value="READY">Ready</option>
             <option value="PICKUP">Pickup</option>
             <option value="IN_TRANSIT">In Transit</option>
             <option value="DELIVERED">Delivered</option>
             <option value="CANCELLED">Cancelled</option>
-            <option value="DRIVER_CANCELLED">Driver Cancelled</option>
-            <option value="REJECTED">Rejected</option>
           </select>
 
-          <select
-            value={orderTypeFilter}
-            onChange={(e) => setOrderTypeFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={orderTypeFilter} onChange={(e) => setOrderTypeFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Types</option>
             <option value="PACKAGE">Package</option>
             <option value="VENDOR">Vendor</option>
           </select>
 
-          <select
-            value={paymentStatusFilter}
-            onChange={(e) => setPaymentStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Payment</option>
-            <option value="UNPAID">Unpaid</option>
             <option value="PAID">Paid</option>
-            <option value="REFUNDED">Refunded</option>
+            <option value="UNPAID">Unpaid</option>
           </select>
 
-          <select
-            value={dispatchStatusFilter}
-            onChange={(e) => setDispatchStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={dispatchStatusFilter} onChange={(e) => setDispatchStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Dispatch</option>
-            <option value="ASSIGNED">Assigned</option>
             <option value="IDLE">Idle</option>
+            <option value="SEARCHING">Searching</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="FAILED">Failed</option>
           </select>
-
-          <input
-            type="number"
-            value={minPriceFilter}
-            onChange={(e) => setMinPriceFilter(e.target.value)}
-            placeholder="Min Price"
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] w-[120px]"
-          />
-
-          <input
-            type="number"
-            value={maxPriceFilter}
-            onChange={(e) => setMaxPriceFilter(e.target.value)}
-            placeholder="Max Price"
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] w-[120px]"
-          />
         </div>
 
         {/* Data Table */}
-        <DataTable
-          data={paginatedData}
-          columns={columns}
-          loading={loading}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          emptyMessage="No orders found"
-        />
+        {initialLoad && loading ? (
+          <SkeletonLoader type="table" rows={10} />
+        ) : (
+          <DataTable
+            data={orders}
+            columns={columns}
+            loading={false}
+            pagination={pagination}
+            onPaginationChange={(newPagination) => setPagination(newPagination)}
+            emptyMessage="No orders found"
+            className="flex-1 min-h-0"
+          />
+        )}
       </div>
     </>
   );

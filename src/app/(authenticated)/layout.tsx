@@ -68,8 +68,8 @@ export default function AuthenticatedLayout({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden w-full">
-          <main className="flex-1 overflow-y-auto bg-[#FBFBFB] w-full">
-            <div className="px-3 py-4 md:px-5 md:py-5 flex flex-col gap-4 w-full">
+          <main className="flex-1 flex flex-col overflow-hidden bg-[#FBFBFB] w-full">
+            <div className="px-3 py-4 md:px-5 md:py-5 flex flex-col gap-4 w-full flex-1 min-h-0 overflow-y-auto">
               <Breadcrumb />
               {children}
             </div>

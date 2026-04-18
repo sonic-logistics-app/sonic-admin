@@ -8,28 +8,47 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  is_verified?: string;
+  otp_verified?: string;
+  provider?: string;
+  status?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  };
 }
 
 export default class CustomerService {
-  getAllCustomers(params?: PaginationParams) {
+  getAllCustomers(params?: PaginationParams): Promise<PaginatedResponse<any>> {
     const queryParams = new URLSearchParams();
 
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("page", (params?.page ?? 1).toString());
+    queryParams.append("limit", (params?.limit ?? 20).toString());
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.is_verified) queryParams.append("is_verified", params.is_verified);
+    if (params?.otp_verified) queryParams.append("otp_verified", params.otp_verified);
+    if (params?.provider) queryParams.append("provider", params.provider);
+    if (params?.status) queryParams.append("status", params.status);
 
-    const queryString = queryParams.toString();
-    const url = queryString
-      ? `${apiUrl}/user?${queryString}`
-      : `${apiUrl}/user`;
+    const url = `${apiUrl}/user?${queryParams.toString()}`;
 
     return fetch(url, {
       headers: authService.getAuthHeaders(),
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, users: [...] }
-        return d.users || [];
+        const users = d.data?.users || d.users || [];
+        const meta = d.meta || {
+          total: users.length,
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 20,
+        };
+        return { data: users, meta };
       });
   }
 

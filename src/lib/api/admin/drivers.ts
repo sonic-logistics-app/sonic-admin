@@ -8,28 +8,39 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  status?: string;
+  kyc_status?: string;
+  is_verified?: string;
+  is_rejected?: string;
+  provider?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number };
 }
 
 export default class DriverService {
-  getAllDrivers(params?: PaginationParams) {
+  getAllDrivers(params?: PaginationParams): Promise<PaginatedResponse<any>> {
     const queryParams = new URLSearchParams();
 
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("page", (params?.page ?? 1).toString());
+    queryParams.append("limit", (params?.limit ?? 20).toString());
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.kyc_status) queryParams.append("kyc_status", params.kyc_status);
+    if (params?.is_verified) queryParams.append("is_verified", params.is_verified);
+    if (params?.is_rejected) queryParams.append("is_rejected", params.is_rejected);
+    if (params?.provider) queryParams.append("provider", params.provider);
 
-    const queryString = queryParams.toString();
-    const url = queryString
-      ? `${apiUrl}/driver?${queryString}`
-      : `${apiUrl}/driver`;
-
-    return fetch(url, {
+    return fetch(`${apiUrl}/driver?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, drivers: [...] }
-        return d.drivers || [];
+        const drivers = d.data?.drivers || d.drivers || [];
+        const meta = d.meta || { total: drivers.length, page: params?.page ?? 1, limit: params?.limit ?? 20 };
+        return { data: drivers, meta };
       });
   }
 

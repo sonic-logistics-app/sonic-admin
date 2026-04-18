@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import VendorService from "@/services/VendorService";
+import VendorService from "@/lib/api/admin/vendors";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -53,9 +55,10 @@ export default function VendorListPage() {
   const vendorService = new VendorService();
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [kycStatusFilter, setKycStatusFilter] = useState<string>("");
@@ -74,72 +77,35 @@ export default function VendorListPage() {
     onConfirm: () => {},
     variant: "primary",
   });
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
   useEffect(() => {
-    loadVendors();
-  }, []);
+    loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter);
+  }, [pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter]);
 
   useEffect(() => {
-    // Filter vendors based on search query and filters
-    let filtered = vendors;
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter]);
 
-    if (statusFilter) {
-      filtered = filtered.filter(v => v.status === statusFilter);
-    }
-
-    if (categoryFilter) {
-      filtered = filtered.filter(v => v.business_type === categoryFilter);
-    }
-
-    if (kycStatusFilter) {
-      filtered = filtered.filter(v => v.kyc_status === kycStatusFilter);
-    }
-
-    if (isAcceptingOrdersFilter !== "") {
-      filtered = filtered.filter(v => v.is_accepting_orders === (isAcceptingOrdersFilter === "true"));
-    }
-
-    if (isOpenFilter !== "") {
-      filtered = filtered.filter(v => v.is_open === (isOpenFilter === "true"));
-    }
-
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter(
-        (vendor) =>
-          vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (vendor.email && vendor.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (vendor.phone && vendor.phone.includes(searchQuery)) ||
-          (vendor.address && vendor.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (vendor.business_registration_number && vendor.business_registration_number.includes(searchQuery)) ||
-          (vendor.tax_identification_number && vendor.tax_identification_number.includes(searchQuery)) ||
-          (vendor.bank_name && vendor.bank_name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    setFilteredVendors(filtered);
-    setPagination((prev) => ({ ...prev, page: 1, total: filtered.length }));
-  }, [searchQuery, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, vendors]);
-
-  const loadVendors = async () => {
+  const loadVendors = async (page: number, search: string, status: string, category: string, kycStatus: string, isAccepting: string, isOpen: string) => {
     try {
       setLoading(true);
-      const data = await vendorService.getAllVendors();
-      setVendors(data);
-      setFilteredVendors(data);
-      setPagination((prev) => ({ ...prev, total: data.length }));
-    } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Failed to load vendors",
-        life: 3000,
+      const result = await vendorService.getAllVendors({
+        page,
+        limit: pagination.limit,
+        search: search || undefined,
+        status: status || undefined,
+        category: category || undefined,
+        kyc_status: kycStatus || undefined,
+        is_accepting_orders: isAccepting || undefined,
+        is_open: isOpen || undefined,
       });
+      setVendors(result.data);
+      setPagination((prev) => ({ ...prev, total: result.meta.total }));
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load vendors", life: 3000 });
     } finally {
+      setInitialLoad(false);
       setLoading(false);
     }
   };
@@ -157,20 +123,10 @@ export default function VendorListPage() {
   const handleDelete = async (vendor: Vendor) => {
     try {
       await vendorService.deleteVendor(vendor.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: `Vendor ${vendor.name} deleted successfully (soft delete)`,
-        life: 3000,
-      });
-      loadVendors();
+      toast.current?.show({ severity: "success", summary: "Success", detail: `Vendor ${vendor.name} deleted successfully`, life: 3000 });
+      loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter);
     } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Delete Failed",
-        detail: error.message || "Failed to delete vendor",
-        life: 3000,
-      });
+      toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete vendor", life: 3000 });
     }
   };
 
@@ -192,11 +148,7 @@ export default function VendorListPage() {
       .slice(0, 2);
   };
 
-  // Get paginated data
-  const paginatedData = filteredVendors.slice(
-    (pagination.page - 1) * pagination.limit,
-    pagination.page * pagination.limit
-  );
+  // Get paginated data — server handles pagination
 
   const columns = [
     {
@@ -312,7 +264,7 @@ export default function VendorListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Vendor Management</h1>
@@ -331,15 +283,12 @@ export default function VendorListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search vendors by name, email, phone, address, or registration number..."
+              placeholder="Search vendors by name, email, phone, address..."
             />
           </div>
-          
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Status</option>
             <option value="pending_approval">Pending Approval</option>
             <option value="active">Active</option>
@@ -347,45 +296,39 @@ export default function VendorListPage() {
             <option value="suspended">Suspended</option>
           </select>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Categories</option>
             <option value="restaurant">Restaurant</option>
             <option value="pharmacy">Pharmacy</option>
+            <option value="shop">Shop</option>
             <option value="grocery">Grocery</option>
+            <option value="gadget">Gadget</option>
+            <option value="flowers">Flowers</option>
+            <option value="baby">Baby</option>
+            <option value="personal_care">Personal Care</option>
+            <option value="beverages">Beverages</option>
+            <option value="other">Other</option>
           </select>
 
-          <select
-            value={kycStatusFilter}
-            onChange={(e) => setKycStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={kycStatusFilter} onChange={(e) => setKycStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All KYC Status</option>
             <option value="not_uploaded">Not Uploaded</option>
             <option value="pending">Pending</option>
-            <option value="abandoned">Abandoned</option>
-            <option value="failed">Failed</option>
             <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
           </select>
 
-          <select
-            value={isAcceptingOrdersFilter}
-            onChange={(e) => setIsAcceptingOrdersFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={isAcceptingOrdersFilter} onChange={(e) => setIsAcceptingOrdersFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Order Status</option>
             <option value="true">Accepting Orders</option>
-            <option value="false">Not Accepting Orders</option>
+            <option value="false">Not Accepting</option>
           </select>
 
-          <select
-            value={isOpenFilter}
-            onChange={(e) => setIsOpenFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB]"
-          >
+          <select value={isOpenFilter} onChange={(e) => setIsOpenFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Availability</option>
             <option value="true">Currently Open</option>
             <option value="false">Currently Closed</option>
@@ -393,14 +336,19 @@ export default function VendorListPage() {
         </div>
 
         {/* Data Table */}
-        <DataTable
-          data={paginatedData}
-          columns={columns}
-          loading={loading}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          emptyMessage="No vendors found"
-        />
+        {initialLoad && loading ? (
+          <SkeletonLoader type="table" rows={10} />
+        ) : (
+          <DataTable
+            data={vendors}
+            columns={columns}
+            loading={false}
+            pagination={pagination}
+            onPaginationChange={(newPagination) => setPagination(newPagination)}
+            emptyMessage="No vendors found"
+            className="flex-1 min-h-0"
+          />
+        )}
       </div>
     </>
   );

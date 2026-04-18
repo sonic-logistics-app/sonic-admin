@@ -8,6 +8,15 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  min_amount?: string;
+  max_amount?: string;
+  expiry_type?: string;
+  has_code?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number };
 }
 
 export interface Voucher {
@@ -16,6 +25,7 @@ export interface Voucher {
   amount: number;
   code: string;
   expiry_type: string;
+  used?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -29,25 +39,25 @@ export interface VoucherFormData {
 
 export default class VoucherService {
   // Get all vouchers
-  getAllVouchers(params?: PaginationParams) {
+  getAllVouchers(params?: PaginationParams): Promise<PaginatedResponse<Voucher>> {
     const queryParams = new URLSearchParams();
 
-    if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("page", (params?.page ?? 1).toString());
+    queryParams.append("limit", (params?.limit ?? 20).toString());
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.min_amount) queryParams.append("min_amount", params.min_amount);
+    if (params?.max_amount) queryParams.append("max_amount", params.max_amount);
+    if (params?.expiry_type) queryParams.append("expiry_type", params.expiry_type);
+    if (params?.has_code) queryParams.append("has_code", params.has_code);
 
-    const queryString = queryParams.toString();
-    const url = queryString
-      ? `${apiUrl}/voucher?${queryString}`
-      : `${apiUrl}/voucher`;
-
-    return fetch(url, {
+    return fetch(`${apiUrl}/voucher?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, vouchers: [...] }
-        return d.vouchers || [];
+        const vouchers = d.data?.vouchers || d.vouchers || [];
+        const meta = d.meta || { total: vouchers.length, page: params?.page ?? 1, limit: params?.limit ?? 20 };
+        return { data: vouchers, meta };
       });
   }
 
