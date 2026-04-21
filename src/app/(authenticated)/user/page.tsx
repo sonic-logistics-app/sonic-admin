@@ -35,6 +35,7 @@ interface Customer {
   is_agree: boolean | null;
   is_verified: boolean;
   welcome_voucher_used: boolean;
+  voucher_status?: string;
   referral_code: string | null;
   referral_used: number | null;
   earn_referral: number | null;
@@ -535,9 +536,16 @@ export default function UserListPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Welcome Voucher Used
+                      Welcome Voucher
                     </label>
-                    <StatusBadge status={selectedCustomer.welcome_voucher_used ? "USED" : "AVAILABLE"} />
+                    {(() => {
+                      const status = selectedCustomer.voucher_status;
+                      if (!status || status === "NOT_ASSIGNED") return <span className="text-[13px] text-[#9CA3AF]">—</span>;
+                      if (status === "USED") return <span className="text-[13px]">✅ Used</span>;
+                      if (status === "EXPIRED") return <span className="text-[13px]">🔴 Expired</span>;
+                      // AVAILABLE — may include balance e.g. "AVAILABLE (₦1000 remaining)"
+                      return <span className="text-[13px]">🟢 {status.replace("AVAILABLE", "Available")}</span>;
+                    })()}
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -595,6 +603,33 @@ export default function UserListPage() {
                 >
                   <i className="pi pi-check mr-2" />
                   Verify User
+                </Button>
+              )}
+              {selectedCustomer.is_verified && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      await customerService.ensureVoucher(selectedCustomer.id);
+                      toast.current?.show({
+                        severity: "success",
+                        summary: "Success",
+                        detail: "Welcome voucher ensured for user",
+                        life: 3000,
+                      });
+                    } catch (error: any) {
+                      toast.current?.show({
+                        severity: "error",
+                        summary: "Error",
+                        detail: error.message || "Failed to ensure voucher",
+                        life: 3000,
+                      });
+                    }
+                  }}
+                  className="px-4 py-2"
+                >
+                  <i className="pi pi-ticket mr-2" />
+                  Ensure Welcome Voucher
                 </Button>
               )}
               <Button

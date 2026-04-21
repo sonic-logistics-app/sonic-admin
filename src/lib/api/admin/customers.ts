@@ -52,6 +52,17 @@ export default class CustomerService {
       });
   }
 
+  ensureVoucher(user_id: number) {
+    return fetch(`${apiUrl}/user/ensure-voucher`, {
+      method: "POST",
+      headers: authService.getAuthHeaders(),
+      body: JSON.stringify({ user_id }),
+    }).then((res) => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    });
+  }
+
   verifyCustomer(user_id: number) {
     return fetch(`${apiUrl}/user/verify`, {
       method: "PUT",
