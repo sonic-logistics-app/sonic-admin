@@ -19,6 +19,8 @@ export interface PaginationParams {
   date_to?: string;
   min_price?: string;
   max_price?: string;
+  refund_status?: string;
+  voucher_used?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -44,6 +46,8 @@ export default class OrderService {
     if (params?.date_to) queryParams.append("date_to", params.date_to);
     if (params?.min_price) queryParams.append("min_price", params.min_price);
     if (params?.max_price) queryParams.append("max_price", params.max_price);
+    if (params?.refund_status) queryParams.append("refund_status", params.refund_status);
+    if (params?.voucher_used) queryParams.append("voucher_used", params.voucher_used);
 
     return fetch(`${apiUrl}/order?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),
@@ -62,8 +66,7 @@ export default class OrderService {
     })
       .then((res) => res.json())
       .then((d) => {
-        // Backend returns: { message, order: {...} }
-        return d.order;
+        return d.data || d.order || d;
       });
   }
 

@@ -15,6 +15,7 @@ const pathLabels: Record<string, string> = {
   driver: "Drivers",
   vendor: "Vendors",
   order: "Orders",
+  refund: "Refund Management",
   voucher: "Vouchers",
   faq: "FAQ",
   support: "Support",

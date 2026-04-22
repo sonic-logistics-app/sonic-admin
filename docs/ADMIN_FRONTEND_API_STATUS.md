@@ -104,8 +104,15 @@ Backend errors return:
 
 ### Order management
 
-- `GET /admin/order` - List all orders with pagination
-- `GET /admin/order/:orderId` - Get order by ID
+- `GET /admin/order` - List all orders with pagination and enhanced filtering
+  - Supports voucher usage filtering (`voucher_used=true/false`)
+  - Supports refund status filtering (`refund_status=REFUND_PENDING/REFUNDED/NO_REFUND`)
+  - Returns voucher details, refund information, and pricing breakdown
+- `GET /admin/order/:orderId` - Get order by ID with complete payment history
+  - Includes voucher usage details
+  - Includes refund information and history
+  - Includes complete payment transaction history
+  - Includes order items breakdown
 - `POST /admin/order/:order_id/generate-code` - Generate verification code
 
 ### Voucher management
@@ -133,6 +140,16 @@ Backend errors return:
 
 - `GET /admin/support/contact-info` - Get contact information
 - `PUT /admin/support/contact-info` - Update contact information
+
+### Transaction management
+
+- `GET /admin/transactions` - List all transactions with comprehensive filtering
+- `GET /admin/transactions/:id` - Get transaction details by ID
+
+### Refund management
+
+- `POST /admin/refund/sync` - Manual sync refund statuses with Flutterwave
+- `GET /admin/refund/summary` - Get refund statistics and summary
 
 ## API Documentation
 
@@ -175,10 +192,15 @@ Backend errors return:
 - User list page with verify/delete actions
 - Driver list and driver details page with verify/reject/delete functionality
 - Vendor listing and approve/delete workflows
-- Order list/detail page and verification code generation
+- Order list/detail page and verification code generation with voucher and refund awareness
+- Enhanced order filtering by voucher usage and refund status
+- Complete payment history tracking including refunds
 - Voucher create/read/update/delete flows
 - FAQ management pages
 - Admin support contact info editor
+- Transaction management with filtering and detailed views
+- Refund management with sync tools and status monitoring
+- Automated refund status synchronization with Flutterwave
 
 ## Frontend features to postpone until backend support exists
 

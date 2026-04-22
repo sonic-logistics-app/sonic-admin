@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import OrderService from "@/services/OrderService";
+import OrderService from "@/lib/api/admin/orders";
+import RefundService from "@/lib/api/admin/refunds";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 
@@ -101,6 +102,60 @@ interface Order {
     address?: string;
     business_type?: string;
   };
+  // New voucher and refund aware fields
+  payment_details?: {
+    tx_ref: string;
+    amount_paid: number;
+    discount_applied: number;
+    payment_method: string;
+    paid_at: string;
+    voucher_used?: {
+      code: string;
+      name: string;
+      original_amount: number;
+      discount_applied: number;
+    };
+  };
+  refund_details?: {
+    refunded_amount: number;
+    refund_reason: string;
+    refunded_at: string;
+    refund_status: string;
+    refund_tx_ref?: string;
+    voucher_restored?: {
+      amount: number;
+      voucher_code: string;
+      message: string;
+    };
+  };
+  pricing_breakdown?: {
+    items_subtotal: number;
+    delivery_fee: number;
+    service_fee: number;
+    discount: number;
+    total_before_discount: number;
+    total_after_discount: number;
+    amount_paid: number;
+    tax?: number;
+    refund_amount?: number;
+  };
+  payment_history?: Array<{
+    id?: string;
+    tx_ref?: string;
+    status: string;
+    amount?: number;
+    type?: string;
+    method?: string;
+    created_at?: string;
+  }>;
+  order_items?: Array<{
+    id: number;
+    name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    description?: string;
+  }>;
 }
 
 export default function OrderDetailsPage() {
@@ -108,9 +163,11 @@ export default function OrderDetailsPage() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const orderService = new OrderService();
+  const refundService = new RefundService();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncingRefund, setSyncingRefund] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -120,7 +177,7 @@ export default function OrderDetailsPage() {
     try {
       setLoading(true);
       const orderId = parseInt(params.id as string);
-      const data = await orderService.getOrderById(orderId);
+      const data = await orderService.getOrderDetails(orderId);
       setOrder(data);
     } catch (error) {
       toast.current?.show({
@@ -132,6 +189,10 @@ export default function OrderDetailsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getInitials = (first: string | null, last: string | null) => {
+    return ((first?.charAt(0) || "") + (last?.charAt(0) || "")).toUpperCase() || "?";
   };
 
   const formatDate = (dateString: string | null) => {
@@ -152,8 +213,47 @@ export default function OrderDetailsPage() {
     }).format(amount);
   };
 
-  const getInitials = (first: string | null, last: string | null) => {
-    return ((first?.charAt(0) || "") + (last?.charAt(0) || "")).toUpperCase() || "?";
+  const handleSyncRefund = async () => {
+    if (!order?.refund_details || order.refund_details.refund_status === "refunded") {
+      return;
+    }
+
+    try {
+      setSyncingRefund(true);
+      const result = await refundService.syncRefunds();
+      
+      // Check if this specific order was updated
+      const orderUpdate = result.data.details.find(detail => 
+        detail.order_id === order.order_id
+      );
+
+      if (orderUpdate && orderUpdate.status === "updated") {
+        // Reload order details to show updated status
+        await loadOrder();
+        toast.current?.show({
+          severity: "success",
+          summary: "Refund Updated",
+          detail: `Order ${order.order_id} refund status updated to REFUNDED`,
+          life: 5000,
+        });
+      } else {
+        toast.current?.show({
+          severity: "info",
+          summary: "No Update Needed",
+          detail: "Refund status is already up to date",
+          life: 3000,
+        });
+      }
+    } catch (error: any) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Sync Failed",
+        detail: error.message || "Failed to sync refund status",
+        life: 3000,
+      });
+    } finally {
+      setSyncingRefund(false);
+    }
   };
 
   if (loading) {
@@ -192,12 +292,33 @@ export default function OrderDetailsPage() {
             <h1 className="text-[24px] font-bold text-[#111827]">Order Details</h1>
             <p className="text-[13px] text-[#525866] mt-1">{order.order_id}</p>
           </div>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB]"
-          >
-            Back
-          </button>
+          <div className="flex items-center gap-3">
+            {order.refund_details && order.refund_details.refund_status === "refund_pending" && (
+              <button
+                onClick={handleSyncRefund}
+                disabled={syncingRefund}
+                className="px-4 py-2 bg-[#D97706] text-white rounded-lg text-[13px] font-semibold hover:bg-[#B45309] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {syncingRefund ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <i className="pi pi-refresh" />
+                    Sync Refund
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#525866] hover:bg-[#F9FAFB]"
+            >
+              Back
+            </button>
+          </div>
         </div>
 
         {/* Order Status Overview */}
@@ -212,7 +333,12 @@ export default function OrderDetailsPage() {
             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
               Payment Status
             </label>
-            <StatusBadge status={order.payment_status} />
+            <div className="space-y-2">
+              <StatusBadge status={order.payment_status} />
+              {order.refund_details && (
+                <StatusBadge status={order.refund_details.refund_status} />
+              )}
+            </div>
           </div>
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
@@ -234,13 +360,164 @@ export default function OrderDetailsPage() {
           </div>
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">
             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-              Total Amount
+              Amount Paid
             </label>
             <p className="text-[16px] font-bold text-[#111827]">
-              {formatCurrency(order.price_fees)}
+              {formatCurrency(order.payment_details?.amount_paid || order.pricing_breakdown?.amount_paid || order.price_fees)}
             </p>
+            {order.payment_details?.discount_applied && order.payment_details.discount_applied > 0 && (
+              <p className="text-[11px] text-[#059669] mt-1">
+                -{formatCurrency(order.payment_details.discount_applied)} discount
+              </p>
+            )}
           </div>
         </div>
+
+        {/* Payment Details */}
+        {order.payment_details && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Payment Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">Payment Method</label>
+                <p className="text-[13px] text-[#111827] capitalize">{order.payment_details.payment_method?.replace(/_/g, ' ') || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">Transaction Ref</label>
+                <p className="text-[13px] font-mono text-[#111827]">{order.payment_details.tx_ref || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">Amount Paid</label>
+                <p className="text-[13px] font-semibold text-[#059669]">{new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(order.payment_details.amount_paid)}</p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">Paid At</label>
+                <p className="text-[13px] text-[#111827]">{order.payment_details.paid_at ? new Date(order.payment_details.paid_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Voucher Information */}
+        {order.payment_details?.voucher_used && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Voucher Applied</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Voucher Code
+                </label>
+                <span className="text-[11px] px-3 py-2 rounded-full bg-[#ECFDF3] text-[#059669] font-semibold">
+                  {order.payment_details.voucher_used.code}
+                </span>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Voucher Name
+                </label>
+                <p className="text-[13px] text-[#111827]">
+                  {order.payment_details.voucher_used.name}
+                </p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Original Amount
+                </label>
+                <p className="text-[13px] text-[#111827]">
+                  {formatCurrency(order.payment_details.voucher_used.original_amount)}
+                </p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Discount Applied
+                </label>
+                <p className="text-[13px] font-semibold text-[#059669]">
+                  -{formatCurrency(order.payment_details.voucher_used.discount_applied)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Refund Information */}
+        {order.refund_details && (
+          <div className="bg-white border border-[#FEF2F2] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4 flex items-center gap-2">
+              <i className="pi pi-exclamation-triangle text-[#DC2626]" />
+              Refund Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Refund Status
+                </label>
+                <StatusBadge status={order.refund_details.refund_status} />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Refunded Amount
+                </label>
+                <p className="text-[15px] font-semibold text-[#DC2626]">
+                  -{formatCurrency(order.refund_details.refunded_amount)}
+                </p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                  Refund Reason
+                </label>
+                <p className="text-[13px] text-[#111827]">
+                  {order.refund_details.refund_reason}
+                </p>
+              </div>
+              {order.refund_details.refunded_at && (
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                    Refunded At
+                  </label>
+                  <p className="text-[13px] text-[#111827]">
+                    {formatDate(order.refund_details.refunded_at)}
+                  </p>
+                </div>
+              )}
+              {order.refund_details.refund_tx_ref && (
+                <div>
+                  <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
+                    Refund TX Ref
+                  </label>
+                  <p className="text-[13px] font-mono text-[#111827]">
+                    {order.refund_details.refund_tx_ref}
+                  </p>
+                </div>
+              )}
+            </div>
+            {order.refund_details.voucher_restored && (
+              <div className="mt-4 p-4 bg-[#ECFDF3] rounded-lg border border-[#059669]/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <i className="pi pi-ticket text-[#059669]" />
+                  <span className="text-[13px] font-semibold text-[#059669]">Voucher Restored</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">Code</label>
+                    <span className="text-[11px] px-2 py-1 rounded-full bg-white text-[#059669] font-semibold border border-[#059669]/20">
+                      {order.refund_details.voucher_restored.voucher_code}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">Amount Restored</label>
+                    <p className="text-[13px] font-semibold text-[#059669]">
+                      {new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(order.refund_details.voucher_restored.amount)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">Message</label>
+                    <p className="text-[13px] text-[#111827]">{order.refund_details.voucher_restored.message}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Customer Information */}
         <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
@@ -351,41 +628,181 @@ export default function OrderDetailsPage() {
           </div>
         )}
 
-        {/* Price Breakdown */}
-        {order.price_breakdown && (
+        {/* Enhanced Price Breakdown */}
+        {(order.pricing_breakdown || order.price_breakdown) && (
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
             <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Price Breakdown</h2>
+            {order.pricing_breakdown ? (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Items Subtotal</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.pricing_breakdown.items_subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Delivery Fee</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.pricing_breakdown.delivery_fee)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Service Fee</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.pricing_breakdown.service_fee)}
+                  </span>
+                </div>
+                {order.pricing_breakdown.tax !== undefined && order.pricing_breakdown.tax > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#525866]">Tax</span>
+                    <span className="text-[13px] font-semibold text-[#111827]">
+                      {formatCurrency(order.pricing_breakdown.tax)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Total Before Discount</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.pricing_breakdown.total_before_discount)}
+                  </span>
+                </div>
+                {order.pricing_breakdown.discount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[13px] text-[#525866]">Discount Applied</span>
+                    <span className="text-[13px] font-semibold text-[#059669]">
+                      -{formatCurrency(order.pricing_breakdown.discount)}
+                    </span>
+                  </div>
+                )}
+                <div className="border-t border-[#E1E4EA] pt-3 flex justify-between items-center">
+                  <span className="text-[13px] font-semibold text-[#111827]">Total After Discount</span>
+                  <span className="text-[15px] font-bold text-[#111827]">
+                    {formatCurrency(order.pricing_breakdown.total_after_discount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center bg-[#F9FAFB] p-3 rounded-lg">
+                  <span className="text-[13px] font-semibold text-[#111827]">Amount Paid</span>
+                  <span className="text-[16px] font-bold text-[#059669]">
+                    {formatCurrency(order.pricing_breakdown.amount_paid)}
+                  </span>
+                </div>
+                {order.pricing_breakdown.refund_amount !== undefined && order.pricing_breakdown.refund_amount > 0 && (
+                  <div className="flex justify-between items-center bg-[#FEF2F2] p-3 rounded-lg">
+                    <span className="text-[13px] font-semibold text-[#DC2626]">Refund Amount</span>
+                    <span className="text-[16px] font-bold text-[#DC2626]">
+                      -{formatCurrency(order.pricing_breakdown.refund_amount)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : order.price_breakdown && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Items Subtotal</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.price_breakdown.gross)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Commission ({(order.price_breakdown.commission_rate * 100).toFixed(0)}%)</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.price_breakdown.commission)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Service Fee</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.price_breakdown.service_fee)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#525866]">Tax</span>
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {formatCurrency(order.price_breakdown.tax)}
+                  </span>
+                </div>
+                <div className="border-t border-[#E1E4EA] pt-3 flex justify-between items-center">
+                  <span className="text-[13px] font-semibold text-[#111827]">Total</span>
+                  <span className="text-[16px] font-bold text-[#111827]">
+                    {formatCurrency(order.price_breakdown.total)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Order Items */}
+        {order.order_items && order.order_items.length > 0 && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Order Items</h2>
+            <div className="space-y-4">
+              {order.order_items.map((item, index) => (
+                <div key={item.id || index} className="flex justify-between items-start p-4 bg-[#F9FAFB] rounded-lg">
+                  <div className="flex-1">
+                    <h3 className="text-[14px] font-semibold text-[#111827]">{item.name}</h3>
+                    {item.description && (
+                      <p className="text-[12px] text-[#525866] mt-1">{item.description}</p>
+                    )}
+                    <p className="text-[12px] text-[#525866] mt-1">
+                      {formatCurrency(item.unit_price)} × {item.quantity}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[14px] font-semibold text-[#111827]">
+                      {formatCurrency(item.total_price)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Payment History */}
+        {order.payment_history && order.payment_history.length > 0 && (
+          <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Payment History</h2>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Items Subtotal</span>
-                <span className="text-[13px] font-semibold text-[#111827]">
-                  {formatCurrency(order.price_breakdown.gross)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Commission ({(order.price_breakdown.commission_rate * 100).toFixed(0)}%)</span>
-                <span className="text-[13px] font-semibold text-[#111827]">
-                  {formatCurrency(order.price_breakdown.commission)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Service Fee</span>
-                <span className="text-[13px] font-semibold text-[#111827]">
-                  {formatCurrency(order.price_breakdown.service_fee)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Tax</span>
-                <span className="text-[13px] font-semibold text-[#111827]">
-                  {formatCurrency(order.price_breakdown.tax)}
-                </span>
-              </div>
-              <div className="border-t border-[#E1E4EA] pt-3 flex justify-between items-center">
-                <span className="text-[13px] font-semibold text-[#111827]">Total</span>
-                <span className="text-[16px] font-bold text-[#111827]">
-                  {formatCurrency(order.price_breakdown.total)}
-                </span>
-              </div>
+              {order.payment_history.map((payment, index) => (
+                <div key={payment.id || index} className="flex justify-between items-center p-4 bg-[#F9FAFB] rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${
+                      payment.status === "REFUNDED" ? "bg-[#DC2626]" : "bg-[#059669]"
+                    }`} />
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#111827] capitalize">
+                        {payment.type || (payment.status === "REFUNDED" ? "refund" : "payment")}
+                      </p>
+                      {payment.created_at && (
+                        <p className="text-[11px] text-[#525866]">
+                          {formatDate(payment.created_at)}
+                        </p>
+                      )}
+                      {payment.tx_ref && (
+                        <p className="text-[11px] text-[#525866] font-mono">
+                          {payment.tx_ref}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {payment.amount !== undefined && (
+                      <p className={`text-[14px] font-semibold ${
+                        payment.status === "REFUNDED" ? "text-[#DC2626]" : "text-[#059669]"
+                      }`}>
+                        {payment.status === "REFUNDED" ? "-" : "+"}{formatCurrency(payment.amount)}
+                      </p>
+                    )}
+                    <StatusBadge status={payment.status} />
+                    {payment.method && (
+                      <p className="text-[11px] text-[#525866] mt-1 capitalize">
+                        {payment.method}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

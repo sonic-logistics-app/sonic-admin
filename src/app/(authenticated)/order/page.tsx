@@ -56,6 +56,41 @@ interface Order {
     name: string;
     phone: string | null;
   };
+  // New voucher and refund aware fields
+  payment_details?: {
+    tx_ref: string;
+    amount_paid: number;
+    discount_applied: number;
+    payment_method: string;
+    paid_at: string;
+    voucher_used?: {
+      code: string;
+      name: string;
+      original_amount: number;
+      discount_applied: number;
+    };
+  };
+  refund_details?: {
+    refunded_amount: number;
+    refund_reason: string;
+    refunded_at: string;
+    refund_status: string;
+    voucher_restored?: {
+      amount: number;
+      voucher_code: string;
+      message: string;
+    };
+  };
+  pricing_breakdown?: {
+    items_subtotal: number;
+    delivery_fee: number;
+    service_fee: number;
+    discount: number;
+    total_before_discount: number;
+    total_after_discount: number;
+    amount_paid: number;
+    refund_amount?: number;
+  };
 }
 
 export default function OrderListPage() {
@@ -72,26 +107,29 @@ export default function OrderListPage() {
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
   const [dispatchStatusFilter, setDispatchStatusFilter] = useState<string>("");
+  const [refundStatusFilter, setRefundStatusFilter] = useState<string>("");
+  const [voucherUsedFilter, setVoucherUsedFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [minPriceFilter, setMinPriceFilter] = useState<string>("");
   const [maxPriceFilter, setMaxPriceFilter] = useState<string>("");
   const debouncedMinPrice = useDebounce(minPriceFilter, 600);
   const debouncedMaxPrice = useDebounce(maxPriceFilter, 600);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
   useEffect(() => {
-    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice);
-  }, [pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice);
+  }, [pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
 
   const loadOrders = async (
     page: number, search: string, status: string, orderType: string,
-    paymentStatus: string, dispatchStatus: string, dateFrom: string,
-    dateTo: string, minPrice: string, maxPrice: string
+    paymentStatus: string, dispatchStatus: string, refundStatus: string,
+    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string
   ) => {
     try {
       setLoading(true);
@@ -102,6 +140,8 @@ export default function OrderListPage() {
         order_type: orderType || undefined,
         payment_status: paymentStatus || undefined,
         dispatch_status: dispatchStatus || undefined,
+        refund_status: refundStatus || undefined,
+        voucher_used: voucherUsed || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
         min_price: minPrice || undefined,
@@ -173,20 +213,7 @@ export default function OrderListPage() {
         </div>
       ),
     },
-    {
-      field: "receiver_address",
-      header: "Delivery Address",
-      sortable: false,
-      body: (rowData: Order) => {
-        const addr = rowData.receiver_address;
-        const addressText = typeof addr === 'string' ? addr : (addr?.dropoff_address || "N/A");
-        return (
-          <span className="text-[13px] text-[#525866] truncate max-w-[200px]">
-            {addressText}
-          </span>
-        );
-      },
-    },
+
     {
       field: "order_status",
       header: "Status",
@@ -210,7 +237,30 @@ export default function OrderListPage() {
       header: "Payment",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge status={rowData.payment_status} />
+        <StatusBadge 
+          status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status} 
+        />
+      ),
+    },
+    {
+      field: "voucher_info",
+      header: "Voucher",
+      sortable: false,
+      body: (rowData: Order) => (
+        <div className="flex flex-col">
+          {rowData.payment_details?.voucher_used ? (
+            <>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-[#ECFDF3] text-[#059669] font-medium">
+                {rowData.payment_details.voucher_used.code}
+              </span>
+              <span className="text-[10px] text-[#525866] mt-1">
+                -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)}
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] text-[#9CA3AF]">—</span>
+          )}
+        </div>
       ),
     },
     {
@@ -218,9 +268,21 @@ export default function OrderListPage() {
       header: "Amount",
       sortable: true,
       body: (rowData: Order) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          {formatCurrency(rowData.price_fees)}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[13px] font-semibold text-[#111827]">
+            {formatCurrency(rowData.pricing_breakdown?.amount_paid || rowData.price_fees)}
+          </span>
+          {rowData.payment_details?.voucher_used && (
+            <span className="text-[11px] text-[#059669]">
+              -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)} voucher
+            </span>
+          )}
+          {rowData.refund_details && (
+            <span className="text-[11px] text-[#DC2626]">
+              -{formatCurrency(rowData.refund_details.refunded_amount)} refunded
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -255,28 +317,13 @@ export default function OrderListPage() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Order Management</h1>
-          <div className="flex items-center gap-3">
-            {/* Date range */}
-            <div className="flex items-center rounded-lg border border-[#E1E4EA] overflow-hidden bg-white">
-              <span className="px-3 text-[12px] font-medium text-[#525866] bg-[#F9FAFB] border-r border-[#E1E4EA] flex items-center py-2">Date</span>
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none bg-white" />
-              <span className="px-2 text-[12px] text-[#9CA3AF]">→</span>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none border-l border-[#E1E4EA] bg-white" />
-            </div>
-            {/* Price range */}
-            <div className="flex items-center rounded-lg border border-[#E1E4EA] overflow-hidden bg-white">
-              <span className="px-3 text-[12px] font-medium text-[#525866] bg-[#F9FAFB] border-r border-[#E1E4EA] flex items-center py-2">₦</span>
-              <input type="number" value={minPriceFilter} onChange={(e) => setMinPriceFilter(e.target.value)}
-                placeholder="Min"
-                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none w-[80px] bg-white" />
-              <span className="px-2 text-[12px] text-[#9CA3AF]">→</span>
-              <input type="number" value={maxPriceFilter} onChange={(e) => setMaxPriceFilter(e.target.value)}
-                placeholder="Max"
-                className="px-3 py-2 text-[13px] text-[#525866] focus:outline-none border-l border-[#E1E4EA] w-[80px] bg-white" />
-            </div>
-          </div>
+          <button
+            onClick={() => router.push("/order/refund")}
+            className="px-4 py-2 border border-[#E1E4EA] text-[#525866] rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <i className="pi pi-undo text-sm" />
+            Manage Refunds
+          </button>
         </div>
 
         {/* Search Bar and Filters */}
@@ -316,14 +363,24 @@ export default function OrderListPage() {
             <option value="UNPAID">Unpaid</option>
           </select>
 
-          <select value={dispatchStatusFilter} onChange={(e) => setDispatchStatusFilter(e.target.value)}
+          <select value={refundStatusFilter} onChange={(e) => setRefundStatusFilter(e.target.value)}
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
-            <option value="">All Dispatch</option>
-            <option value="IDLE">Idle</option>
-            <option value="SEARCHING">Searching</option>
-            <option value="ASSIGNED">Assigned</option>
-            <option value="FAILED">Failed</option>
+            <option value="">All Refunds</option>
+            <option value="refund_pending">Refund Pending</option>
+            <option value="refunded">Refunded</option>
+            <option value="NO_REFUND">No Refund</option>
           </select>
+
+          <button
+            onClick={() => setShowFiltersModal(true)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+          >
+            <i className="pi pi-filter text-sm" />
+            More Filters
+            {(dateFrom || dateTo || minPriceFilter || maxPriceFilter || dispatchStatusFilter || voucherUsedFilter) && (
+              <div className="w-2 h-2 rounded-full bg-[#2563EB]" />
+            )}
+          </button>
         </div>
 
         {/* Data Table */}
@@ -341,6 +398,180 @@ export default function OrderListPage() {
           />
         )}
       </div>
+
+      {/* Filters Modal */}
+      {showFiltersModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setShowFiltersModal(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl border border-[#E1E4EA] w-full max-w-md">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-[#E1E4EA]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#DBEAFE] flex items-center justify-center">
+                  <i className="pi pi-filter text-[#2563EB]" />
+                </div>
+                <div>
+                  <h2 className="text-[16px] font-semibold text-[#111827]">
+                    Advanced Filters
+                  </h2>
+                  <p className="text-[12px] text-[#525866]">
+                    Filter by date range and price
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFiltersModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+              >
+                <i className="pi pi-times text-[#525866]" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Date Range */}
+              <div>
+                <label className="block text-[13px] font-semibold text-[#111827] mb-3">
+                  Date Range
+                </label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-[13px] font-semibold text-[#111827] mb-3">
+                  Price Range (₦)
+                </label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      Minimum Price
+                    </label>
+                    <input
+                      type="number"
+                      value={minPriceFilter}
+                      onChange={(e) => setMinPriceFilter(e.target.value)}
+                      placeholder="Enter minimum price"
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      Maximum Price
+                    </label>
+                    <input
+                      type="number"
+                      value={maxPriceFilter}
+                      onChange={(e) => setMaxPriceFilter(e.target.value)}
+                      placeholder="Enter maximum price"
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Filters */}
+              <div>
+                <label className="block text-[13px] font-semibold text-[#111827] mb-3">
+                  Additional Filters
+                </label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      Dispatch Status
+                    </label>
+                    <select 
+                      value={dispatchStatusFilter} 
+                      onChange={(e) => setDispatchStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    >
+                      <option value="">All Dispatch</option>
+                      <option value="IDLE">Idle</option>
+                      <option value="SEARCHING">Searching</option>
+                      <option value="ASSIGNED">Assigned</option>
+                      <option value="FAILED">Failed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                      Voucher Usage
+                    </label>
+                    <select 
+                      value={voucherUsedFilter} 
+                      onChange={(e) => setVoucherUsedFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
+                    >
+                      <option value="">All Vouchers</option>
+                      <option value="true">Voucher Used</option>
+                      <option value="false">No Voucher</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-between gap-3 p-6 border-t border-[#E1E4EA]">
+              <button
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                  setMinPriceFilter("");
+                  setMaxPriceFilter("");
+                  setDispatchStatusFilter("");
+                  setVoucherUsedFilter("");
+                }}
+                className="px-4 py-2 text-[13px] font-semibold text-[#525866] hover:text-[#111827] transition-colors"
+              >
+                Clear All
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFiltersModal(false)}
+                  className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-semibold text-[#111827] hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setShowFiltersModal(false)}
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

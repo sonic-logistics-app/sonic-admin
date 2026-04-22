@@ -9,6 +9,7 @@ export const menuData: MenuModel[] = [
       { label: "Driver", icon: "pi pi-fw pi-car", to: "/driver" },
       { label: "Vendor", icon: "pi pi-fw pi-shop", to: "/vendor" },
       { label: "Order", icon: "pi pi-fw pi-truck", to: "/order" },
+      { label: "Transaction", icon: "pi pi-fw pi-credit-card", to: "/transaction" },
       { label: "Voucher", icon: "pi pi-fw pi-ticket", to: "/voucher" },
       { label: "FAQ", icon: "pi pi-fw pi-question-circle", to: "/faq" },
     ],

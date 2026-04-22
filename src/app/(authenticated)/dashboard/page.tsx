@@ -9,6 +9,7 @@ import RecentOrders from "@/components/dashboard/RecentOrders";
 import SalesChart from "@/components/dashboard/SalesChart";
 import OrderStatusSidebar from "@/components/dashboard/OrderStatusSidebar";
 import SystemHealth from "@/components/dashboard/SystemHealth";
+import RefundSummaryWidget from "@/components/dashboard/RefundSummaryWidget";
 
 interface OrderStatus {
   status: string;
@@ -288,6 +289,7 @@ export default function DashboardPage() {
             loading={loading}
             error={error}
           />
+          <RefundSummaryWidget />
           <SystemHealth
             system={{
               activeDrivers: dashboardStats.activeDrivers,
