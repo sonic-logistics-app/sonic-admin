@@ -3,6 +3,7 @@ import "./globals.css";
 import "primeicons/primeicons.css";
 import { PrimeReactProvider } from "primereact/api";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import TokenValidator from "@/components/auth/TokenValidator";
 
 export const metadata: Metadata = {
   title: "Sonic Admin",
@@ -19,7 +20,9 @@ export default function RootLayout({
       <body style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
         <ErrorBoundary>
           <PrimeReactProvider>
-            {children}
+            <TokenValidator>
+              {children}
+            </TokenValidator>
           </PrimeReactProvider>
         </ErrorBoundary>
       </body>

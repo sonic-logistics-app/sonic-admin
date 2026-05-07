@@ -183,11 +183,22 @@ export default class AuthService {
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
 
+    if (!response.ok) {
+      // Refresh token is invalid or expired, clear everything and redirect to login
+      this.clearLocalStorage();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Refresh token expired');
+    }
+
     const data = await response.json();
     
     // Backend returns: { message, accessToken, refreshToken }
     if (data.accessToken) {
       localStorage.setItem('admin_token', data.accessToken);
+      // Update cookie as well
+      document.cookie = `admin_token=${data.accessToken}; path=/; SameSite=Lax`;
       
       if (data.refreshToken) {
         localStorage.setItem('admin_refresh_token', data.refreshToken);
