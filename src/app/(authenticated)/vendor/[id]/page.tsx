@@ -55,6 +55,7 @@ interface VendorDetails {
   bank_code: string | null;
   location_photos: string[] | null;
   onboarding_completed: boolean;
+  max_orders_per_hour: number;
   orders_count?: number;
   last_order_date?: string;
 }
@@ -110,45 +111,63 @@ export default function VendorDetailsPage() {
   const handleApprove = async () => {
     if (!vendor) return;
     
-    try {
-      await vendorService.approveVendor(vendor.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Vendor approved successfully",
-        life: 3000,
-      });
-      loadVendorDetails();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Approval Failed",
-        detail: error.message || "Failed to approve vendor",
-        life: 3000,
-      });
-    }
+    setConfirmDialog({
+      visible: true,
+      title: "Approve Vendor",
+      message: `Are you sure you want to approve ${vendor.name}? This will activate the vendor and allow them to start receiving orders.`,
+      variant: "success",
+      onConfirm: async () => {
+        try {
+          await vendorService.approveVendor(vendor.id);
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Vendor approved successfully",
+            life: 3000,
+          });
+          loadVendorDetails();
+        } catch (error: any) {
+          toast.current?.show({
+            severity: "error",
+            summary: "Approval Failed",
+            detail: error.message || "Failed to approve vendor",
+            life: 3000,
+          });
+        }
+        setConfirmDialog({ ...confirmDialog, visible: false });
+      },
+    });
   };
 
   const handleReject = async () => {
     if (!vendor) return;
     
-    try {
-      await vendorService.rejectVendor(vendor.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Vendor rejected successfully",
-        life: 3000,
-      });
-      loadVendorDetails();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Rejection Failed",
-        detail: error.message || "Failed to reject vendor",
-        life: 3000,
-      });
-    }
+    setConfirmDialog({
+      visible: true,
+      title: "Reject Vendor",
+      message: `Are you sure you want to reject ${vendor.name}? This will deactivate the vendor and prevent them from receiving orders.`,
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await vendorService.rejectVendor(vendor.id);
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Vendor rejected successfully",
+            life: 3000,
+          });
+          loadVendorDetails();
+        } catch (error: any) {
+          toast.current?.show({
+            severity: "error",
+            summary: "Rejection Failed",
+            detail: error.message || "Failed to reject vendor",
+            life: 3000,
+          });
+        }
+        setConfirmDialog({ ...confirmDialog, visible: false });
+      },
+    });
   };
 
   const handleVerifyVendor = async (status: 'VERIFIED' | 'REJECTED') => {
@@ -188,45 +207,63 @@ export default function VendorDetailsPage() {
   const handleSuspend = async () => {
     if (!vendor) return;
     
-    try {
-      await vendorService.suspendVendor(vendor.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Vendor suspended successfully",
-        life: 3000,
-      });
-      loadVendorDetails();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Suspension Failed",
-        detail: error.message || "Failed to suspend vendor",
-        life: 3000,
-      });
-    }
+    setConfirmDialog({
+      visible: true,
+      title: "Suspend Vendor",
+      message: `Are you sure you want to suspend ${vendor.name}? This will temporarily disable their operations. They can be reactivated later.`,
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await vendorService.suspendVendor(vendor.id);
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Vendor suspended successfully",
+            life: 3000,
+          });
+          loadVendorDetails();
+        } catch (error: any) {
+          toast.current?.show({
+            severity: "error",
+            summary: "Suspension Failed",
+            detail: error.message || "Failed to suspend vendor",
+            life: 3000,
+          });
+        }
+        setConfirmDialog({ ...confirmDialog, visible: false });
+      },
+    });
   };
 
   const handleActivate = async () => {
     if (!vendor) return;
     
-    try {
-      await vendorService.activateVendor(vendor.id);
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Vendor activated successfully",
-        life: 3000,
-      });
-      loadVendorDetails();
-    } catch (error: any) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Activation Failed",
-        detail: error.message || "Failed to activate vendor",
-        life: 3000,
-      });
-    }
+    setConfirmDialog({
+      visible: true,
+      title: "Activate Vendor",
+      message: `Are you sure you want to activate ${vendor.name}? This will set the vendor to active status and allow them to receive orders.`,
+      variant: "success",
+      onConfirm: async () => {
+        try {
+          await vendorService.activateVendor(vendor.id);
+          toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail: "Vendor activated successfully",
+            life: 3000,
+          });
+          loadVendorDetails();
+        } catch (error: any) {
+          toast.current?.show({
+            severity: "error",
+            summary: "Activation Failed",
+            detail: error.message || "Failed to activate vendor",
+            life: 3000,
+          });
+        }
+        setConfirmDialog({ ...confirmDialog, visible: false });
+      },
+    });
   };
 
   const confirmDelete = () => {
@@ -283,25 +320,39 @@ export default function VendorDetailsPage() {
       .slice(0, 2);
   };
 
+  // Check if all 4 tabs are complete
+  const isBusinessProfileComplete = vendor?.name && vendor?.business_type && vendor?.phone && vendor?.address && vendor?.latitude && vendor?.longitude && vendor?.logo_url;
+  const isKycComplete = (vendor?.bvn || vendor?.nin) && (vendor?.owner_first_name || vendor?.owner_last_name) && vendor?.kyc_status === 'completed';
+  const isLocationPhotosComplete = vendor?.location_photos && vendor.location_photos.length > 0;
+  const isBankingComplete = vendor?.account_number && vendor?.bank_name;
+  
+  const allTabsComplete = isBusinessProfileComplete && isKycComplete && isLocationPhotosComplete && isBankingComplete;
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "pi-home" },
     { 
+      id: "business-profile", 
+      label: "Business Profile", 
+      icon: "pi-building",
+      status: isBusinessProfileComplete ? "completed" : "pending"
+    },
+    { 
       id: "kyc", 
-      label: "KYC Documents", 
-      icon: "pi-file",
+      label: "Identity & KYC", 
+      icon: "pi-shield",
       status: vendor?.kyc_status 
     },
     { 
-      id: "business", 
-      label: "Business Info", 
-      icon: "pi-briefcase",
-      status: vendor?.status 
+      id: "location-photos", 
+      label: "Location Photos", 
+      icon: "pi-camera",
+      status: isLocationPhotosComplete ? "completed" : "pending"
     },
     { 
       id: "banking", 
       label: "Banking Details", 
       icon: "pi-credit-card",
-      status: vendor?.status 
+      status: isBankingComplete ? "completed" : "pending"
     },
     { id: "activity", label: "Activity", icon: "pi-clock" },
   ];
@@ -578,44 +629,69 @@ export default function VendorDetailsPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Accepting Orders
                       </label>
-                      <StatusBadge status={vendor.is_accepting_orders ? "VERIFIED" : "PENDING"} />
+                      <StatusBadge status={(vendor.status === "active" && vendor.is_accepting_orders) ? "VERIFIED" : "PENDING"} />
+                      <p className="text-[10px] text-[#525866] mt-1">
+                        {vendor.status !== "active" ? "Requires active status" : vendor.is_accepting_orders ? "Enabled" : "Disabled"}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Store Open
                       </label>
-                      <StatusBadge status={vendor.is_open ? "VERIFIED" : "PENDING"} />
+                      <StatusBadge status={(vendor.status === "active" && vendor.is_open) ? "VERIFIED" : "PENDING"} />
+                      <p className="text-[10px] text-[#525866] mt-1">
+                        {vendor.status !== "active" ? "Requires active status" : vendor.is_open ? "Currently open" : "Currently closed"}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Enhanced Status Management Actions */}
-                <div className="flex justify-center gap-4 pt-6 border-t border-[#E1E4EA]">
-                  {vendor.status === "pending_approval" && (
-                    <>
-                      <Button
-                        variant="success"
-                        onClick={handleApprove}
-                      >
-                        <i className="pi pi-check mr-2" />
-                        Approve Vendor
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={handleReject}
-                      >
-                        <i className="pi pi-times mr-2" />
-                        Reject Vendor
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleSuspend}
-                      >
-                        <i className="pi pi-pause mr-2" />
-                        Suspend
-                      </Button>
-                    </>
+                <div className="flex flex-col items-center gap-4 pt-6 border-t border-[#E1E4EA]">
+                  {vendor.status === "pending_approval" && !allTabsComplete && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center max-w-2xl">
+                      <p className="text-[13px] text-orange-800 flex items-center justify-center gap-2">
+                        <i className="pi pi-exclamation-triangle" />
+                        <span>
+                          All verification sections must be complete before approving vendor. 
+                          {!isBusinessProfileComplete && " Missing: Business Profile."}
+                          {!isKycComplete && vendor?.kyc_status !== 'completed' && " KYC must be verified (currently: " + vendor?.kyc_status.toUpperCase() + ")."}
+                          {!isKycComplete && vendor?.kyc_status === 'completed' && " Missing: Identity & KYC data."}
+                          {!isLocationPhotosComplete && " Missing: Location Photos."}
+                          {!isBankingComplete && " Missing: Banking Details."}
+                        </span>
+                      </p>
+                    </div>
                   )}
+                  
+                  <div className="flex gap-4">
+                    {vendor.status === "pending_approval" && (
+                      <>
+                        <Button
+                          variant="success"
+                          onClick={handleApprove}
+                          disabled={!allTabsComplete}
+                          className={!allTabsComplete ? "opacity-50 cursor-not-allowed" : ""}
+                        >
+                          <i className="pi pi-check mr-2" />
+                          Approve Vendor
+                        </Button>
+                        <Button
+                          variant="danger"
+                          onClick={handleReject}
+                        >
+                          <i className="pi pi-times mr-2" />
+                          Reject Vendor
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleSuspend}
+                        >
+                          <i className="pi pi-pause mr-2" />
+                          Suspend
+                        </Button>
+                      </>
+                    )}
 
                   {vendor.status === "active" && (
                     <>
@@ -671,6 +747,7 @@ export default function VendorDetailsPage() {
                       Delete Vendor
                     </Button>
                   </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -680,250 +757,139 @@ export default function VendorDetailsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-[18px] font-semibold text-[#111827]">KYC Documents</h3>
+                      <h3 className="text-[18px] font-semibold text-[#111827]">Identity & KYC Verification</h3>
                       <p className="text-[13px] text-[#525866]">
                         KYC Status: {vendor.kyc_status.toUpperCase()}
                       </p>
                     </div>
-                    <StatusBadge status={vendor.kyc_status} />
-                  </div>
-
-                  {/* Verification Status Section */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200 rounded-lg p-5 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-[14px] font-semibold text-[#111827] flex items-center gap-2">
-                        <i className="pi pi-shield text-blue-600" />
-                        Verification Status
-                      </h4>
-                      
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={vendor.kyc_status} />
                       {/* Verify/Reject Buttons */}
-                      <div className="flex items-center gap-2">
-                        {vendor.kyc_status !== 'completed' && (
-                          <Button
-                            onClick={() => handleVerifyVendor('VERIFIED')}
-                            className="bg-green-600 hover:bg-green-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
-                          >
-                            <i className="pi pi-check-circle" />
-                            Verify Vendor
-                          </Button>
-                        )}
-                        {vendor.kyc_status !== 'failed' && (
-                          <Button
-                            onClick={() => handleVerifyVendor('REJECTED')}
-                            className="bg-red-600 hover:bg-red-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
-                          >
-                            <i className="pi pi-times-circle" />
-                            Reject
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Business Profile Completeness */}
-                      <div className="bg-white rounded-lg p-4 border border-blue-100">
-                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                          Business Profile
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {(vendor.name && vendor.business_type && vendor.phone && vendor.address && vendor.latitude && vendor.longitude && vendor.logo_url) ? (
-                            <>
-                              <i className="pi pi-check-circle text-green-600" />
-                              <span className="text-[13px] font-semibold text-green-600">Complete</span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="pi pi-exclamation-triangle text-orange-600" />
-                              <span className="text-[13px] font-semibold text-orange-600">Incomplete</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="mt-2 space-y-0.5 text-[10px] text-[#525866]">
-                          <div className="flex items-center gap-1">
-                            <i className={`pi ${vendor.name ? 'pi-check text-green-600' : 'pi-times text-red-600'}`} />
-                            <span>Name</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className={`pi ${vendor.business_type ? 'pi-check text-green-600' : 'pi-times text-red-600'}`} />
-                            <span>Business Type</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className={`pi ${vendor.phone ? 'pi-check text-green-600' : 'pi-times text-red-600'}`} />
-                            <span>Phone</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className={`pi ${(vendor.address && vendor.latitude && vendor.longitude) ? 'pi-check text-green-600' : 'pi-times text-red-600'}`} />
-                            <span>Address + GPS</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className={`pi ${vendor.logo_url ? 'pi-check text-green-600' : 'pi-times text-red-600'}`} />
-                            <span>Logo</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Business Type */}
-                      <div className="bg-white rounded-lg p-4 border border-blue-100">
-                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                          Business Type
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {vendor.is_registered_business ? (
-                            <>
-                              <i className="pi pi-building text-orange-500" />
-                              <span className="text-[13px] font-semibold text-[#111827]">Registered Business</span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="pi pi-user text-gray-500" />
-                              <span className="text-[13px] font-semibold text-[#111827]">Individual</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Identity Verification (BVN/NIN) */}
-                      <div className="bg-white rounded-lg p-4 border border-blue-100">
-                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                          Identity Verification
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {(vendor.bvn || vendor.nin) ? (
-                            <>
-                              <i className="pi pi-check-circle text-green-600" />
-                              <span className="text-[13px] font-semibold text-green-600">Verified</span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="pi pi-times-circle text-red-600" />
-                              <span className="text-[13px] font-semibold text-red-600">Not Verified</span>
-                            </>
-                          )}
-                        </div>
-                        {vendor.verification_type && (
-                          <p className="text-[11px] text-[#525866] mt-1">
-                            {vendor.verification_type.toUpperCase()}: {' '}
-                            <span className="font-mono">
-                              {vendor.verification_type === 'bvn' 
-                                ? vendor.bvn?.substring(0, 3) + '********'
-                                : vendor.nin?.substring(0, 3) + '********'
-                              }
-                            </span>
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Owner Information */}
-                      {(vendor.owner_first_name || vendor.owner_last_name) && (
-                        <div className="bg-white rounded-lg p-4 border border-blue-100">
-                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                            Owner Information
-                          </label>
-                          <div className="space-y-1">
-                            <p className="text-[13px] font-semibold text-[#111827]">
-                              {vendor.owner_first_name} {vendor.owner_middle_name} {vendor.owner_last_name}
-                            </p>
-                            {vendor.owner_date_of_birth && (
-                              <p className="text-[11px] text-[#525866]">
-                                DOB: {vendor.owner_date_of_birth}
-                              </p>
-                            )}
-                            {vendor.owner_gender && (
-                              <p className="text-[11px] text-[#525866]">
-                                Gender: {vendor.owner_gender}
-                              </p>
-                            )}
-                            {vendor.owner_phone_number && (
-                              <p className="text-[11px] text-[#525866]">
-                                Phone: {vendor.owner_phone_number}
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                      {vendor.kyc_status !== 'completed' && (
+                        <Button
+                          onClick={() => handleVerifyVendor('VERIFIED')}
+                          className="bg-green-600 hover:bg-green-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                          <i className="pi pi-check-circle" />
+                          Verify Vendor
+                        </Button>
                       )}
-
-                      {/* CAC Verification (only for registered businesses) */}
-                      {vendor.is_registered_business && (
-                        <div className="bg-white rounded-lg p-4 border border-blue-100">
-                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                            CAC Verification
-                          </label>
-                          <div className="flex items-center gap-2">
-                            {vendor.cac_number ? (
-                              <>
-                                <i className="pi pi-check-circle text-green-600" />
-                                <span className="text-[13px] font-semibold text-green-600">Verified</span>
-                              </>
-                            ) : (
-                              <>
-                                <i className="pi pi-times-circle text-red-600" />
-                                <span className="text-[13px] font-semibold text-red-600">Not Verified</span>
-                              </>
-                            )}
-                          </div>
-                          {vendor.cac_number && (
-                            <p className="text-[11px] text-[#525866] mt-1 font-mono">
-                              {vendor.cac_number}
-                            </p>
-                          )}
-                        </div>
+                      {vendor.kyc_status !== 'failed' && (
+                        <Button
+                          onClick={() => handleVerifyVendor('REJECTED')}
+                          className="bg-red-600 hover:bg-red-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                          <i className="pi pi-times-circle" />
+                          Reject
+                        </Button>
                       )}
-
-                      {/* Bank Account Verification */}
-                      <div className="bg-white rounded-lg p-4 border border-blue-100">
-                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                          Bank Account
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {vendor.account_number && vendor.bank_name ? (
-                            <>
-                              <i className="pi pi-check-circle text-green-600" />
-                              <span className="text-[13px] font-semibold text-green-600">Verified</span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="pi pi-times-circle text-red-600" />
-                              <span className="text-[13px] font-semibold text-red-600">Not Verified</span>
-                            </>
-                          )}
-                        </div>
-                        {vendor.account_number && (
-                          <div className="mt-1 space-y-0.5">
-                            {vendor.account_name && (
-                              <p className="text-[11px] text-[#111827] font-semibold">
-                                {vendor.account_name}
-                              </p>
-                            )}
-                            <p className="text-[11px] text-[#525866]">
-                              {vendor.bank_name} • {vendor.account_number}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Location Photos */}
-                      <div className="bg-white rounded-lg p-4 border border-blue-100">
-                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                          Location Photos
-                        </label>
-                        <div className="flex items-center gap-2">
-                          {vendor.location_photos && vendor.location_photos.length > 0 ? (
-                            <>
-                              <i className="pi pi-check-circle text-green-600" />
-                              <span className="text-[13px] font-semibold text-green-600">
-                                {vendor.location_photos.length} Photo{vendor.location_photos.length > 1 ? 's' : ''}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <i className="pi pi-times-circle text-red-600" />
-                              <span className="text-[13px] font-semibold text-red-600">No Photos</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
+
+                  {/* Identity Verification Details */}
+                  <div className="border border-[#E1E4EA] rounded-lg p-6 mb-6">
+                    <h4 className="text-[15px] font-semibold text-[#111827] mb-4">Identity Verification</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                          Verification Method
+                        </label>
+                        <p className="text-[13px] text-[#111827] uppercase font-semibold">
+                          {vendor.verification_type || "Not Verified"}
+                        </p>
+                      </div>
+                      {vendor.verification_type === "bvn" && vendor.bvn && (
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            Bank Verification Number (BVN)
+                          </label>
+                          <p className="text-[13px] text-[#111827] font-mono">
+                            {vendor.bvn}
+                          </p>
+                        </div>
+                      )}
+                      {vendor.verification_type === "nin" && vendor.nin && (
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            National Identification Number (NIN)
+                          </label>
+                          <p className="text-[13px] text-[#111827] font-mono">
+                            {vendor.nin}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Owner Information */}
+                  {(vendor.owner_first_name || vendor.owner_last_name) && (
+                    <div className="border border-[#E1E4EA] rounded-lg p-6 mb-6">
+                      <h4 className="text-[15px] font-semibold text-[#111827] mb-4">Owner Information</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            Full Name
+                          </label>
+                          <p className="text-[13px] text-[#111827]">
+                            {[vendor.owner_first_name, vendor.owner_middle_name, vendor.owner_last_name].filter(Boolean).join(" ")}
+                          </p>
+                        </div>
+                        {vendor.owner_date_of_birth && (
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                              Date of Birth
+                            </label>
+                            <p className="text-[13px] text-[#111827]">
+                              {vendor.owner_date_of_birth}
+                            </p>
+                          </div>
+                        )}
+                        {vendor.owner_phone_number && (
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                              Phone Number
+                            </label>
+                            <p className="text-[13px] text-[#111827]">
+                              {vendor.owner_phone_number}
+                            </p>
+                          </div>
+                        )}
+                        {vendor.owner_gender && (
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                              Gender
+                            </label>
+                            <p className="text-[13px] text-[#111827] capitalize">
+                              {vendor.owner_gender}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CAC Verification (only for registered businesses) */}
+                  {vendor.is_registered_business && (
+                    <div className="border border-[#E1E4EA] rounded-lg p-6 mb-6">
+                      <h4 className="text-[15px] font-semibold text-[#111827] mb-4">CAC Verification</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            CAC Registration Number
+                          </label>
+                          <p className="text-[13px] text-[#111827] font-mono">
+                            {vendor.cac_number || "Not Provided"}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            Verification Status
+                          </label>
+                          <StatusBadge status={vendor.cac_number ? "VERIFIED" : "PENDING"} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* KYC Documents */}
                   <h4 className="text-[15px] font-semibold text-[#111827] mb-4 mt-6">Uploaded Documents</h4>
@@ -988,73 +954,132 @@ export default function VendorDetailsPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Business Location Photos */}
-                  {vendor.location_photos && vendor.location_photos.length > 0 && (
-                    <div className="mt-6">
-                      <h4 className="text-[15px] font-semibold text-[#111827] mb-4">Business Location Photos</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {vendor.location_photos.map((photo, index) => (
-                          <div key={index} className="relative group">
-                            <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#E1E4EA] hover:border-[#2563EB] transition-all">
-                              <img
-                                src={photo}
-                                alt={`Location photo ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            {index === 0 && (
-                              <div className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] px-2 py-1 rounded-full font-semibold">
-                                Primary
-                              </div>
-                            )}
-                            <a
-                              href={photo}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-50 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <i className="pi pi-eye text-white text-xl" />
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-[11px] text-[#525866] mt-3">
-                        {vendor.location_photos.length} photo{vendor.location_photos.length > 1 ? 's' : ''} uploaded
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {activeTab === "business" && (
+            {activeTab === "business-profile" && (
               <div className="space-y-6">
+                {/* Business Information */}
                 <div className="border border-[#E1E4EA] rounded-lg p-6">
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Details</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Business Registration Number
+                        Business Name
                       </label>
-                      <p className="text-[13px] text-[#111827] font-mono">
-                        {vendor.business_registration_number || "N/A"}
+                      <p className="text-[13px] text-[#111827] font-semibold">
+                        {vendor.name}
                       </p>
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Tax ID Number
+                        Business Type
                       </label>
-                      <p className="text-[13px] text-[#111827] font-mono">
-                        {vendor.tax_identification_number || "N/A"}
+                      <p className="text-[13px] text-[#111827] capitalize">
+                        {vendor.business_type}
                       </p>
                     </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        Registration Type
+                      </label>
+                      <p className="text-[13px] text-[#111827]">
+                        {vendor.is_registered_business ? "Registered Business" : "Individual Vendor"}
+                      </p>
+                    </div>
+                    {vendor.is_registered_business && vendor.cac_number && (
+                      <div>
+                        <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                          CAC Registration Number
+                        </label>
+                        <p className="text-[13px] text-[#111827] font-mono">
+                          {vendor.cac_number}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        Email
+                      </label>
+                      <p className="text-[13px] text-[#111827]">
+                        {vendor.email || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        Phone
+                      </label>
+                      <p className="text-[13px] text-[#111827]">
+                        {vendor.phone || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address & Location */}
+                <div className="border border-[#E1E4EA] rounded-lg p-6">
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Address & Location</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        Address
+                      </label>
+                      <p className="text-[13px] text-[#111827]">
+                        {vendor.address || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        GPS Coordinates
+                      </label>
+                      <p className="text-[13px] text-[#111827] font-mono">
+                        {vendor.latitude && vendor.longitude 
+                          ? `${vendor.latitude}, ${vendor.longitude}`
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Logo */}
+                {vendor.logo_url && (
+                  <div className="border border-[#E1E4EA] rounded-lg p-6">
+                    <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Logo</h3>
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={vendor.logo_url}
+                        alt={vendor.name}
+                        className="w-24 h-24 rounded-lg object-cover border-2 border-[#E1E4EA]"
+                      />
+                      <div>
+                        <p className="text-[13px] text-[#525866]">Logo uploaded</p>
+                        <a
+                          href={vendor.logo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[13px] text-[#2563EB] hover:underline"
+                        >
+                          View full size
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Operational Settings */}
+                <div className="border border-[#E1E4EA] rounded-lg p-6">
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Operational Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Commission Rate
                       </label>
                       <p className="text-[13px] text-[#111827] font-semibold">
                         {vendor.commission_rate}%
+                      </p>
+                      <p className="text-[11px] text-[#525866] mt-1">
+                        Vendor receives {100 - vendor.commission_rate}%
                       </p>
                     </div>
                     <div>
@@ -1070,7 +1095,15 @@ export default function VendorDetailsPage() {
                         Max Orders/Hour
                       </label>
                       <p className="text-[13px] text-[#111827]">
-                        {vendor.orders_count || "N/A"}
+                        {vendor.max_orders_per_hour}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                        Timezone
+                      </label>
+                      <p className="text-[13px] text-[#111827]">
+                        {vendor.timezone}
                       </p>
                     </div>
                     <div>
@@ -1090,6 +1123,68 @@ export default function VendorDetailsPage() {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === "location-photos" && (
+              <div className="space-y-6">
+                <div className="border border-[#E1E4EA] rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-[15px] font-semibold text-[#111827]">Business Location Photos</h3>
+                      <p className="text-[13px] text-[#525866] mt-1">
+                        Photos of the business storefront, entrance, and interior
+                      </p>
+                    </div>
+                    {vendor.location_photos && vendor.location_photos.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <i className="pi pi-check-circle text-green-600" />
+                        <span className="text-[13px] font-semibold text-green-600">
+                          {vendor.location_photos.length} Photo{vendor.location_photos.length > 1 ? 's' : ''} Uploaded
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {vendor.location_photos && vendor.location_photos.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {vendor.location_photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square rounded-lg overflow-hidden border-2 border-[#E1E4EA] hover:border-[#2563EB] transition-all">
+                            <img
+                              src={photo}
+                              alt={`Location photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          {index === 0 && (
+                            <div className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] px-2 py-1 rounded-full font-semibold">
+                              Primary
+                            </div>
+                          )}
+                          <a
+                            href={photo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-50 transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <i className="pi pi-eye text-white text-xl" />
+                          </a>
+                          <div className="mt-2 text-center">
+                            <p className="text-[11px] text-[#525866]">
+                              Photo {index + 1}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-[#F9FAFB] rounded-lg">
+                      <i className="pi pi-camera text-[#9CA3AF] text-4xl mb-3" />
+                      <p className="text-[13px] text-[#525866]">No location photos uploaded yet</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
