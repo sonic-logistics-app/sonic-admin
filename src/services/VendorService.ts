@@ -199,6 +199,26 @@ export default class VendorService {
       });
   }
 
+  updateVendorKYCStatus(vendorId: string, status: 'VERIFIED' | 'REJECTED') {
+    return fetch(`${apiUrl}/vendor/${vendorId}/kyc-status`, {
+      method: 'PUT',
+      headers: {
+        ...authService.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ kyc_status: status }),
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .catch(error => {
+        throw error;
+      });
+  }
+
   createVendor(vendorData: CreateVendorData) {
     const formData = new FormData();
     
