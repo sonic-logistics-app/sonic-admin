@@ -469,7 +469,13 @@ export default function VendorDetailsPage() {
                   <span className="text-[13px] font-semibold text-[#111827]">
                     {vendor.commission_rate}%
                   </span>
-                  <span className="text-[11px] text-[#525866]">Commission</span>
+                  <span className="text-[11px] text-[#525866]">Sonic Commission</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-semibold text-[#059669]">
+                    {100 - vendor.commission_rate}%
+                  </span>
+                  <span className="text-[11px] text-[#525866]">Vendor Share</span>
                 </div>
               </div>
             </div>
@@ -1073,13 +1079,13 @@ export default function VendorDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Commission Rate
+                        Commission Split
                       </label>
                       <p className="text-[13px] text-[#111827] font-semibold">
-                        {vendor.commission_rate}%
+                        Sonic: {vendor.commission_rate}%
                       </p>
-                      <p className="text-[11px] text-[#525866] mt-1">
-                        Vendor receives {100 - vendor.commission_rate}%
+                      <p className="text-[11px] text-[#059669] font-semibold mt-1">
+                        Vendor: {100 - vendor.commission_rate}%
                       </p>
                     </div>
                     <div>
