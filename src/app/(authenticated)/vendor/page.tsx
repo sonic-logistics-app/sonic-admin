@@ -208,17 +208,12 @@ export default function VendorListPage() {
     },
     {
       field: "commission_rate",
-      header: "Commission Split",
+      header: "Vendor Commission",
       sortable: true,
       body: (rowData: Vendor) => (
-        <div className="text-[13px]">
-          <div className="font-semibold text-[#111827]">
-            Sonic: {rowData.commission_rate}%
-          </div>
-          <div className="text-[11px] text-[#059669]">
-            Vendor: {100 - rowData.commission_rate}%
-          </div>
-        </div>
+        <span className="text-[13px] font-semibold text-[#059669]">
+          {100 - rowData.commission_rate}%
+        </span>
       ),
     },
     {
