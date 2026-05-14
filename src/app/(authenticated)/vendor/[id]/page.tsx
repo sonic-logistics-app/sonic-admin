@@ -58,6 +58,12 @@ interface VendorDetails {
   max_orders_per_hour: number;
   orders_count?: number;
   last_order_date?: string;
+  VendorAddress?: {
+    landmark_address: string | null;
+    dropoff_address: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
 }
 
 export default function VendorDetailsPage() {
@@ -321,7 +327,7 @@ export default function VendorDetailsPage() {
   };
 
   // Check if all 4 tabs are complete
-  const isBusinessProfileComplete = vendor?.name && vendor?.business_type && vendor?.phone && vendor?.address && vendor?.latitude && vendor?.longitude && vendor?.logo_url;
+  const isBusinessProfileComplete = vendor?.name && vendor?.business_type && vendor?.phone && (vendor?.VendorAddress?.landmark_address || vendor?.VendorAddress?.dropoff_address || vendor?.address) && (vendor?.VendorAddress?.latitude || vendor?.latitude) && (vendor?.VendorAddress?.longitude || vendor?.longitude) && vendor?.logo_url;
   const isKycComplete = (vendor?.bvn || vendor?.nin) && (vendor?.owner_first_name || vendor?.owner_last_name) && vendor?.kyc_status === 'completed';
   const isLocationPhotosComplete = vendor?.location_photos && vendor.location_photos.length > 0;
   const isBankingComplete = vendor?.account_number && vendor?.bank_name;
@@ -1026,7 +1032,7 @@ export default function VendorDetailsPage() {
                         Address
                       </label>
                       <p className="text-[13px] text-[#111827]">
-                        {vendor.address || "N/A"}
+                        {vendor.VendorAddress?.landmark_address || vendor.VendorAddress?.dropoff_address || vendor.address || "N/A"}
                       </p>
                     </div>
                     <div>
@@ -1034,7 +1040,9 @@ export default function VendorDetailsPage() {
                         GPS Coordinates
                       </label>
                       <p className="text-[13px] text-[#111827] font-mono">
-                        {vendor.latitude && vendor.longitude 
+                        {(vendor.VendorAddress?.latitude && vendor.VendorAddress?.longitude)
+                          ? `${vendor.VendorAddress.latitude}, ${vendor.VendorAddress.longitude}`
+                          : (vendor.latitude && vendor.longitude)
                           ? `${vendor.latitude}, ${vendor.longitude}`
                           : "N/A"}
                       </p>
