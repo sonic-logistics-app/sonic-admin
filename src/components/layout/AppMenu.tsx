@@ -16,8 +16,15 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await AdminAuth.logout();
-    router.push("/login");
+    try {
+      await AdminAuth.logout();
+    } catch (error) {
+      // Ignore errors, still proceed with logout
+      console.error("Logout error:", error);
+    } finally {
+      // Force a hard navigation to login page
+      window.location.href = "/login";
+    }
   };
 
   // Separate logout item from other menu items

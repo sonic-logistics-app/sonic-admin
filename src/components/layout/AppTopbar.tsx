@@ -64,8 +64,15 @@ export default function AppTopbar({ onMenuToggle }: AppTopbarProps) {
       label: "Logout",
       icon: "pi pi-sign-out",
       command: async () => {
-        await AdminAuth.logout();
-        router.push("/login");
+        try {
+          await AdminAuth.logout();
+        } catch (error) {
+          // Ignore errors, still proceed with logout
+          console.error("Logout error:", error);
+        } finally {
+          // Force a hard navigation to login page
+          window.location.href = "/login";
+        }
       },
     },
   ];

@@ -157,6 +157,8 @@ export default function LoginPage() {
             width={200}
             height={100}
             className="mb-3 mx-auto"
+            priority
+            style={{ width: 'auto', height: 'auto', maxWidth: '200px' }}
           />
           <div className="text-[#111827] text-2xl font-semibold mb-3">
             Sonic Admin
