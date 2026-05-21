@@ -52,6 +52,8 @@ export default function UserListPage() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedCustomer, setEditedCustomer] = useState<Customer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
@@ -205,7 +207,50 @@ export default function UserListPage() {
 
   const handleRowClick = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setEditedCustomer(customer);
+    setIsEditMode(false);
     setShowDetailsModal(true);
+  };
+
+  const handleEditToggle = () => {
+    if (isEditMode) {
+      // Cancel edit - reset to original
+      setEditedCustomer(selectedCustomer);
+    }
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedCustomer) return;
+
+    try {
+      await customerService.updateCustomer(editedCustomer.id, {
+        first_name: editedCustomer.first_name,
+        last_name: editedCustomer.last_name,
+        email: editedCustomer.email,
+        phone: editedCustomer.phone,
+      });
+
+      toast.current?.show({
+        severity: "success",
+        summary: "Success",
+        detail: "User updated successfully",
+        life: 3000,
+      });
+
+      setSelectedCustomer(editedCustomer);
+      setIsEditMode(false);
+      
+      // Reload the list
+      loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
+    } catch (error: any) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: error.message || "Failed to update user",
+        life: 3000,
+      });
+    }
   };
 
   const columns = [
@@ -432,12 +477,26 @@ export default function UserListPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-              >
-                <i className="pi pi-times text-[#525866]" />
-              </button>
+              <div className="flex items-center gap-2">
+                {!isEditMode && (
+                  <button
+                    onClick={handleEditToggle}
+                    className="px-3 py-2 text-[13px] font-semibold text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <i className="pi pi-pencil" />
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setIsEditMode(false);
+                  }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                >
+                  <i className="pi pi-times text-[#525866]" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
@@ -450,33 +509,69 @@ export default function UserListPage() {
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       First Name
                     </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {selectedCustomer.first_name || "N/A"}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={editedCustomer?.first_name || ""}
+                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, first_name: e.target.value} : null)}
+                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
+                      />
+                    ) : (
+                      <p className="text-[13px] text-[#111827]">
+                        {selectedCustomer.first_name || "N/A"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       Last Name
                     </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {selectedCustomer.last_name || "N/A"}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={editedCustomer?.last_name || ""}
+                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, last_name: e.target.value} : null)}
+                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
+                      />
+                    ) : (
+                      <p className="text-[13px] text-[#111827]">
+                        {selectedCustomer.last_name || "N/A"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       Email
                     </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {selectedCustomer.email || "N/A"}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="email"
+                        value={editedCustomer?.email || ""}
+                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, email: e.target.value} : null)}
+                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
+                      />
+                    ) : (
+                      <p className="text-[13px] text-[#111827]">
+                        {selectedCustomer.email || "N/A"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       Phone
                     </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {selectedCustomer.phone || "N/A"}
-                    </p>
+                    {isEditMode ? (
+                      <input
+                        type="tel"
+                        value={editedCustomer?.phone || ""}
+                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, phone: e.target.value} : null)}
+                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
+                      />
+                    ) : (
+                      <p className="text-[13px] text-[#111827]">
+                        {selectedCustomer.phone || "N/A"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -592,57 +687,79 @@ export default function UserListPage() {
 
             {/* Actions */}
             <div className="flex justify-end gap-3 p-6 border-t border-[#E1E4EA]">
-              {!selectedCustomer.is_verified && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    confirmVerify(selectedCustomer);
-                  }}
-                  className="px-4 py-2"
-                >
-                  <i className="pi pi-check mr-2" />
-                  Verify User
-                </Button>
+              {isEditMode ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleEditToggle}
+                    className="px-4 py-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveEdit}
+                    className="px-4 py-2 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+                  >
+                    <i className="pi pi-check mr-2" />
+                    Save Changes
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {!selectedCustomer.is_verified && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        confirmVerify(selectedCustomer);
+                      }}
+                      className="px-4 py-2"
+                    >
+                      <i className="pi pi-check mr-2" />
+                      Verify User
+                    </Button>
+                  )}
+                  {selectedCustomer.is_verified && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await customerService.ensureVoucher(selectedCustomer.id);
+                          toast.current?.show({
+                            severity: "success",
+                            summary: "Success",
+                            detail: "Welcome voucher ensured for user",
+                            life: 3000,
+                          });
+                        } catch (error: any) {
+                          toast.current?.show({
+                            severity: "error",
+                            summary: "Error",
+                            detail: error.message || "Failed to ensure voucher",
+                            life: 3000,
+                          });
+                        }
+                      }}
+                      className="px-4 py-2"
+                    >
+                      <i className="pi pi-ticket mr-2" />
+                      Ensure Welcome Voucher
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      confirmDelete(selectedCustomer);
+                    }}
+                    className="px-4 py-2 text-[#DC2626] border-[#DC2626] hover:bg-[#DC2626] hover:text-white"
+                  >
+                    <i className="pi pi-trash mr-2" />
+                    Delete User
+                  </Button>
+                </>
               )}
-              {selectedCustomer.is_verified && (
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      await customerService.ensureVoucher(selectedCustomer.id);
-                      toast.current?.show({
-                        severity: "success",
-                        summary: "Success",
-                        detail: "Welcome voucher ensured for user",
-                        life: 3000,
-                      });
-                    } catch (error: any) {
-                      toast.current?.show({
-                        severity: "error",
-                        summary: "Error",
-                        detail: error.message || "Failed to ensure voucher",
-                        life: 3000,
-                      });
-                    }
-                  }}
-                  className="px-4 py-2"
-                >
-                  <i className="pi pi-ticket mr-2" />
-                  Ensure Welcome Voucher
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  confirmDelete(selectedCustomer);
-                }}
-                className="px-4 py-2 text-[#DC2626] border-[#DC2626] hover:bg-[#DC2626] hover:text-white"
-              >
-                <i className="pi pi-trash mr-2" />
-                Delete User
-              </Button>
             </div>
           </div>
         </div>

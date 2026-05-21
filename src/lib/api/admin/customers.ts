@@ -71,6 +71,17 @@ export default class CustomerService {
     }).then((res) => res.json());
   }
 
+  updateCustomer(user_id: number, data: { first_name?: string | null; last_name?: string | null; email?: string | null; phone?: string | null }) {
+    return fetch(`${apiUrl}/user/${user_id}`, {
+      method: "PUT",
+      headers: authService.getAuthHeaders(),
+      body: JSON.stringify(data),
+    }).then((res) => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    });
+  }
+
   deleteCustomer(user_id: number) {
     return fetch(`${apiUrl}/user`, {
       method: "DELETE",
