@@ -72,9 +72,33 @@ interface Order {
     user_id: number;
     location_id: number;
   } | string;
-  sender_address: string | null;
+  sender_address: {
+    id: number;
+    public_id: string;
+    sender_label: string;
+    sender_name: string;
+    sender_phone: string;
+    pickup_address: string;
+    landmark_address: string | null;
+    created_at: string;
+    updated_at: string;
+    user_id: number;
+    location_id: number;
+  } | string | null;
   delivery_address?: string;
-  package: string | null;
+  package: string | {
+    id: number;
+    public_id: string;
+    delivery_type: string;
+    image_url: string | null;
+    description: string | null;
+    is_asuranced: boolean;
+    offer_price: number;
+    created_at: string;
+    updated_at: string;
+    category_id: number;
+    package_size_id: number;
+  } | null;
   user: {
     id: number;
     public_id?: string;
@@ -221,9 +245,9 @@ export default function OrderDetailsPage() {
     try {
       setSyncingRefund(true);
       const result = await refundService.syncRefunds();
-      
+
       // Check if this specific order was updated
-      const orderUpdate = result.data.details.find(detail => 
+      const orderUpdate = result.data.details.find(detail =>
         detail.order_id === order.order_id
       );
 
@@ -244,11 +268,12 @@ export default function OrderDetailsPage() {
           life: 3000,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       toast.current?.show({
         severity: "error",
         summary: "Sync Failed",
-        detail: error.message || "Failed to sync refund status",
+        detail: message || "Failed to sync refund status",
         life: 3000,
       });
     } finally {
@@ -549,16 +574,32 @@ export default function OrderDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
             <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Pickup Location</h2>
-            <p className="text-[13px] text-[#525866]">
-              {order.sender_address || "N/A"}
-            </p>
+            <div className="space-y-2">
+              {typeof order.sender_address === 'string' || order.sender_address === null ? (
+                <p className="text-[13px] text-[#525866]">{order.sender_address || "N/A"}</p>
+              ) : (
+                <>
+                  <p className="text-[13px] text-[#525866]">{order.sender_address.pickup_address || "N/A"}</p>
+                  {order.sender_address.sender_name && (
+                    <p className="text-[13px] text-[#525866]">
+                      <span className="font-semibold">Sender:</span> {order.sender_address.sender_name}
+                    </p>
+                  )}
+                  {order.sender_address.sender_phone && (
+                    <p className="text-[13px] text-[#525866]">
+                      <span className="font-semibold">Phone:</span> {order.sender_address.sender_phone}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
             <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Delivery Location</h2>
             <div className="space-y-2">
               <p className="text-[13px] text-[#525866]">
-                {typeof order.receiver_address === 'string' 
-                  ? order.receiver_address 
+                {typeof order.receiver_address === 'string'
+                  ? order.receiver_address
                   : order.receiver_address?.dropoff_address || "N/A"}
               </p>
               {typeof order.receiver_address === 'object' && order.receiver_address?.receiver_name && (
@@ -767,9 +808,8 @@ export default function OrderDetailsPage() {
               {order.payment_history.map((payment, index) => (
                 <div key={payment.id || index} className="flex justify-between items-center p-4 bg-[#F9FAFB] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      payment.status === "REFUNDED" ? "bg-[#DC2626]" : "bg-[#059669]"
-                    }`} />
+                    <div className={`w-3 h-3 rounded-full ${payment.status === "REFUNDED" ? "bg-[#DC2626]" : "bg-[#059669]"
+                      }`} />
                     <div>
                       <p className="text-[13px] font-semibold text-[#111827] capitalize">
                         {payment.type || (payment.status === "REFUNDED" ? "refund" : "payment")}
@@ -788,9 +828,8 @@ export default function OrderDetailsPage() {
                   </div>
                   <div className="text-right">
                     {payment.amount !== undefined && (
-                      <p className={`text-[14px] font-semibold ${
-                        payment.status === "REFUNDED" ? "text-[#DC2626]" : "text-[#059669]"
-                      }`}>
+                      <p className={`text-[14px] font-semibold ${payment.status === "REFUNDED" ? "text-[#DC2626]" : "text-[#059669]"
+                        }`}>
                         {payment.status === "REFUNDED" ? "-" : "+"}{formatCurrency(payment.amount)}
                       </p>
                     )}
@@ -870,7 +909,11 @@ export default function OrderDetailsPage() {
               <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
                 Package Type
               </label>
-              <p className="text-[13px] text-[#111827]">{order.package || "N/A"}</p>
+              <p className="text-[13px] text-[#111827]">
+                {typeof order.package === 'string'
+                  ? order.package
+                  : order.package?.delivery_type || "N/A"}
+              </p>
             </div>
             <div>
               <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">

@@ -147,7 +147,7 @@ export default function OrderListPage() {
         min_price: minPrice || undefined,
         max_price: maxPrice || undefined,
       });
-      setOrders(result.data);
+      setOrders(result.data as unknown as Order[]);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
       toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load orders", life: 3000 });
@@ -237,8 +237,8 @@ export default function OrderListPage() {
       header: "Payment",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge 
-          status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status} 
+        <StatusBadge
+          status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status}
         />
       ),
     },
@@ -328,7 +328,7 @@ export default function OrderListPage() {
 
         {/* Search Bar and Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 min-w-[250px]">
+          <div className="flex-1 min-w-62.5">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -509,8 +509,8 @@ export default function OrderListPage() {
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       Dispatch Status
                     </label>
-                    <select 
-                      value={dispatchStatusFilter} 
+                    <select
+                      value={dispatchStatusFilter}
                       onChange={(e) => setDispatchStatusFilter(e.target.value)}
                       className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
                     >
@@ -525,8 +525,8 @@ export default function OrderListPage() {
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                       Voucher Usage
                     </label>
-                    <select 
-                      value={voucherUsedFilter} 
+                    <select
+                      value={voucherUsedFilter}
                       onChange={(e) => setVoucherUsedFilter(e.target.value)}
                       className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white"
                     >

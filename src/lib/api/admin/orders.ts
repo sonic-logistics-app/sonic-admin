@@ -28,8 +28,12 @@ export interface PaginatedResponse<T> {
   meta: { total: number; page: number; limit: number };
 }
 
+export interface Order {
+  [key: string]: unknown;
+}
+
 export default class OrderService {
-  getAllOrders(params?: PaginationParams): Promise<PaginatedResponse<any>> {
+  getAllOrders(params?: PaginationParams): Promise<PaginatedResponse<Order>> {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", (params?.page ?? 1).toString());
