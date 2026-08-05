@@ -19,7 +19,6 @@ export default function LoginPage() {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [statusError, setStatusError] = useState("");
-  const [checkingAuth, setCheckingAuth] = useState(true);
   
   // Registration form fields
   const [regEmail, setRegEmail] = useState("");
@@ -35,16 +34,8 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    // Check auth immediately on mount
+    // Check auth state from localStorage
     checkAuth();
-    
-    // If already authenticated, redirect to dashboard
-    if (isAuthenticated) {
-      router.push("/dashboard");
-      return;
-    }
-
-    setCheckingAuth(false);
     
     // Check if admin account exists
     setCheckingStatus(true);
@@ -61,16 +52,7 @@ export default function LoginPage() {
       setNeedsSetup(true);
       setCheckingStatus(false);
     });
-  }, []);
-
-  // Don't render login page while checking if user is already authenticated
-  if (checkingAuth || isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#FBFBFB]">
-        <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl" />
-      </div>
-    );
-  }
+  }, [checkAuth, checkAdminStatus]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
