@@ -13,19 +13,21 @@ const authService = new AuthService();
  */
 export default function TokenValidator({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  // Only validate if NOT on login page
-  const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
-  const [isValidating, setIsValidating] = useState(!isLoginPage);
-  const [isValid, setIsValid] = useState(isLoginPage);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isValid, setIsValid] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
     const validateToken = async () => {
       // Skip validation on login page
-      if (typeof window !== 'undefined' && window.location.pathname === '/login') {
-        setIsValidating(false);
+      if (window.location.pathname === '/login') {
         setIsValid(true);
         return;
       }
+
+      setIsValidating(true);
 
       const token = authService.getToken();
       
@@ -59,7 +61,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
 
     // Set up periodic token validation (every 5 minutes)
     const interval = setInterval(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      if (window.location.pathname !== '/login') {
         refreshTokenIfNeeded().catch(() => {
           authService.clearLocalStorage();
           router.push('/login');
@@ -69,6 +71,11 @@ export default function TokenValidator({ children }: { children: React.ReactNode
 
     return () => clearInterval(interval);
   }, [router]);
+
+  // Don't render anything until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   // Show loading while validating
   if (isValidating) {
