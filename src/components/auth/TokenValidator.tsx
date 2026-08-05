@@ -13,8 +13,10 @@ const authService = new AuthService();
  */
 export default function TokenValidator({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [isValidating, setIsValidating] = useState(true);
-  const [isValid, setIsValid] = useState(false);
+  // Only validate if NOT on login page
+  const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+  const [isValidating, setIsValidating] = useState(!isLoginPage);
+  const [isValid, setIsValid] = useState(isLoginPage);
 
   useEffect(() => {
     const validateToken = async () => {
