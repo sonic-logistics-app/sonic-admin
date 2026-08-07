@@ -40,6 +40,7 @@ export interface Transaction {
   id: string;
   type: "payment" | "vendor_earning";
   order_id: string;
+  order_number?: string;
   tx_ref?: string;
   amount: number;
   discount?: number;
@@ -89,6 +90,7 @@ export interface Transaction {
 export interface TransactionDetails extends Transaction {
   order?: {
     order_id: string;
+    order_number?: string;
     order_status: string;
     payment_status: string;
     order_type: string;

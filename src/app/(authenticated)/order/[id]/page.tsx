@@ -10,6 +10,7 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 interface Order {
   id: number;
   order_id: string;
+  order_number?: string;
   public_id?: string;
   order_status: string;
   order_type: string;
@@ -257,7 +258,7 @@ export default function OrderDetailsPage() {
         toast.current?.show({
           severity: "success",
           summary: "Refund Updated",
-          detail: `Order ${order.order_id} refund status updated to REFUNDED`,
+          detail: `Order ${order.order_number || order.order_id} refund status updated to REFUNDED`,
           life: 5000,
         });
       } else {
@@ -315,7 +316,12 @@ export default function OrderDetailsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[24px] font-bold text-[#111827]">Order Details</h1>
-            <p className="text-[13px] text-[#525866] mt-1">{order.order_id}</p>
+            <p className="text-[13px] text-[#525866] mt-1">
+              {order.order_number || order.order_id}
+              {order.order_number && (
+                <span className="text-[#9CA3AF] ml-2">{order.order_id}</span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {order.refund_details && order.refund_details.refund_status === "refund_pending" && (

@@ -188,7 +188,7 @@ export default function RefundManagementPage() {
                 type="text"
                 value={debugOrderId}
                 onChange={(e) => setDebugOrderId(e.target.value)}
-                placeholder="Enter Order ID (e.g., f8qiusaggpf1twt1zqhoeih)"
+                placeholder="Enter Order Number (e.g., SNK-10234) or Order ID"
                 className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
               />
             </div>
@@ -438,7 +438,7 @@ export default function RefundManagementPage() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="text-[13px] font-semibold text-[#111827] font-mono">
-                              {detail.order_id}
+                              {detail.order_number || detail.order_id}
                             </p>
                             <p className="text-[12px] text-[#525866] mt-1">
                               {detail.message}
@@ -511,7 +511,7 @@ export default function RefundManagementPage() {
                       Debug Results
                     </h2>
                     <p className="text-[13px] text-[#525866]">
-                      Order ID: {debugResults.data.order_id}
+                      Order: {debugResults.data.order_number || debugResults.data.order_id}
                     </p>
                   </div>
                 </div>

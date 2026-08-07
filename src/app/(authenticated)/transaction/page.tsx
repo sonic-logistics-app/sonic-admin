@@ -206,7 +206,7 @@ export default function TransactionListPage() {
       sortable: true,
       body: (rowData: Transaction) => (
         <span className="text-[13px] font-semibold text-[#2563EB]">
-          {rowData.order_id}
+          {rowData.order_number || rowData.order_id}
         </span>
       ),
     },
@@ -517,7 +517,7 @@ export default function TransactionListPage() {
                       Order ID
                     </label>
                     <p className="text-[13px] text-[#2563EB] font-semibold">
-                      {selectedTransaction.order_id}
+                      {selectedTransaction.order_number || selectedTransaction.order_id}
                     </p>
                   </div>
                   {selectedTransaction.tx_ref && (

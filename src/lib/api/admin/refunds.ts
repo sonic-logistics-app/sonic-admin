@@ -12,6 +12,7 @@ export interface RefundSyncResponse {
     errors: number;
     details: Array<{
       order_id: string;
+      order_number?: string;
       status: "updated" | "no_change" | "error";
       message: string;
       refund_amount?: number;
@@ -39,6 +40,7 @@ export interface RefundDebugResponse {
   success: boolean;
   data: {
     order_id: string;
+    order_number?: string;
     flutterwave_response: any;
     detection_results: {
       amount_settled: number;

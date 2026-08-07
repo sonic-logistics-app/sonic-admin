@@ -46,6 +46,7 @@ interface DashboardStatsData {
 interface RecentOrder {
   id: number;
   order_id: string;
+  order_number?: string;
   status: string;
   total_payment: number;
   package_category: string;
@@ -226,6 +227,7 @@ export default function DashboardPage() {
         const formattedOrders = orders.map((order: any) => ({
           id: order.id,
           order_id: order.order_id,
+          order_number: order.order_number,
           status: order.order_status,
           total_payment: order.price_fees,
           package_category: order.package?.delivery_type ?? "-",

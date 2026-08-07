@@ -7,6 +7,7 @@ import SkeletonLoader from "@/components/shared/SkeletonLoader";
 interface RecentOrder {
   id: number;
   order_id: string;
+  order_number?: string;
   status: string;
   total_payment: number;
   package_category: string;
@@ -32,31 +33,37 @@ const formatCurrency = (value: number) => {
 export default function RecentOrders({ orders, loading, onRowClick }: RecentOrdersProps) {
   const columns = [
     {
+      field: "order_number",
+      header: "Order #",
+      width: "12%",
+      body: (rowData: RecentOrder) => rowData.order_number || rowData.order_id,
+    },
+    {
       field: "fullname_customer",
       header: "Customer",
-      width: "25%",
+      width: "22%",
     },
     {
       field: "fullname_driver",
       header: "Driver",
-      width: "25%",
+      width: "22%",
     },
     {
       field: "total_payment",
       header: "Total Payment",
-      width: "20%",
+      width: "18%",
       body: (rowData: RecentOrder) => formatCurrency(rowData.total_payment),
     },
     {
       field: "status",
       header: "Status",
-      width: "15%",
+      width: "13%",
       body: (rowData: RecentOrder) => <StatusBadge status={rowData.status} />,
     },
     {
       field: "package_category",
       header: "Package Category",
-      width: "15%",
+      width: "13%",
     },
   ];
 

@@ -13,6 +13,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 interface Order {
   id: number;
   order_id: string;
+  order_number: string;
   order_status: string;
   order_type: string;
   payment_status: string;
@@ -185,9 +186,16 @@ export default function OrderListPage() {
       header: "Order ID",
       sortable: true,
       body: (rowData: Order) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          {rowData.order_id}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[13px] font-semibold text-[#111827]">
+            {rowData.order_number || rowData.order_id}
+          </span>
+          {rowData.order_number && (
+            <span className="text-[11px] text-[#9CA3AF]">
+              {rowData.order_id}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -332,7 +340,7 @@ export default function OrderListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search by order ID, customer, driver, or vendor..."
+              placeholder="Search by order number, order ID, customer, driver, or vendor..."
             />
           </div>
 
