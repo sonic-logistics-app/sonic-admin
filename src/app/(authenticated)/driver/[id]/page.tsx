@@ -295,6 +295,33 @@ export default function DriverDetailsPage() {
     return "PENDING";
   };
 
+  /** Per-field status so empty National ID is not shown as REJECTED. */
+  const getDocumentFieldStatus = (
+    doc: DriverDocument | undefined,
+    field: "national_id" | "driver_license" | "bank_verification",
+  ): "PENDING" | "VERIFIED" | "REJECTED" => {
+    if (!doc) return "PENDING";
+
+    if (field === "national_id") {
+      const hasData = Boolean(doc.national_id_url || doc.national_id_number);
+      if (doc.is_national_id_verified) return "VERIFIED";
+      if (doc.is_rejected && hasData) return "REJECTED";
+      return "PENDING";
+    }
+
+    if (field === "driver_license") {
+      const hasData = Boolean(doc.driver_license_url && doc.driver_license_url !== "pending");
+      if (doc.is_driver_license_verified) return "VERIFIED";
+      if (doc.is_rejected && hasData) return "REJECTED";
+      return "PENDING";
+    }
+
+    const hasData = Boolean(doc.bank_verification);
+    if (doc.is_bank_verification_verified) return "VERIFIED";
+    if (doc.is_rejected && hasData) return "REJECTED";
+    return "PENDING";
+  };
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "pi-user" },
     { 
@@ -608,18 +635,22 @@ export default function DriverDetailsPage() {
                         }}
                         onVerify={() => handleVerifyComponent("document")}
                         onReject={() => handleRejectComponent("document")}
-                        status={driver.verificationStatus.document}
+                        status={getDocumentFieldStatus(driver.driver_documents[0], "national_id")}
                       />
                       <DocumentViewer
                         title="Driver License"
                         documents={{
-                          front_image: driver.driver_documents[0].driver_license_url || undefined,
+                          front_image:
+                            driver.driver_documents[0].driver_license_url &&
+                            driver.driver_documents[0].driver_license_url !== "pending"
+                              ? driver.driver_documents[0].driver_license_url
+                              : undefined,
                           verified: driver.driver_documents[0].is_driver_license_verified,
                           uploaded_at: driver.driver_documents[0].created_at,
                         }}
                         onVerify={() => handleVerifyComponent("document")}
                         onReject={() => handleRejectComponent("document")}
-                        status={driver.verificationStatus.document}
+                        status={getDocumentFieldStatus(driver.driver_documents[0], "driver_license")}
                       />
                     </div>
 
@@ -639,7 +670,7 @@ export default function DriverDetailsPage() {
                             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                               Status
                             </label>
-                            <StatusBadge status={driver.driver_documents[0].is_national_id_verified ? "VERIFIED" : "PENDING"} />
+                            <StatusBadge status={getDocumentFieldStatus(driver.driver_documents[0], "national_id")} />
                           </div>
                         </div>
                       </div>
@@ -659,7 +690,7 @@ export default function DriverDetailsPage() {
                             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                               Status
                             </label>
-                            <StatusBadge status={driver.driver_documents[0].is_bank_verification_verified ? "VERIFIED" : "PENDING"} />
+                            <StatusBadge status={getDocumentFieldStatus(driver.driver_documents[0], "bank_verification")} />
                           </div>
                         </div>
                       </div>
