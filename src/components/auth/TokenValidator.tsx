@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { isTokenExpired, refreshTokenIfNeeded } from '@/lib/api/interceptor';
 import AuthService from '@/services/AuthService';
 
@@ -13,6 +13,7 @@ const authService = new AuthService();
  */
 export default function TokenValidator({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isValidating, setIsValidating] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -22,8 +23,9 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     
     const validateToken = async () => {
       // Skip validation on login page
-      if (window.location.pathname === '/login') {
+      if (pathname === '/login') {
         setIsValid(true);
+        setIsValidating(false);
         return;
       }
 
@@ -34,6 +36,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
       // No token, redirect to login
       if (!token) {
         authService.clearLocalStorage();
+        setIsValidating(false);
         router.push('/login');
         return;
       }
@@ -61,7 +64,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
 
     // Set up periodic token validation (every 5 minutes)
     const interval = setInterval(() => {
-      if (window.location.pathname !== '/login') {
+      if (pathname !== '/login') {
         refreshTokenIfNeeded().catch(() => {
           authService.clearLocalStorage();
           router.push('/login');
@@ -70,15 +73,15 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [router]);
+  }, [router, pathname]);
 
   // Don't render anything until mounted to avoid hydration mismatch
   if (!mounted) {
     return null;
   }
 
-  // Show loading while validating
-  if (isValidating) {
+  // Show loading while validating (but not on login page)
+  if (isValidating && pathname !== '/login') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -89,6 +92,6 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     );
   }
 
-  // Only render children if token is valid
-  return isValid ? <>{children}</> : null;
+  // Only render children if token is valid or on login page
+  return (isValid || pathname === '/login') ? <>{children}</> : null;
 }
