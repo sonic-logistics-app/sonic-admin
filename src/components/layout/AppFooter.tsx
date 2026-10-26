@@ -6,10 +6,10 @@ export default function AppFooter() {
   return (
     <div className="flex items-center justify-center py-4 px-6 bg-white border-t text-sm text-gray-600">
       <Image
-        src="/sonic-logo.svg"
+        src="/sonic-icon.png"
         alt="Logo"
         height={20}
-        width={27}
+        width={17}
         className="mr-2"
       />
       by

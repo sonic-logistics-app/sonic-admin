@@ -42,10 +42,10 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
       <div className="px-5 py-4 flex-shrink-0 border-b border-[#E1E4EA]">
         <Link href="/dashboard" className="flex items-end gap-3 no-underline">
           <Image
-            src="/sonic-logo.svg"
+            src="/sonic-logo.png"
             alt="Logo"
             width={120}
-            height={80}
+            height={36}
             className="rounded-md"
             priority
           />
