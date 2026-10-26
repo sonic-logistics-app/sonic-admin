@@ -134,10 +134,10 @@ export default function LoginPage() {
       <div className="bg-white p-8 shadow-lg rounded-2xl w-full max-w-md border border-[#E1E4EA]">
         <div className="text-center mb-6">
           <Image
-            src="/sonic-logo.svg"
+            src="/sonic-logo.png"
             alt="Sonic Logo"
             width={200}
-            height={100}
+            height={60}
             className="mb-3 mx-auto"
             priority
             style={{ width: 'auto', height: 'auto', maxWidth: '200px' }}
