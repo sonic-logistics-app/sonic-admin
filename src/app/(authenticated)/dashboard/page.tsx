@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardService from "@/services/DashboardService";
 import DashboardStats from "@/components/dashboard/DashboardStats";
+import DailySignups, { DailySignupStats } from "@/components/dashboard/DailySignups";
 import SecondaryMetrics from "@/components/dashboard/SecondaryMetrics";
 import RecentOrders from "@/components/dashboard/RecentOrders";
 import SalesChart from "@/components/dashboard/SalesChart";
@@ -83,6 +84,7 @@ export default function DashboardPage() {
     verifiedUsers: 0,
     activeUsers30d: 0,
   });
+  const [dailySignups, setDailySignups] = useState<DailySignupStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [chartData, setChartData] = useState<any>(null);
 
@@ -102,6 +104,7 @@ export default function DashboardPage() {
 
       // Handle stats
       if (stats) {
+        setDailySignups(stats.daily ?? null);
 
         // Handle missing or invalid data gracefully
         if (!stats) {
@@ -261,6 +264,11 @@ export default function DashboardPage() {
       {/* Primary Stats */}
       <div className="mb-4">
         <DashboardStats stats={dashboardStats} loading={loading} error={error} />
+      </div>
+
+      {/* Signups today */}
+      <div className="mb-4">
+        <DailySignups daily={dailySignups} loading={loading} />
       </div>
 
       {/* Secondary Metrics */}
