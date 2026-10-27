@@ -8,10 +8,10 @@ interface DashboardStatsData {
   totalDriver: number;
   totalVendor: number;
   orderDifference: number;
-  orderGrowthRate: number;
-  customerLastWeek: number;
-  driverLastWeek: number;
-  vendorLastWeek: number;
+  orderGrowthRate: number | null;
+  customerThisWeek: number;
+  driverThisWeek: number;
+  vendorThisWeek: number;
 }
 
 interface DashboardStatsProps {
@@ -43,19 +43,25 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
           </div>
         </div>
         <p className="text-[#525866] text-[11px]">
-          <span
-            className={`font-semibold ${
-              stats.orderDifference > 0
-                ? "text-[#059669]"
-                : stats.orderDifference < 0
-                ? "text-[#DC2626]"
-                : "text-[#525866]"
-            }`}
-          >
-            {stats.orderDifference > 0 && "+"}
-            {stats.orderGrowthRate.toFixed(1)}%
-          </span>{" "}
-          since last week
+          {stats.orderGrowthRate === null ? (
+            "No orders at this point last week"
+          ) : (
+            <>
+              <span
+                className={`font-semibold ${
+                  stats.orderDifference > 0
+                    ? "text-[#059669]"
+                    : stats.orderDifference < 0
+                    ? "text-[#DC2626]"
+                    : "text-[#525866]"
+                }`}
+              >
+                {stats.orderDifference > 0 && "+"}
+                {stats.orderGrowthRate.toFixed(1)}%
+              </span>{" "}
+              vs same point last week
+            </>
+          )}
         </p>
       </div>
 
@@ -76,7 +82,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         </div>
         <p className="text-[#525866] text-[11px]">
           <span className="font-semibold text-[#059669]">
-            {stats.customerLastWeek}
+            {stats.customerThisWeek}
           </span>{" "}
           new this week
         </p>
@@ -99,7 +105,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         </div>
         <p className="text-[#525866] text-[11px]">
           <span className="font-semibold text-[#059669]">
-            {stats.driverLastWeek}
+            {stats.driverThisWeek}
           </span>{" "}
           new this week
         </p>
@@ -122,7 +128,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         </div>
         <p className="text-[#525866] text-[11px]">
           <span className="font-semibold text-[#059669]">
-            {stats.vendorLastWeek}
+            {stats.vendorThisWeek}
           </span>{" "}
           new this week
         </p>

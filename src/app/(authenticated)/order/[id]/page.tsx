@@ -6,6 +6,7 @@ import OrderService from "@/lib/api/admin/orders";
 import RefundService from "@/lib/api/admin/refunds";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
+import { businessTypeLabel } from "@/lib/businessTypes";
 
 interface Order {
   id: number;
@@ -668,7 +669,7 @@ export default function OrderDetailsPage() {
               )}
               {order.vendor.business_type && (
                 <p className="text-[13px] text-[#525866]">
-                  Type: {order.vendor.business_type}
+                  Type: {businessTypeLabel(order.vendor.business_type)}
                 </p>
               )}
             </div>

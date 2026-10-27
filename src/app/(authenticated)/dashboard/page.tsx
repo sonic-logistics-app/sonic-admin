@@ -25,10 +25,10 @@ interface DashboardStatsData {
   orderLastWeek: number;
   orderThisWeek: number;
   orderDifference: number;
-  orderGrowthRate: number;
-  customerLastWeek: number;
-  driverLastWeek: number;
-  vendorLastWeek: number;
+  orderGrowthRate: number | null;
+  customerThisWeek: number;
+  driverThisWeek: number;
+  vendorThisWeek: number;
   // New metrics
   totalRevenue: number;
   revenueThisWeek: number;
@@ -68,9 +68,9 @@ export default function DashboardPage() {
     orderThisWeek: 0,
     orderDifference: 0,
     orderGrowthRate: 0,
-    customerLastWeek: 0,
-    driverLastWeek: 0,
-    vendorLastWeek: 0,
+    customerThisWeek: 0,
+    driverThisWeek: 0,
+    vendorThisWeek: 0,
     totalRevenue: 0,
     revenueThisWeek: 0,
     revenueLastWeek: 0,
@@ -115,9 +115,9 @@ export default function DashboardPage() {
             orderThisWeek: 0,
             orderDifference: 0,
             orderGrowthRate: 0,
-            customerLastWeek: 0,
-            driverLastWeek: 0,
-            vendorLastWeek: 0,
+            customerThisWeek: 0,
+            driverThisWeek: 0,
+            vendorThisWeek: 0,
             totalRevenue: 0,
             revenueThisWeek: 0,
             revenueLastWeek: 0,
@@ -156,15 +156,14 @@ export default function DashboardPage() {
             total: statusMap[status] || 0,
           }));
 
-          const orderLastWeek = stats.order?.total_last_week || 0;
+          // Compare week-to-date with the same slice of last week, not the whole of last week.
+          const orderLastWeek =
+            stats.order?.total_last_week_same_period ?? stats.order?.total_last_week ?? 0;
           const orderThisWeek = stats.order?.total_this_week || 0;
           const orderDifference = orderThisWeek - orderLastWeek;
+          // null means there is no baseline to compare against.
           const orderGrowthRate =
-            orderLastWeek > 0
-              ? (orderDifference / orderLastWeek) * 100
-              : orderThisWeek > 0
-              ? 100
-              : 0;
+            orderLastWeek > 0 ? (orderDifference / orderLastWeek) * 100 : null;
 
           setDashboardStats({
             totalOrder: stats.order?.total || 0,
@@ -176,9 +175,9 @@ export default function DashboardPage() {
             orderThisWeek,
             orderDifference,
             orderGrowthRate,
-            customerLastWeek: stats.user?.total_this_week || 0,
-            driverLastWeek: stats.driver?.total_this_week || 0,
-            vendorLastWeek: stats.vendor?.total_this_week || 0,
+            customerThisWeek: stats.user?.total_this_week || 0,
+            driverThisWeek: stats.driver?.total_this_week || 0,
+            vendorThisWeek: stats.vendor?.total_this_week || 0,
             totalRevenue: stats.revenue?.total || 0,
             revenueThisWeek: stats.revenue?.this_week || 0,
             revenueLastWeek: stats.revenue?.last_week || 0,
@@ -205,9 +204,9 @@ export default function DashboardPage() {
           orderThisWeek: 0,
           orderDifference: 0,
           orderGrowthRate: 0,
-          customerLastWeek: 0,
-          driverLastWeek: 0,
-          vendorLastWeek: 0,
+          customerThisWeek: 0,
+          driverThisWeek: 0,
+          vendorThisWeek: 0,
           totalRevenue: 0,
           revenueThisWeek: 0,
           revenueLastWeek: 0,
