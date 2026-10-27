@@ -7,6 +7,7 @@ import Button from "@/components/shared/Button";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import { businessTypeLabel } from "@/lib/businessTypes";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -583,8 +584,8 @@ export default function VendorDetailsPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Business Type
                       </label>
-                      <p className="text-[13px] text-[#111827] capitalize">
-                        {vendor.business_type}
+                      <p className="text-[13px] text-[#111827]">
+                        {businessTypeLabel(vendor.business_type)}
                       </p>
                     </div>
                     <div>
@@ -982,8 +983,8 @@ export default function VendorDetailsPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Business Type
                       </label>
-                      <p className="text-[13px] text-[#111827] capitalize">
-                        {vendor.business_type}
+                      <p className="text-[13px] text-[#111827]">
+                        {businessTypeLabel(vendor.business_type)}
                       </p>
                     </div>
                     <div>

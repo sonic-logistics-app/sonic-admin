@@ -9,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { businessTypeLabel } from "@/lib/businessTypes";
 
 export default function TransactionListPage() {
   const toast = useRef<ToastRef>(null);
@@ -237,7 +238,7 @@ export default function TransactionListPage() {
                 {rowData.vendor.name}
               </span>
               <span className="text-[11px] text-[#525866]">
-                {rowData.vendor.business_type}
+                {businessTypeLabel(rowData.vendor.business_type)}
               </span>
             </>
           ) : (
@@ -633,8 +634,8 @@ export default function TransactionListPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         Business Type
                       </label>
-                      <p className="text-[13px] text-[#111827] capitalize">
-                        {selectedTransaction.vendor.business_type}
+                      <p className="text-[13px] text-[#111827]">
+                        {businessTypeLabel(selectedTransaction.vendor.business_type)}
                       </p>
                     </div>
                     <div>

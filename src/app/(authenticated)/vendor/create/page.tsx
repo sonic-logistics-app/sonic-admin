@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import VendorService, { CreateVendorData } from "@/services/VendorService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
+import { BUSINESS_TYPE_OPTIONS } from "@/lib/businessTypes";
 
 interface FileUpload {
   file: File | null;
@@ -322,15 +323,9 @@ export default function CreateVendorPage() {
                   onChange={(e) => handleInputChange('business_type', e.target.value)}
                   className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 >
-                  <option value="restaurant">Restaurant</option>
-                  <option value="pharmacy">Pharmacy</option>
-                  <option value="grocery">Grocery</option>
-                  <option value="gadget">Gadget</option>
-                  <option value="flowers">Flowers</option>
-                  <option value="baby">Baby</option>
-                  <option value="personal_care">Personal Care</option>
-                  <option value="beverages">Beverages</option>
-                  <option value="shop">Shop</option>
+                  {BUSINESS_TYPE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
 

@@ -11,6 +11,7 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { businessTypeLabel, BUSINESS_TYPE_OPTIONS } from "@/lib/businessTypes";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -183,8 +184,8 @@ export default function VendorListPage() {
       header: "Business Type",
       sortable: true,
       body: (rowData: Vendor) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium capitalize">
-          {rowData.business_type}
+        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
+          {businessTypeLabel(rowData.business_type)}
         </span>
       ),
     },
@@ -299,15 +300,9 @@ export default function VendorListPage() {
           <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Categories</option>
-            <option value="restaurant">Restaurant</option>
-            <option value="pharmacy">Pharmacy</option>
-            <option value="shop">Shop</option>
-            <option value="grocery">Grocery</option>
-            <option value="gadget">Gadget</option>
-            <option value="flowers">Flowers</option>
-            <option value="baby">Baby</option>
-            <option value="personal_care">Personal Care</option>
-            <option value="beverages">Beverages</option>
+            {BUSINESS_TYPE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
           </select>
 
           <select value={kycStatusFilter} onChange={(e) => setKycStatusFilter(e.target.value)}
