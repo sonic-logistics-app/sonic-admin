@@ -308,7 +308,6 @@ export default function VendorListPage() {
             <option value="baby">Baby</option>
             <option value="personal_care">Personal Care</option>
             <option value="beverages">Beverages</option>
-            <option value="other">Other</option>
           </select>
 
           <select value={kycStatusFilter} onChange={(e) => setKycStatusFilter(e.target.value)}
