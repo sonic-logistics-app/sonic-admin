@@ -117,9 +117,11 @@ export default class VendorService {
       method: 'PUT',
       headers: authService.getAuthHeaders(),
     })
-      .then(res => {
+      .then(async res => {
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          // Surface the server's reason, e.g. which verification items are still missing
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.message || `HTTP error! status: ${res.status}`);
         }
         return res.json();
       })
