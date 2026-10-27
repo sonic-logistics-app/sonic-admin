@@ -609,7 +609,7 @@ export default function VendorDetailsPage() {
                         Address
                       </label>
                       <p className="text-[13px] text-[#111827]">
-                        {vendor.address || "N/A"}
+                        {vendor.VendorAddress?.landmark_address || vendor.VendorAddress?.dropoff_address || vendor.address || "N/A"}
                       </p>
                     </div>
                     <div>
