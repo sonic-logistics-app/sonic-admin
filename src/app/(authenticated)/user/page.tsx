@@ -12,6 +12,8 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useOptimisticUpdate } from "@/hooks/useOptimisticUpdate";
 import { useDebounce } from "@/hooks/useDebounce";
+import ExcelExportButton from "@/components/shared/ExcelExportButton";
+import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exportExcel";
 
 interface Customer {
   id: number;
@@ -350,6 +352,37 @@ export default function UserListPage() {
     },
   ];
 
+  const exportUsers = async () => {
+    try {
+      const rows = await fetchAllPages<Customer>((page, limit) =>
+        customerService.getAllCustomers({
+          page,
+          limit,
+          search: debouncedSearchQuery || undefined,
+          is_verified: isVerifiedFilter || undefined,
+          provider: providerFilter || undefined,
+          otp_verified: otpVerifiedFilter || undefined,
+        }),
+      );
+      if (rows.length === 0) {
+        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No users match the current filters", life: 3000 });
+        return;
+      }
+      await downloadExcel("users", "Users", [
+        { header: "Name", width: 26, value: (c: Customer) => `${c.first_name || ""} ${c.last_name || ""}`.trim() || "No Name" },
+        { header: "Email", width: 30, value: (c: Customer) => c.email },
+        { header: "Phone", width: 16, value: (c: Customer) => c.phone },
+        { header: "Verified", width: 10, value: (c: Customer) => yesNo(c.is_verified) },
+        { header: "Sign-up method", width: 16, value: (c: Customer) => c.provider },
+        { header: "Joined", width: 22, value: (c: Customer) => formatExportDate(c.created_at) },
+        { header: "Last login", width: 22, value: (c: Customer) => formatExportDate(c.last_login_at) },
+      ], rows);
+      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} users exported`, life: 3000 });
+    } catch (error: any) {
+      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export users", life: 4000 });
+    }
+  };
+
   return (
     <>
       <Toast ref={toast} />
@@ -368,6 +401,8 @@ export default function UserListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">User Management</h1>
+          <div className="flex items-center gap-2">
+            <ExcelExportButton onExport={exportUsers} />
           <button
             onClick={() => router.push("/user/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
@@ -375,6 +410,7 @@ export default function UserListPage() {
             <i className="pi pi-plus text-sm" />
             Create User
           </button>
+          </div>
         </div>
 
         {/* Search Bar */}

@@ -12,6 +12,8 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { businessTypeLabel, BUSINESS_TYPE_OPTIONS } from "@/lib/businessTypes";
+import ExcelExportButton from "@/components/shared/ExcelExportButton";
+import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exportExcel";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -48,6 +50,7 @@ interface Vendor {
   account_number: string | null;
   bank_code: string | null;
   onboarding_completed: boolean;
+  VendorAddress?: { landmark_address?: string | null } | null;
 }
 
 export default function VendorListPage() {
@@ -251,6 +254,42 @@ export default function VendorListPage() {
     },
   ];
 
+  const exportVendors = async () => {
+    try {
+      const rows = await fetchAllPages<Vendor>((page, limit) =>
+        vendorService.getAllVendors({
+          page,
+          limit,
+          search: debouncedSearch || undefined,
+          status: statusFilter || undefined,
+          category: categoryFilter || undefined,
+          kyc_status: kycStatusFilter || undefined,
+          is_accepting_orders: isAcceptingOrdersFilter || undefined,
+          is_open: isOpenFilter || undefined,
+        }),
+      );
+      if (rows.length === 0) {
+        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No vendors match the current filters", life: 3000 });
+        return;
+      }
+      await downloadExcel("vendors", "Vendors", [
+        { header: "Business name", width: 28, value: (v: Vendor) => v.name },
+        { header: "Email", width: 30, value: (v: Vendor) => v.email },
+        { header: "Phone", width: 16, value: (v: Vendor) => v.phone },
+        { header: "Business type", width: 16, value: (v: Vendor) => businessTypeLabel(v.business_type) },
+        { header: "Status", width: 16, value: (v: Vendor) => v.status },
+        { header: "KYC status", width: 14, value: (v: Vendor) => v.kyc_status },
+        { header: "Accepting orders", width: 16, value: (v: Vendor) => yesNo(v.is_accepting_orders) },
+        { header: "Store open", width: 12, value: (v: Vendor) => yesNo(v.is_open) },
+        { header: "Address", width: 40, value: (v: Vendor) => v.VendorAddress?.landmark_address || v.address },
+        { header: "Joined", width: 22, value: (v: Vendor) => formatExportDate(v.created_at) },
+      ], rows);
+      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} vendors exported`, life: 3000 });
+    } catch (error: any) {
+      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export vendors", life: 4000 });
+    }
+  };
+
   return (
     <>
       <Toast ref={toast} />
@@ -269,6 +308,8 @@ export default function VendorListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Vendor Management</h1>
+          <div className="flex items-center gap-2">
+            <ExcelExportButton onExport={exportVendors} />
           <button
             onClick={() => router.push("/vendor/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
@@ -276,6 +317,7 @@ export default function VendorListPage() {
             <i className="pi pi-plus text-sm" />
             Create Vendor
           </button>
+          </div>
         </div>
 
         {/* Filters */}
