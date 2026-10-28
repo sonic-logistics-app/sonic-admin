@@ -11,6 +11,8 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import ExcelExportButton from "@/components/shared/ExcelExportButton";
+import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exportExcel";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -297,6 +299,40 @@ export default function DriverListPage() {
     },
   ];
 
+  const exportDrivers = async () => {
+    try {
+      const rows = await fetchAllPages<Driver>((page, limit) =>
+        driverService.getAllDrivers({
+          page,
+          limit,
+          search: debouncedSearch || undefined,
+          status: statusFilter || undefined,
+          kyc_status: kycStatusFilter || undefined,
+          is_verified: isVerifiedFilter || undefined,
+          is_rejected: isRejectedFilter || undefined,
+          provider: providerFilter || undefined,
+        }),
+      );
+      if (rows.length === 0) {
+        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No drivers match the current filters", life: 3000 });
+        return;
+      }
+      await downloadExcel("drivers", "Drivers", [
+        { header: "Name", width: 26, value: (d: Driver) => `${d.first_name || ""} ${d.last_name || ""}`.trim() || "No Name" },
+        { header: "Email", width: 30, value: (d: Driver) => d.email },
+        { header: "Phone", width: 16, value: (d: Driver) => d.phone },
+        { header: "Status", width: 14, value: (d: Driver) => d.status },
+        { header: "KYC status", width: 14, value: (d: Driver) => d.kyc_status },
+        { header: "Verification progress", width: 20, value: (d: Driver) => d.verificationProgress },
+        { header: "Sign-up method", width: 16, value: (d: Driver) => d.provider },
+        { header: "Joined", width: 22, value: (d: Driver) => formatExportDate(d.created_at) },
+      ], rows);
+      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} drivers exported`, life: 3000 });
+    } catch (error: any) {
+      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export drivers", life: 4000 });
+    }
+  };
+
   return (
     <>
       <Toast ref={toast} />
@@ -315,6 +351,8 @@ export default function DriverListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Driver Management</h1>
+          <div className="flex items-center gap-2">
+            <ExcelExportButton onExport={exportDrivers} />
           <button
             onClick={() => router.push("/driver/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
@@ -322,6 +360,7 @@ export default function DriverListPage() {
             <i className="pi pi-plus text-sm" />
             Create Driver
           </button>
+          </div>
         </div>
 
         {/* Search Bar and Filters */}
