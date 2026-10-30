@@ -22,6 +22,14 @@ interface PaginationState {
   total: number;
 }
 
+export interface SelectionConfig<T = unknown> {
+  selectedKeys: Set<string | number>;
+  onChange: (keys: Set<string | number>) => void;
+  getKey: (row: T) => string | number;
+  /** Rows that cannot be selected (for example already verified) show a disabled checkbox. */
+  isSelectable?: (row: T) => boolean;
+}
+
 interface DataTableProps<T = any> {
   data: T[];
   columns: TableColumn<T>[];
@@ -32,6 +40,8 @@ interface DataTableProps<T = any> {
   emptyMessage?: string;
   className?: string;
   tableMaxHeight?: string;
+  /** Adds a checkbox column. Omit it and the table behaves exactly as before. */
+  selection?: SelectionConfig<T>;
 }
 
 /**
@@ -47,9 +57,36 @@ export default function DataTable<T extends Record<string, any>>({
   emptyMessage = "No data found",
   className = "",
   tableMaxHeight = "calc(100vh - 300px)",
+  selection,
 }: DataTableProps<T>) {
   const [sortField, setSortField] = useState<string | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined);
+
+  // Row selection (only when the page asks for it)
+  const selectableRows = selection ? data.filter((row) => selection.isSelectable?.(row) ?? true) : [];
+  const selectedOnPage = selection ? selectableRows.filter((row) => selection.selectedKeys.has(selection.getKey(row))).length : 0;
+  const allSelected = selectableRows.length > 0 && selectedOnPage === selectableRows.length;
+  const someSelected = selectedOnPage > 0 && !allSelected;
+
+  const toggleRow = (row: T) => {
+    if (!selection) return;
+    const next = new Set(selection.selectedKeys);
+    const key = selection.getKey(row);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    selection.onChange(next);
+  };
+
+  const toggleAll = () => {
+    if (!selection) return;
+    const next = new Set(selection.selectedKeys);
+    selectableRows.forEach((row) => {
+      const key = selection.getKey(row);
+      if (allSelected) next.delete(key);
+      else next.add(key);
+    });
+    selection.onChange(next);
+  };
 
   // Handle sorting
   const handleSort = (field: string) => {
@@ -111,6 +148,21 @@ export default function DataTable<T extends Record<string, any>>({
       }`}
       onClick={() => onRowClick?.(rowData)}
     >
+      {selection && (
+        <label
+          className="flex items-center gap-2 mb-3 text-[13px] font-semibold text-[#525866]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-[#2563EB]"
+            checked={selection.selectedKeys.has(selection.getKey(rowData))}
+            disabled={!(selection.isSelectable?.(rowData) ?? true)}
+            onChange={() => toggleRow(rowData)}
+          />
+          Select
+        </label>
+      )}
       {columns.map((col) => (
         <div key={String(col.field)} className="flex justify-between items-center mb-3 last:mb-0">
           <span className="text-[13px] font-semibold text-[#525866]">{col.header}:</span>
@@ -138,6 +190,21 @@ export default function DataTable<T extends Record<string, any>>({
             {/* Header — sticky */}
             <thead className="bg-white border-b border-[#E1E4EA] sticky top-0 z-10">
               <tr>
+                {selection && (
+                  <th className="px-4 py-3 w-12">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all on this page"
+                      className="h-4 w-4 accent-[#2563EB]"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      disabled={selectableRows.length === 0}
+                      onChange={toggleAll}
+                    />
+                  </th>
+                )}
                 {columns.map((col) => (
                   <th
                     key={String(col.field)}
@@ -165,7 +232,7 @@ export default function DataTable<T extends Record<string, any>>({
               {data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={columns.length}
+                    colSpan={columns.length + (selection ? 1 : 0)}
                     className="px-6 py-8 text-center text-[13px] text-[#525866]"
                   >
                     {emptyMessage}
@@ -180,6 +247,18 @@ export default function DataTable<T extends Record<string, any>>({
                     }`}
                     onClick={() => onRowClick?.(row)}
                   >
+                    {selection && (
+                      <td className="px-4 py-4 w-12" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label="Select row"
+                          className="h-4 w-4 accent-[#2563EB]"
+                          checked={selection.selectedKeys.has(selection.getKey(row))}
+                          disabled={!(selection.isSelectable?.(row) ?? true)}
+                          onChange={() => toggleRow(row)}
+                        />
+                      </td>
+                    )}
                     {columns.map((col) => (
                       <td
                         key={String(col.field)}

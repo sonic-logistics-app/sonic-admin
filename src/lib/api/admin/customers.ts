@@ -71,6 +71,23 @@ export default class CustomerService {
     }).then((res) => res.json());
   }
 
+  /** Verify several customers at once. No email is sent. */
+  verifyCustomers(user_ids: number[]) {
+    return fetch(`${apiUrl}/user/verify-bulk`, {
+      method: "PUT",
+      headers: authService.getAuthHeaders(),
+      body: JSON.stringify({ user_ids }),
+    }).then(async (res) => {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.message || `Request failed (${res.status})`);
+      return body as {
+        success: boolean;
+        message: string;
+        data: { verified: number; already_verified: number; not_found: number; failed: number };
+      };
+    });
+  }
+
   updateCustomer(user_id: number, data: { first_name?: string | null; last_name?: string | null; email?: string | null; phone?: string | null }) {
     return fetch(`${apiUrl}/user/${user_id}`, {
       method: "PUT",

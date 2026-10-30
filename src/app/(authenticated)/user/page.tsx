@@ -59,6 +59,8 @@ export default function UserListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [bulkVerifying, setBulkVerifying] = useState(false);
   const [otpVerifiedFilter, setOtpVerifiedFilter] = useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const { data: optimisticCustomers, optimisticUpdate, resetData } = useOptimisticUpdate<Customer>(customers);
@@ -109,6 +111,7 @@ export default function UserListPage() {
       }));
 
       setCustomers(formattedCustomers);
+      setSelectedIds(new Set()); // a new page or filter starts with nothing selected
       resetData(formattedCustomers);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
@@ -148,6 +151,51 @@ export default function UserListPage() {
         });
       }
     );
+  };
+
+  const confirmBulkVerify = () => {
+    const count = selectedIds.size;
+    setConfirmDialog({
+      visible: true,
+      title: "Verify selected customers",
+      message: `Verify ${count} customer${count === 1 ? "" : "s"}? Each one gets the welcome voucher and an in-app notification. No email is sent.`,
+      onConfirm: handleBulkVerify,
+      variant: "success",
+    });
+  };
+
+  const handleBulkVerify = async () => {
+    const ids = Array.from(selectedIds).map(Number);
+    if (ids.length === 0) return;
+
+    setBulkVerifying(true);
+    try {
+      const result = await customerService.verifyCustomers(ids);
+      const { verified, already_verified, not_found, failed } = result.data;
+      const extras = [
+        already_verified ? `${already_verified} already verified` : "",
+        not_found ? `${not_found} not found` : "",
+        failed ? `${failed} failed` : "",
+      ].filter(Boolean);
+
+      toast.current?.show({
+        severity: failed > 0 ? "warn" : "success",
+        summary: "Verification complete",
+        detail: `${verified} verified${extras.length ? `, ${extras.join(", ")}` : ""}`,
+        life: 5000,
+      });
+      setSelectedIds(new Set());
+      loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
+    } catch (error) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: error instanceof Error ? error.message : "Failed to verify users",
+        life: 4000,
+      });
+    } finally {
+      setBulkVerifying(false);
+    }
   };
 
   const confirmVerify = (customer: Customer) => {
@@ -460,7 +508,40 @@ export default function UserListPage() {
         {initialLoad && loading ? (
           <SkeletonLoader type="table" rows={10} />
         ) : (
+          <>
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3">
+              <span className="text-[13px] font-semibold text-[#1E40AF]">
+                {selectedIds.size} customer{selectedIds.size === 1 ? "" : "s"} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={bulkVerifying}
+                  className="px-3 py-1.5 text-[13px] font-semibold text-[#525866] hover:text-[#111827] disabled:opacity-50"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmBulkVerify}
+                  disabled={bulkVerifying}
+                  className="px-4 py-2 bg-[#059669] text-white rounded-lg text-[13px] font-semibold hover:bg-[#047857] transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <i className={`pi ${bulkVerifying ? "pi-spinner pi-spin" : "pi-check"} text-sm`} />
+                  {bulkVerifying ? "Verifying..." : "Verify selected"}
+                </button>
+              </div>
+            </div>
+          )}
           <DataTable
+            selection={{
+              selectedKeys: selectedIds,
+              onChange: setSelectedIds,
+              getKey: (c: Customer) => c.id,
+              isSelectable: (c: Customer) => !c.is_verified,
+            }}
             data={optimisticCustomers}
             columns={columns}
             loading={false}
@@ -472,6 +553,7 @@ export default function UserListPage() {
             emptyMessage="No users found"
             className="flex-1 min-h-0"
           />
+          </>
         )}
       </div>
 

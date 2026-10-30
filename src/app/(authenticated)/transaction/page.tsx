@@ -218,10 +218,10 @@ export default function TransactionListPage() {
       body: (rowData: Transaction) => (
         <div className="flex flex-col">
           <span className="text-[13px] font-medium text-[#111827]">
-            {rowData.customer.name}
+            {rowData.customer?.name ?? "—"}
           </span>
           <span className="text-[11px] text-[#525866]">
-            {rowData.customer.email}
+            {rowData.customer?.email ?? "—"}
           </span>
         </div>
       ),
@@ -587,7 +587,7 @@ export default function TransactionListPage() {
                       Name
                     </label>
                     <p className="text-[13px] text-[#111827]">
-                      {selectedTransaction.customer.name}
+                      {selectedTransaction.customer?.name ?? "—"}
                     </p>
                   </div>
                   <div>
@@ -595,7 +595,7 @@ export default function TransactionListPage() {
                       Email
                     </label>
                     <p className="text-[13px] text-[#111827]">
-                      {selectedTransaction.customer.email}
+                      {selectedTransaction.customer?.email ?? "—"}
                     </p>
                   </div>
                   <div>
@@ -603,7 +603,7 @@ export default function TransactionListPage() {
                       Phone
                     </label>
                     <p className="text-[13px] text-[#111827]">
-                      {selectedTransaction.customer.phone}
+                      {selectedTransaction.customer?.phone ?? "—"}
                     </p>
                   </div>
                   <div>
@@ -611,7 +611,7 @@ export default function TransactionListPage() {
                       Customer ID
                     </label>
                     <p className="text-[13px] text-[#525866] font-mono">
-                      {selectedTransaction.customer.id}
+                      {selectedTransaction.customer?.id ?? "—"}
                     </p>
                   </div>
                 </div>
