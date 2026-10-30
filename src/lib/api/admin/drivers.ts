@@ -21,7 +21,7 @@ export interface PaginatedResponse<T> {
 }
 
 export default class DriverService {
-  getAllDrivers(params?: PaginationParams): Promise<PaginatedResponse<any>> {
+  getAllDrivers<T = Record<string, unknown>>(params?: PaginationParams): Promise<PaginatedResponse<T>> {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", (params?.page ?? 1).toString());
@@ -65,7 +65,7 @@ export default class DriverService {
       });
   }
 
-  verifyDriver(driverId: number, verificationData: any) {
+  verifyDriver(driverId: number, verificationData: Record<string, unknown>) {
     const requestBody = {
       driver_id: driverId.toString(),
       ...verificationData,
@@ -88,7 +88,7 @@ export default class DriverService {
       });
   }
 
-  rejectDriver(driverId: number, rejectionData: any) {
+  rejectDriver(driverId: number, rejectionData: Record<string, unknown>) {
     const requestBody = {
       driver_id: driverId.toString(),
       ...rejectionData,

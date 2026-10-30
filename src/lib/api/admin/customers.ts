@@ -24,7 +24,7 @@ export interface PaginatedResponse<T> {
 }
 
 export default class CustomerService {
-  getAllCustomers(params?: PaginationParams): Promise<PaginatedResponse<any>> {
+  getAllCustomers<T = Record<string, unknown>>(params?: PaginationParams): Promise<PaginatedResponse<T>> {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", (params?.page ?? 1).toString());

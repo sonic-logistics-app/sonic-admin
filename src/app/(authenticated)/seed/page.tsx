@@ -108,7 +108,8 @@ export default function SeedPage() {
       } else {
         throw new Error("Unexpected response from seed endpoint");
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       setSeeding(false);
       setProgressStep(null);
       toast.current?.show({
@@ -132,7 +133,8 @@ export default function SeedPage() {
         detail: "Test data cleaned up successfully",
         life: 3000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

@@ -69,7 +69,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: false });
         return { success: false, message: response.message || "Login failed" };
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       set({ isLoading: false });
       return { success: false, message: error.message || "Login failed" };
     }
@@ -93,7 +94,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           message: response.message || "Registration failed",
         };
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       set({ isLoading: false });
       return {
         success: false,
@@ -113,7 +115,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   checkAuth: () => {
     const token = authService.getToken();
-    const user = authService.getUser();
+    const user = authService.getUser() as User | null;
 
     if (token && user) {
       set({
@@ -158,7 +160,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: false });
         return { success: false, message: response.message || "Update failed" };
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       set({ isLoading: false });
       return { success: false, message: error.message || "Update failed" };
     }
@@ -172,7 +175,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Backend returns: { message }
       return { success: true, message: response.message };
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       set({ isLoading: false });
       return {
         success: false,
@@ -197,7 +201,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           message: response.message || "Token refresh failed",
         };
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       return {
         success: false,
         message: error.message || "Token refresh failed",

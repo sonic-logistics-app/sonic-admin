@@ -47,7 +47,7 @@ export interface Transaction {
   discount?: number;
   status: string;
   method?: string;
-  breakdown_snapshot?: any;
+  breakdown_snapshot?: unknown;
   vendor_transaction_type?: string;
   description?: string;
   customer: {

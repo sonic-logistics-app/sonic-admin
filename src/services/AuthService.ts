@@ -65,6 +65,14 @@ export interface ChangePasswordRequest {
   confirm_new_password: string;
 }
 
+export interface AdminUser {
+  id?: string | number;
+  email?: string;
+  name?: string;
+  role?: string;
+  [key: string]: unknown;
+}
+
 export default class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     const startTime = Date.now();
@@ -238,7 +246,7 @@ export default class AuthService {
     return localStorage.getItem('admin_refresh_token');
   }
 
-  getUser(): any | null {
+  getUser(): AdminUser | null {
     if (typeof window === 'undefined') return null;
     const userStr = localStorage.getItem('admin_user');
     return userStr ? JSON.parse(userStr) : null;

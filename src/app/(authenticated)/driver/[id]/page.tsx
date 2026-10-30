@@ -193,7 +193,8 @@ export default function DriverDetailsPage() {
       });
       
       loadDriverDetails();
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Verification Failed",
@@ -221,7 +222,8 @@ export default function DriverDetailsPage() {
       });
       
       loadDriverDetails();
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Rejection Failed",
@@ -255,7 +257,8 @@ export default function DriverDetailsPage() {
         life: 3000,
       });
       router.push("/driver");
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",
@@ -827,7 +830,7 @@ export default function DriverDetailsPage() {
                       <div>
                         <h3 className="text-[18px] font-semibold text-[#111827]">Personal Information Verification</h3>
                         <p className="text-[13px] text-[#525866]">
-                          Review and verify driver's basic profile information and KYC status
+                          Review and verify driver&apos;s basic profile information and KYC status
                         </p>
                       </div>
                     </div>
@@ -1025,7 +1028,7 @@ export default function DriverDetailsPage() {
                         <div>
                           <h3 className="text-[18px] font-semibold text-[#111827]">Bank Account Verification</h3>
                           <p className="text-[13px] text-[#525866]">
-                            Review and verify driver's bank account details
+                            Review and verify driver&apos;s bank account details
                           </p>
                         </div>
                       </div>

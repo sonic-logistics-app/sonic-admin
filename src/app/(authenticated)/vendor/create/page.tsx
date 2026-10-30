@@ -182,7 +182,8 @@ export default function CreateVendorPage() {
       } else {
         throw new Error(result.message || "Failed to create vendor");
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

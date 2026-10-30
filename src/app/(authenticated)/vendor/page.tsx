@@ -95,7 +95,7 @@ export default function VendorListPage() {
   const loadVendors = async (page: number, search: string, status: string, category: string, kycStatus: string, isAccepting: string, isOpen: string) => {
     try {
       setLoading(true);
-      const result = await vendorService.getAllVendors({
+      const result = await vendorService.getAllVendors<Vendor>({
         page,
         limit: pagination.limit,
         search: search || undefined,
@@ -130,7 +130,8 @@ export default function VendorListPage() {
       await vendorService.deleteVendor(vendor.id);
       toast.current?.show({ severity: "success", summary: "Success", detail: `Vendor ${vendor.name} deleted successfully`, life: 3000 });
       loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete vendor", life: 3000 });
     }
   };
@@ -263,7 +264,7 @@ export default function VendorListPage() {
   const exportVendors = async () => {
     try {
       const rows = await fetchAllPages<Vendor>((page, limit) =>
-        vendorService.getAllVendors({
+        vendorService.getAllVendors<Vendor>({
           page,
           limit,
           search: debouncedSearch || undefined,
@@ -292,7 +293,8 @@ export default function VendorListPage() {
         { header: "Joined", width: 22, value: (v: Vendor) => formatExportDate(v.created_at) },
       ], rows);
       toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} vendors exported`, life: 3000 });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export vendors", life: 4000 });
     }
   };

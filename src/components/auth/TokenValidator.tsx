@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { isTokenExpired, refreshTokenIfNeeded } from '@/lib/api/interceptor';
 import AuthService from '@/services/AuthService';
@@ -16,11 +16,14 @@ export default function TokenValidator({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [isValidating, setIsValidating] = useState(false);
   const [isValid, setIsValid] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  // false while rendering on the server, true once running in the browser
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
-    setMounted(true);
-    
     const validateToken = async () => {
       // Skip validation on login page
       if (pathname === '/login') {

@@ -11,7 +11,16 @@ interface OrderStatusSidebarProps {
   error: string;
 }
 
-const statusConfig: Record<string, any> = {
+interface StatusStyle {
+  label: string;
+  icon: string;
+  bgColor: string;
+  borderColor: string;
+  textColor: string;
+  [key: string]: string;
+}
+
+const statusConfig: Record<string, StatusStyle> = {
   PENDING: {
     label: "Pending",
     icon: "pi pi-clock",

@@ -6,7 +6,7 @@ interface CacheEntry<T> {
 }
 
 class ApiCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private readonly TTL = 30000; // 30 seconds
 
   get<T>(key: string): T | null {
@@ -18,7 +18,7 @@ class ApiCache {
       return null;
     }
     
-    return entry.data;
+    return entry.data as T;
   }
 
   set<T>(key: string, data: T): void {
@@ -76,7 +76,8 @@ export function useApiCache<T>(
       apiCache.set(key, result);
       setData(result);
       return result;
-    } catch (err: any) {
+    } catch (caught) {
+      const err = caught as Error;
       setError(err.message || 'Failed to fetch data');
       // Return cached data if available on error
       const cached = apiCache.get<T>(key);

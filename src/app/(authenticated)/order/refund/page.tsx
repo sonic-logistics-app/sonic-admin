@@ -31,7 +31,8 @@ export default function RefundManagementPage() {
       setLoading(true);
       const result = await refundService.getRefundSummary();
       setSummary(result.data);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -59,7 +60,8 @@ export default function RefundManagementPage() {
         detail: `${result.data.updated} refunds updated, ${result.data.errors} errors`,
         life: 5000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Sync Failed",
@@ -94,7 +96,8 @@ export default function RefundManagementPage() {
         detail: `Debug results for order ${debugOrderId}`,
         life: 3000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Debug Failed",
@@ -335,7 +338,7 @@ export default function RefundManagementPage() {
                   Refunds in Transaction List
                 </p>
                 <p className="text-[12px] text-[#525866] mb-3">
-                  All refunded payments appear in the transaction list with status "REFUNDED" and are clearly marked.
+                  All refunded payments appear in the transaction list with status &quot;REFUNDED&quot; and are clearly marked.
                 </p>
                 <button
                   onClick={() => router.push("/transaction?type=payment&status=REFUNDED")}
@@ -346,9 +349,9 @@ export default function RefundManagementPage() {
               </div>
               
               <div className="space-y-2">
-                <p className="text-[12px] font-semibold text-[#111827]">What You'll See:</p>
+                <p className="text-[12px] font-semibold text-[#111827]">What You&apos;ll See:</p>
                 <ul className="text-[11px] text-[#525866] space-y-1">
-                  <li>• Status shows as "REFUNDED" instead of "SUCCESS"</li>
+                  <li>• Status shows as &quot;REFUNDED&quot; instead of &quot;SUCCESS&quot;</li>
                   <li>• Original payment amount with strikethrough</li>
                   <li>• Complete customer and order details</li>
                   <li>• Voucher information if applicable</li>

@@ -41,7 +41,7 @@ export interface RefundDebugResponse {
   data: {
     order_id: string;
     order_number?: string;
-    flutterwave_response: any;
+    flutterwave_response: unknown;
     detection_results: {
       amount_settled: number;
       amount_charged: number;

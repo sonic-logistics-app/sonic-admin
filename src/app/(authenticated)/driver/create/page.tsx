@@ -144,7 +144,8 @@ export default function CreateDriverPage() {
       } else {
         throw new Error(result.message || "Failed to create driver");
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

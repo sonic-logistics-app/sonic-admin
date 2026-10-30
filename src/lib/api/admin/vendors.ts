@@ -68,7 +68,7 @@ export interface VendorFormData {
 
 export default class VendorService {
   // Get all vendors
-  getAllVendors(params?: PaginationParams): Promise<PaginatedResponse<any>> {
+  getAllVendors<T = Record<string, unknown>>(params?: PaginationParams): Promise<PaginatedResponse<T>> {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", (params?.page ?? 1).toString());
@@ -152,7 +152,7 @@ export default class VendorService {
   }
 
   // Approve vendor
-  approveVendor(vendorId: number | string, approvalData?: any) {
+  approveVendor(vendorId: number | string, approvalData?: Record<string, unknown>) {
     return fetch(`${apiUrl}/vendor/${vendorId}/approve`, {
       method: "PUT",
       headers: authService.getAuthHeaders(),

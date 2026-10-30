@@ -18,7 +18,7 @@ interface RecentOrder {
 interface RecentOrdersProps {
   orders: RecentOrder[];
   loading: boolean;
-  onRowClick: (event: any) => void;
+  onRowClick: (event: { data: RecentOrder }) => void;
 }
 
 const formatCurrency = (value: number) => {

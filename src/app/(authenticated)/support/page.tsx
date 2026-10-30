@@ -61,7 +61,8 @@ export default function SupportPage() {
         detail: "Contact information updated successfully",
         life: 3000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

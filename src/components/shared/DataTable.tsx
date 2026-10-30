@@ -8,7 +8,7 @@
 import React, { useState } from "react";
 import StatusBadge from "./StatusBadge";
 
-interface TableColumn<T = any> {
+interface TableColumn<T = unknown> {
   field: string;
   header: string;
   sortable?: boolean;
@@ -30,7 +30,7 @@ export interface SelectionConfig<T = unknown> {
   isSelectable?: (row: T) => boolean;
 }
 
-interface DataTableProps<T = any> {
+interface DataTableProps<T = unknown> {
   data: T[];
   columns: TableColumn<T>[];
   loading?: boolean;
@@ -47,7 +47,7 @@ interface DataTableProps<T = any> {
 /**
  * Reusable DataTable with desktop table view and mobile card fallback
  */
-export default function DataTable<T extends Record<string, any>>({
+export default function DataTable<T extends object>({
   data,
   columns,
   loading = false,
@@ -167,7 +167,7 @@ export default function DataTable<T extends Record<string, any>>({
         <div key={String(col.field)} className="flex justify-between items-center mb-3 last:mb-0">
           <span className="text-[13px] font-semibold text-[#525866]">{col.header}:</span>
           <span className="text-[13px] text-[#111827]">
-            {col.body ? col.body(rowData) : String(rowData[col.field] || "")}
+            {col.body ? col.body(rowData) : String((rowData as Record<string, unknown>)[col.field] || "")}
           </span>
         </div>
       ))}
@@ -264,7 +264,7 @@ export default function DataTable<T extends Record<string, any>>({
                         key={String(col.field)}
                         className="px-6 py-4 text-[13px] text-[#111827]"
                       >
-                        {col.body ? col.body(row) : String(row[col.field] || "")}
+                        {col.body ? col.body(row) : String((row as Record<string, unknown>)[col.field] || "")}
                       </td>
                     ))}
                   </tr>

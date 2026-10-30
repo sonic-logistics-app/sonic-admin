@@ -97,7 +97,7 @@ export default function UserListPage() {
   const loadCustomers = async (page: number, search: string, isVerified: string, provider: string, otpVerified: string) => {
     try {
       setLoading(true);
-      const result = await customerService.getAllCustomers({
+      const result = await customerService.getAllCustomers<Omit<Customer, "name">>({
         page,
         limit: pagination.limit,
         search: search || undefined,
@@ -106,7 +106,7 @@ export default function UserListPage() {
         otp_verified: otpVerified || undefined,
       });
 
-      const formattedCustomers = result.data.map((customer: any) => ({
+      const formattedCustomers = result.data.map((customer) => ({
         ...customer,
         name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "No Name",
       }));
@@ -232,7 +232,7 @@ export default function UserListPage() {
         });
         return newData;
       },
-      (error: any) => {
+      (error: Error) => {
         toast.current?.show({
           severity: "error",
           summary: "Delete Failed",
@@ -294,7 +294,8 @@ export default function UserListPage() {
       
       // Reload the list
       loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -409,7 +410,7 @@ export default function UserListPage() {
   const exportUsers = async () => {
     try {
       const rows = await fetchAllPages<Customer>((page, limit) =>
-        customerService.getAllCustomers({
+        customerService.getAllCustomers<Customer>({
           page,
           limit,
           search: debouncedSearchQuery || undefined,
@@ -433,7 +434,8 @@ export default function UserListPage() {
         { header: "Last login", width: 22, value: (c: Customer) => formatExportDate(c.last_login_at) },
       ], rows);
       toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} users exported`, life: 3000 });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export users", life: 4000 });
     }
   };
@@ -857,7 +859,8 @@ export default function UserListPage() {
                             detail: "Welcome voucher ensured for user",
                             life: 3000,
                           });
-                        } catch (error: any) {
+                        } catch (caught) {
+                          const error = caught as Error;
                           toast.current?.show({
                             severity: "error",
                             summary: "Error",

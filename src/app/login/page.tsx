@@ -37,10 +37,7 @@ export default function LoginPage() {
     // Check auth state from localStorage
     checkAuth();
     
-    // Check if admin account exists
-    setCheckingStatus(true);
-    setStatusError("");
-    
+    // Check if admin account exists (checkingStatus starts true, statusError starts empty)
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
     
     checkAdminStatus().then(({ hasAdmin }) => {
@@ -280,7 +277,7 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <a
                   className="font-medium no-underline cursor-pointer text-[#2563EB] hover:underline"
                 >

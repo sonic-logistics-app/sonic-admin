@@ -27,7 +27,19 @@ async function readJson(res: Response) {
   return body;
 }
 
-function toAccount(kind: DeletedKind, row: any): DeletedAccount {
+interface RawAccount {
+  id: string | number;
+  short_code?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  deleted_at?: string | null;
+}
+
+function toAccount(kind: DeletedKind, row: RawAccount): DeletedAccount {
   const personName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
   return {
     id: row.id,
@@ -49,7 +61,7 @@ export default class DeletedAccountsService {
     if (params.search) query.set("search", params.search);
 
     const body = await readJson(await fetch(`${apiUrl}/${PATH[kind]}?${query}`, { headers: authService.getAuthHeaders() }));
-    const rows: any[] = body.data?.[kind] ?? [];
+    const rows: RawAccount[] = body.data?.[kind] ?? [];
     return {
       data: rows.map((row) => toAccount(kind, row)),
       meta: body.meta ?? { total: rows.length, page: params.page, limit: params.limit },

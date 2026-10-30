@@ -82,7 +82,8 @@ export default function FAQEditPage() {
         });
         router.push(`/faq/${faq.id}`);
       }
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

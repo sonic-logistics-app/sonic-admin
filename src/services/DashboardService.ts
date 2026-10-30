@@ -2,6 +2,7 @@ import BaseApiService from './BaseApiService';
 
 export default class DashboardService extends BaseApiService {
   async getDashboardStats() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped dashboard JSON, shaped by the consuming page
     const response = await this.apiCall<any>('/dashboard/stats', {
       method: 'GET',
       headers: this.getAuthHeaders(),
@@ -12,6 +13,7 @@ export default class DashboardService extends BaseApiService {
   }
 
   async getRecentOrders() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped dashboard JSON, shaped by the consuming page
     const response = await this.apiCall<any>('/dashboard/latest-order', {
       method: 'GET',
       headers: this.getAuthHeaders(),
@@ -22,6 +24,7 @@ export default class DashboardService extends BaseApiService {
   }
 
   async getChartData(period: string = '6months') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped dashboard JSON, shaped by the consuming page
     const response = await this.apiCall<any>(`/dashboard/chart-data?period=${period}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),

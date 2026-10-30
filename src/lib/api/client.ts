@@ -6,7 +6,7 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api/admin";
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   error?: string;
@@ -104,7 +104,7 @@ class ApiClient {
     return response.json();
   }
 
-  async get<T = any>(endpoint: string): Promise<T> {
+  async get<T = unknown>(endpoint: string): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "GET",
@@ -113,7 +113,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async post<T = any>(endpoint: string, data?: any): Promise<T> {
+  async post<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "POST",
@@ -123,7 +123,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async put<T = any>(endpoint: string, data?: any): Promise<T> {
+  async put<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "PUT",
@@ -133,7 +133,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async patch<T = any>(endpoint: string, data?: any): Promise<T> {
+  async patch<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
     const headersWithAuth = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -144,7 +144,7 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async delete<T = any>(endpoint: string): Promise<T> {
+  async delete<T = unknown>(endpoint: string): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "DELETE",

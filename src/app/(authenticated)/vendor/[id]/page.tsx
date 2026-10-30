@@ -134,7 +134,8 @@ export default function VendorDetailsPage() {
             life: 3000,
           });
           loadVendorDetails();
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({
             severity: "error",
             summary: "Approval Failed",
@@ -165,7 +166,8 @@ export default function VendorDetailsPage() {
             life: 3000,
           });
           loadVendorDetails();
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({
             severity: "error",
             summary: "Rejection Failed",
@@ -199,7 +201,8 @@ export default function VendorDetailsPage() {
             life: 3000,
           });
           loadVendorDetails();
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({
             severity: "error",
             summary: "Error",
@@ -230,7 +233,8 @@ export default function VendorDetailsPage() {
             life: 3000,
           });
           loadVendorDetails();
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({
             severity: "error",
             summary: "Suspension Failed",
@@ -261,7 +265,8 @@ export default function VendorDetailsPage() {
             life: 3000,
           });
           loadVendorDetails();
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({
             severity: "error",
             summary: "Activation Failed",
@@ -298,7 +303,8 @@ export default function VendorDetailsPage() {
         life: 3000,
       });
       router.push("/vendor"); // Navigate back since vendor is now deleted and won't appear in normal queries
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",

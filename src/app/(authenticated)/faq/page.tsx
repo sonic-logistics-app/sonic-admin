@@ -80,7 +80,8 @@ export default function FAQListPage() {
       await faqService.deleteFAQ(faq.id);
       toast.current?.show({ severity: "success", summary: "Success", detail: "FAQ deleted successfully", life: 3000 });
       loadFAQs(pagination.page, debouncedSearch, categoryFilter);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete FAQ", life: 3000 });
     }
   };

@@ -3,8 +3,23 @@
 import { Chart } from "primereact/chart";
 import { useMemo } from "react";
 
+interface SalesChartDataset {
+  label?: string;
+  [key: string]: unknown;
+}
+
+interface SalesChartData {
+  labels?: string[];
+  datasets?: SalesChartDataset[];
+}
+
+interface TooltipContext {
+  dataset: { label?: string };
+  parsed: { y: number | null };
+}
+
 interface SalesChartProps {
-  data?: any;
+  data?: SalesChartData | null;
   loading?: boolean;
 }
 
@@ -18,7 +33,7 @@ export default function SalesChart({ data, loading = false }: SalesChartProps) {
       };
     }
 
-    const datasets = data.datasets?.map((dataset: any) => ({
+    const datasets = data.datasets?.map((dataset) => ({
       ...dataset,
       yAxisID: dataset.label === "Revenue" ? "y-revenue" : "y-orders",
       borderColor: dataset.label === "Revenue" ? "#2563EB" : "#059669",
@@ -83,7 +98,7 @@ export default function SalesChart({ data, loading = false }: SalesChartProps) {
         boxPadding: 6,
         usePointStyle: true,
         callbacks: {
-          label: function (context: any) {
+          label: function (context: TooltipContext) {
             let label = context.dataset.label || "";
             if (label) {
               label += ": ";
@@ -149,7 +164,7 @@ export default function SalesChart({ data, loading = false }: SalesChartProps) {
             family: "system-ui, -apple-system, sans-serif",
           },
           padding: 10,
-          callback: function (value: any) {
+          callback: function (value: number) {
             if (value >= 1000000) {
               return "₦" + (value / 1000000).toFixed(1) + "M";
             } else if (value >= 1000) {
@@ -187,7 +202,7 @@ export default function SalesChart({ data, loading = false }: SalesChartProps) {
             family: "system-ui, -apple-system, sans-serif",
           },
           padding: 10,
-          callback: function (value: any) {
+          callback: function (value: number) {
             return value.toLocaleString();
           },
         },

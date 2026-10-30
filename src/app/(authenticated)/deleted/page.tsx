@@ -50,7 +50,8 @@ export default function DeletedAccountsPage() {
         const result = await service.list(kind, { page, limit: 20, search: debouncedSearch || undefined });
         setRows(result.data);
         setPagination((prev) => ({ ...prev, page, total: result.meta.total }));
-      } catch (error: any) {
+      } catch (caught) {
+        const error = caught as Error;
         toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load deleted accounts", life: 3000 });
       } finally {
         setInitialLoad(false);
@@ -84,7 +85,8 @@ export default function DeletedAccountsPage() {
           await service.restore(kind, account.id);
           toast.current?.show({ severity: "success", summary: "Restored", detail: `${account.name} has been restored`, life: 3000 });
           load(pagination.page);
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({ severity: "error", summary: "Restore failed", detail: error.message || "Could not restore", life: 4000 });
         }
       },
@@ -102,7 +104,8 @@ export default function DeletedAccountsPage() {
           await service.deleteForever(kind, account.id);
           toast.current?.show({ severity: "success", summary: "Deleted", detail: `${account.name} was permanently deleted`, life: 3000 });
           load(pagination.page);
-        } catch (error: any) {
+        } catch (caught) {
+          const error = caught as Error;
           toast.current?.show({ severity: "error", summary: "Delete failed", detail: error.message || "Could not delete", life: 4000 });
         }
       },

@@ -104,7 +104,7 @@ export default function DriverListPage() {
   const loadDrivers = async (page: number, search: string, status: string, kycStatus: string, isVerified: string, isRejected: string, provider: string) => {
     try {
       setLoading(true);
-      const result = await driverService.getAllDrivers({
+      const result = await driverService.getAllDrivers<Omit<Driver, "name">>({
         page,
         limit: pagination.limit,
         search: search || undefined,
@@ -115,7 +115,7 @@ export default function DriverListPage() {
         provider: provider || undefined,
       });
 
-      const formatted = result.data.map((driver: any) => ({
+      const formatted = result.data.map((driver) => ({
         ...driver,
         name: `${driver.first_name || ""} ${driver.last_name || ""}`.trim() || "No Name",
       }));
@@ -156,7 +156,8 @@ export default function DriverListPage() {
         life: 3000,
       });
       loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",
@@ -308,7 +309,7 @@ export default function DriverListPage() {
   const exportDrivers = async () => {
     try {
       const rows = await fetchAllPages<Driver>((page, limit) =>
-        driverService.getAllDrivers({
+        driverService.getAllDrivers<Driver>({
           page,
           limit,
           search: debouncedSearch || undefined,
@@ -335,7 +336,8 @@ export default function DriverListPage() {
         { header: "Joined", width: 22, value: (d: Driver) => formatExportDate(d.created_at) },
       ], rows);
       toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} drivers exported`, life: 3000 });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export drivers", life: 4000 });
     }
   };

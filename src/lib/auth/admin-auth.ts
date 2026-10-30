@@ -111,7 +111,7 @@ export class AdminAuth {
     }
 
     try {
-      const response = await apiClient.post("/refresh", { refreshToken });
+      const response = await apiClient.post<{ accessToken: string; refreshToken: string }>("/refresh", { refreshToken });
       const newToken = response.accessToken;
 
       this.storeTokens({
@@ -129,7 +129,7 @@ export class AdminAuth {
    * Login with credentials
    */
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post("/login", credentials);
+    const response = await apiClient.post<{ admin?: AdminUser; accessToken?: string; refreshToken?: string }>("/login", credentials);
 
     if (response.admin && response.accessToken) {
       const tokens: AuthTokens = {
@@ -166,7 +166,7 @@ export class AdminAuth {
    * Get current admin user profile
    */
   static async getProfile(): Promise<AdminUser> {
-    const response = await apiClient.get("/profile");
+    const response = await apiClient.get<{ admin?: AdminUser } & AdminUser>("/profile");
     return response.admin || response;
   }
 
@@ -176,7 +176,7 @@ export class AdminAuth {
   static async updateProfile(
     profileData: Partial<AdminUser>,
   ): Promise<AdminUser> {
-    const response = await apiClient.put("/profile", profileData);
+    const response = await apiClient.put<{ admin?: AdminUser } & AdminUser>("/profile", profileData);
     const updatedUser = response.admin || response;
     this.storeUser(updatedUser);
     return updatedUser;

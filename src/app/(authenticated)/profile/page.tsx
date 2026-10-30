@@ -78,7 +78,8 @@ export default function ProfilePage() {
         detail: "Profile updated successfully",
         life: 3000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -136,7 +137,8 @@ export default function ProfilePage() {
         detail: "Password changed successfully",
         life: 3000,
       });
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

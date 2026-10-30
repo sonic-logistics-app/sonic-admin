@@ -22,6 +22,11 @@ function ToastItem({ message, onRemove }: ToastItemProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
+  const handleRemove = () => {
+    setIsRemoving(true);
+    setTimeout(onRemove, 300); // Wait for exit animation
+  };
+
   useEffect(() => {
     // Show animation
     const showTimer = setTimeout(() => setIsVisible(true), 10);
@@ -36,11 +41,6 @@ function ToastItem({ message, onRemove }: ToastItemProps) {
       clearTimeout(removeTimer);
     };
   }, [message.life]);
-
-  const handleRemove = () => {
-    setIsRemoving(true);
-    setTimeout(onRemove, 300); // Wait for exit animation
-  };
 
   const getStyles = () => {
     switch (message.severity) {

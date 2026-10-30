@@ -93,7 +93,8 @@ class BaseApiService {
       }
 
       return data;
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       this.monitorResponseTime(startTime);
       
       if (error.name === 'AbortError') {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import VoucherService, { Voucher } from "@/lib/api/admin/vouchers";
 import { ToastRef } from "@/components/shared/Toast";
 
@@ -32,20 +32,24 @@ export default function VoucherFormDialog({
 
   const [formData, setFormData] = useState(defaultFormData);
 
-  useEffect(() => {
+  // Reset the form each time the dialog opens or switches to another voucher
+  const formKey = visible ? `${editMode ? "edit" : "new"}:${voucher?.id ?? ""}` : null;
+  const [syncedKey, setSyncedKey] = useState<string | null>(null);
+  if (formKey !== syncedKey) {
+    setSyncedKey(formKey);
     if (visible) {
-      if (editMode && voucher) {
-        setFormData({
-          code: voucher.code,
-          name: voucher.name,
-          amount: voucher.amount,
-          expiry_type: voucher.expiry_type,
-        });
-      } else {
-        setFormData(defaultFormData);
-      }
+      setFormData(
+        editMode && voucher
+          ? {
+              code: voucher.code,
+              name: voucher.name,
+              amount: voucher.amount,
+              expiry_type: voucher.expiry_type,
+            }
+          : defaultFormData,
+      );
     }
-  }, [visible, editMode, voucher]);
+  }
 
   const handleSave = async () => {
     try {
@@ -68,7 +72,8 @@ export default function VoucherFormDialog({
       }
       onHide();
       onSave();
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",

@@ -98,7 +98,8 @@ export default function VoucherListPage() {
       await voucherService.deleteVoucher(voucher.id);
       toast.current?.show({ severity: "success", summary: "Success", detail: `Voucher "${voucher.code}" deleted successfully`, life: 3000 });
       loadVouchers(pagination.page, debouncedSearch, hasCodeFilter, debouncedMin, debouncedMax);
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete voucher", life: 3000 });
     }
   };

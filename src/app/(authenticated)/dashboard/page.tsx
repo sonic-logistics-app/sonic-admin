@@ -55,6 +55,22 @@ interface RecentOrder {
   fullname_driver: string;
 }
 
+interface ChartData {
+  labels?: string[];
+  datasets?: { label?: string; [key: string]: unknown }[];
+}
+
+interface ApiOrder {
+  id: number;
+  order_id: string;
+  order_number?: string;
+  order_status: string;
+  price_fees: number;
+  package?: { delivery_type?: string } | null;
+  user?: { first_name?: string | null; last_name?: string | null } | null;
+  driver?: { first_name?: string | null; last_name?: string | null } | null;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -86,7 +102,7 @@ export default function DashboardPage() {
   });
   const [dailySignups, setDailySignups] = useState<DailySignupStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [chartData, setChartData] = useState<any>(null);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
 
   const dashboardService = new DashboardService();
 
@@ -147,7 +163,7 @@ export default function DashboardPage() {
           // Build status map from API data
           const statusMap: Record<string, number> = {};
           if (stats.order?.status && Array.isArray(stats.order.status)) {
-            stats.order.status.forEach((item: any) => {
+            stats.order.status.forEach((item: { order_status?: string; total?: unknown }) => {
               if (item.order_status && typeof item.total === 'number') {
                 statusMap[item.order_status] = item.total;
               }
@@ -226,7 +242,7 @@ export default function DashboardPage() {
 
       // Handle recent orders
       if (orders) {
-        const formattedOrders = orders.map((order: any) => ({
+        const formattedOrders = orders.map((order: ApiOrder) => ({
           id: order.id,
           order_id: order.order_id,
           order_number: order.order_number,
@@ -248,14 +264,14 @@ export default function DashboardPage() {
         setChartData(chartData);
       }
 
-    } catch (err: any) {
+    } catch {
       setError("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
-  const onRowClick = (event: any) => {
+  const onRowClick = (event: { data: { id: number | string } }) => {
     router.push(`/order/${event.data.id}`);
   };
 

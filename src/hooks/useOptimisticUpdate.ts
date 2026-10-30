@@ -8,7 +8,7 @@ export function useOptimisticUpdate<T>(initialData: T[]) {
     updateFn: (currentData: T[]) => T[],
     apiFn: () => Promise<R>,
     onSuccess?: (result: R, newData: T[]) => T[],
-    onError?: (error: any) => void
+    onError?: (error: Error) => void
   ): Promise<R | null> => {
     // Store original data for rollback
     setOriginalData(data);
@@ -30,7 +30,8 @@ export function useOptimisticUpdate<T>(initialData: T[]) {
       }
       
       return result;
-    } catch (error: any) {
+    } catch (caught) {
+      const error = caught as Error;
       // Rollback on error
       setData(originalData);
       

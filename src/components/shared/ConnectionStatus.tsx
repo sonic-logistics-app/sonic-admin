@@ -12,44 +12,6 @@ export default function ConnectionStatus({ className = '' }: ConnectionStatusPro
   const [status, setStatus] = useState<ConnectionStatus>('good');
   const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    // Monitor network status
-    const handleOnline = () => setStatus('good');
-    const handleOffline = () => setStatus('offline');
-
-    // Monitor API response times
-    const handleResponseTime = (event: CustomEvent) => {
-      const { responseTime } = event.detail;
-      updateStatus(responseTime);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('connection-status-update', handleResponseTime as EventListener);
-
-    // Set initial status
-    if (!navigator.onLine) {
-      setStatus('offline');
-      setIsVisible(true);
-    }
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('connection-status-update', handleResponseTime as EventListener);
-    };
-  }, []);
-
-  // Auto-hide good status after 3 seconds
-  useEffect(() => {
-    if (status === 'good' && isVisible) {
-      const timer = setTimeout(() => setIsVisible(false), 3000);
-      return () => clearTimeout(timer);
-    } else if (status !== 'good') {
-      setIsVisible(true);
-    }
-  }, [status, isVisible]);
-
   // Function to be called by API interceptors
   const updateStatus = (responseTime: number) => {
     if (responseTime > 3000) {
@@ -64,7 +26,49 @@ export default function ConnectionStatus({ className = '' }: ConnectionStatusPro
     }
   };
 
-  if (!isVisible) return null;
+  useEffect(() => {
+    // Monitor network status
+    const handleOnline = () => {
+      setStatus('good');
+      setIsVisible(true);
+    };
+    const handleOffline = () => {
+      setStatus('offline');
+      setIsVisible(true);
+    };
+
+    // Monitor API response times
+    const handleResponseTime = (event: CustomEvent) => {
+      const { responseTime } = event.detail;
+      updateStatus(responseTime);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('connection-status-update', handleResponseTime as EventListener);
+
+    // Set initial status (deferred so the state update does not run inside the effect body)
+    const initialCheck = window.setTimeout(() => {
+      if (!navigator.onLine) handleOffline();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(initialCheck);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('connection-status-update', handleResponseTime as EventListener);
+    };
+  }, []);
+
+  // Auto-hide good status after 3 seconds
+  useEffect(() => {
+    if (status === 'good' && isVisible) {
+      const timer = setTimeout(() => setIsVisible(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, isVisible]);
+
+  if (!isVisible && status === 'good') return null;
 
   const statusConfig = {
     good: { icon: '✅', text: 'Connected', color: 'text-green-600 bg-green-50 border-green-200' },
