@@ -18,6 +18,7 @@ import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exp
 interface Customer {
   id: number;
   public_id: string;
+  short_code: string;
   first_name: string | null;
   last_name: string | null;
   name: string;
@@ -326,6 +327,11 @@ export default function UserListPage() {
       ),
     },
     {
+      field: "short_code",
+      header: "Code",
+      body: (rowData: Customer) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
+    },
+    {
       field: "email",
       header: "Email",
       sortable: true,
@@ -418,6 +424,7 @@ export default function UserListPage() {
       }
       await downloadExcel("users", "Users", [
         { header: "Name", width: 26, value: (c: Customer) => `${c.first_name || ""} ${c.last_name || ""}`.trim() || "No Name" },
+        { header: "Code", width: 14, value: (c: Customer) => c.short_code },
         { header: "Email", width: 30, value: (c: Customer) => c.email },
         { header: "Phone", width: 16, value: (c: Customer) => c.phone },
         { header: "Verified", width: 10, value: (c: Customer) => yesNo(c.is_verified) },
@@ -591,7 +598,7 @@ export default function UserListPage() {
                     {selectedCustomer.name}
                   </h2>
                   <p className="text-[13px] text-[#525866]">
-                    User ID: {selectedCustomer.public_id}
+                    Code: {selectedCustomer.short_code}
                   </p>
                 </div>
               </div>

@@ -182,12 +182,12 @@ export default function TransactionListPage() {
 
   const columns = [
     {
-      field: "id",
-      header: "Transaction ID",
-      sortable: true,
+      field: "short_code",
+      header: "Transaction Code",
+      sortable: false,
       body: (rowData: Transaction) => (
         <span className="text-[13px] font-semibold text-[#111827] font-mono">
-          {rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id}
+          {rowData.short_code ?? (rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id)}
         </span>
       ),
     },
@@ -507,10 +507,10 @@ export default function TransactionListPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Transaction ID
+                      Transaction code
                     </label>
                     <p className="text-[13px] text-[#111827] font-mono bg-[#F3F4F6] px-2 py-1 rounded">
-                      {selectedTransaction.id}
+                      {selectedTransaction.short_code ?? selectedTransaction.id}
                     </p>
                   </div>
                   <div>
@@ -608,10 +608,10 @@ export default function TransactionListPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Customer ID
+                      Customer code
                     </label>
                     <p className="text-[13px] text-[#525866] font-mono">
-                      {selectedTransaction.customer?.id ?? "—"}
+                      {selectedTransaction.customer?.short_code ?? selectedTransaction.customer?.id ?? "—"}
                     </p>
                   </div>
                 </div>
@@ -689,10 +689,10 @@ export default function TransactionListPage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Driver ID
+                        Driver code
                       </label>
                       <p className="text-[13px] text-[#525866] font-mono">
-                        {selectedTransaction.driver.id}
+                        {selectedTransaction.driver.short_code ?? selectedTransaction.driver.id}
                       </p>
                     </div>
                   </div>

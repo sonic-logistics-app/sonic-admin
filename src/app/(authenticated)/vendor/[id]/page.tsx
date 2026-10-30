@@ -18,6 +18,7 @@ interface KYCDocuments {
 
 interface VendorDetails {
   id: string;
+  short_code: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -422,7 +423,7 @@ export default function VendorDetailsPage() {
             <div>
               <h1 className="text-[24px] font-bold text-[#111827]">Vendor Details</h1>
               <p className="text-[13px] text-[#525866]">
-                ID: {vendor.id}
+                Code: {vendor.short_code}
               </p>
             </div>
           </div>

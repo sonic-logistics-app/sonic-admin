@@ -110,6 +110,7 @@ export default function DeletedAccountsPage() {
 
   const columns = [
     { field: "name", header: "Name", body: (r: DeletedAccount) => <span className="font-medium text-[#111827]">{r.name}</span> },
+    { field: "short_code", header: "Code", body: (r: DeletedAccount) => <span className="font-mono text-[12px]">{r.short_code || "—"}</span> },
     { field: "email", header: "Email", body: (r: DeletedAccount) => r.email || "N/A" },
     { field: "phone", header: "Phone", body: (r: DeletedAccount) => r.phone || "N/A" },
     { field: "deleted_at", header: "Deleted on", body: (r: DeletedAccount) => formatDate(r.deleted_at) },
@@ -172,7 +173,7 @@ export default function DeletedAccountsPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder={`Search deleted ${tab.label.toLowerCase()} by name, email or phone...`}
+              placeholder={`Search deleted ${tab.label.toLowerCase()} by name, code, email or phone...`}
             />
           </div>
         </div>

@@ -87,6 +87,7 @@ interface BankAccount {
 }
 
 interface DriverDetails {
+  short_code: string;
   id: number;
   public_id: string;
   first_name: string | null;
@@ -415,7 +416,7 @@ export default function DriverDetailsPage() {
             <div>
               <h1 className="text-[24px] font-bold text-[#111827]">Driver Details</h1>
               <p className="text-[13px] text-[#525866]">
-                ID: {driver.public_id}
+                Code: {driver.short_code}
               </p>
             </div>
           </div>

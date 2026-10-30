@@ -24,6 +24,7 @@ interface KYCDocuments {
 
 interface Vendor {
   id: string;
+  short_code: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -177,6 +178,11 @@ export default function VendorListPage() {
       ),
     },
     {
+      field: "short_code",
+      header: "Code",
+      body: (rowData: Vendor) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
+    },
+    {
       field: "email",
       header: "Email",
       sortable: true,
@@ -274,6 +280,7 @@ export default function VendorListPage() {
       }
       await downloadExcel("vendors", "Vendors", [
         { header: "Business name", width: 28, value: (v: Vendor) => v.name },
+        { header: "Code", width: 14, value: (v: Vendor) => v.short_code },
         { header: "Email", width: 30, value: (v: Vendor) => v.email },
         { header: "Phone", width: 16, value: (v: Vendor) => v.phone },
         { header: "Business type", width: 16, value: (v: Vendor) => businessTypeLabel(v.business_type) },

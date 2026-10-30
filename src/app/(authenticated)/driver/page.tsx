@@ -25,6 +25,7 @@ interface VerificationStatus {
 interface Driver {
   id: number;
   public_id: string;
+  short_code: string;
   first_name: string | null;
   last_name: string | null;
   name: string;
@@ -223,6 +224,11 @@ export default function DriverListPage() {
       ),
     },
     {
+      field: "short_code",
+      header: "Code",
+      body: (rowData: Driver) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
+    },
+    {
       field: "email",
       header: "Email",
       sortable: true,
@@ -319,6 +325,7 @@ export default function DriverListPage() {
       }
       await downloadExcel("drivers", "Drivers", [
         { header: "Name", width: 26, value: (d: Driver) => `${d.first_name || ""} ${d.last_name || ""}`.trim() || "No Name" },
+        { header: "Code", width: 14, value: (d: Driver) => d.short_code },
         { header: "Email", width: 30, value: (d: Driver) => d.email },
         { header: "Phone", width: 16, value: (d: Driver) => d.phone },
         { header: "Status", width: 14, value: (d: Driver) => d.status },

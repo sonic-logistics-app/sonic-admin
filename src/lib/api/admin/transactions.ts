@@ -38,6 +38,7 @@ export interface TransactionSummary {
 
 export interface Transaction {
   id: string;
+  short_code?: string;
   type: "payment" | "vendor_earning";
   order_id: string;
   order_number?: string;
@@ -51,6 +52,7 @@ export interface Transaction {
   description?: string;
   customer: {
     id: string;
+    short_code?: string;
     name: string;
     email: string;
     phone: string;
@@ -64,6 +66,7 @@ export interface Transaction {
   };
   driver?: {
     id: string;
+    short_code?: string;
     name: string;
     email: string;
     phone: string;

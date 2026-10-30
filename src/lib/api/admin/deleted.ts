@@ -7,6 +7,7 @@ export type DeletedKind = "vendors" | "users" | "drivers";
 
 export interface DeletedAccount {
   id: string | number;
+  short_code: string | null;
   name: string;
   email: string | null;
   phone: string | null;
@@ -30,6 +31,7 @@ function toAccount(kind: DeletedKind, row: any): DeletedAccount {
   const personName = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
   return {
     id: row.id,
+    short_code: row.short_code ?? null,
     name: (kind === "vendors" ? row.name : personName || row.full_name || row.name) || row.email || "Unnamed",
     email: row.email ?? null,
     phone: row.phone ?? null,
