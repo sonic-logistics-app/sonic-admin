@@ -57,6 +57,20 @@ interface VendorDetails {
   location_photos: string[] | null;
   onboarding_completed: boolean;
   max_orders_per_hour: number;
+  // Computed by the API with the same checklist the approve/activate actions enforce
+  verification?: {
+    isComplete: boolean;
+    completionPercentage: number;
+    requirements: {
+      businessProfileComplete: boolean;
+      identityVerified: boolean;
+      bankAccountAdded: boolean;
+      locationPhotosUploaded: boolean;
+      cacVerified?: boolean;
+      documentsUploaded?: boolean;
+    };
+    missingItems: string[];
+  };
   orders_count?: number;
   last_order_date?: string;
   VendorAddress?: {
@@ -327,13 +341,18 @@ export default function VendorDetailsPage() {
       .slice(0, 2);
   };
 
-  // Check if all 4 tabs are complete
-  const isBusinessProfileComplete = vendor?.name && vendor?.business_type && vendor?.phone && (vendor?.VendorAddress?.landmark_address || vendor?.VendorAddress?.dropoff_address || vendor?.address) && (vendor?.VendorAddress?.latitude || vendor?.latitude) && (vendor?.VendorAddress?.longitude || vendor?.longitude) && vendor?.logo_url;
-  const isKycComplete = (vendor?.bvn || vendor?.nin) && (vendor?.owner_first_name || vendor?.owner_last_name) && vendor?.kyc_status === 'completed';
-  const isLocationPhotosComplete = vendor?.location_photos && vendor.location_photos.length > 0;
-  const isBankingComplete = vendor?.account_number && vendor?.bank_name;
-  
-  const allTabsComplete = isBusinessProfileComplete && isKycComplete && isLocationPhotosComplete && isBankingComplete;
+  // Completion comes from the API so this page can never disagree with what approve enforces
+  const verification = vendor?.verification;
+  const reqs = verification?.requirements;
+  const isBusinessProfileComplete = !!reqs?.businessProfileComplete;
+  const isKycComplete = !!reqs?.identityVerified && reqs.cacVerified !== false && reqs.documentsUploaded !== false;
+  const isLocationPhotosComplete = !!reqs?.locationPhotosUploaded;
+  const isBankingComplete = !!reqs?.bankAccountAdded;
+  const allTabsComplete = !!verification?.isComplete;
+  // Same rule the API applies before it accepts a KYC "verified" review
+  const hasIdentityData =
+    (vendor?.verification_type === "bvn" && !!vendor.bvn) ||
+    (vendor?.verification_type === "nin" && !!vendor.nin);
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "pi-home" },
@@ -347,7 +366,7 @@ export default function VendorDetailsPage() {
       id: "kyc", 
       label: "Identity & KYC", 
       icon: "pi-shield",
-      status: vendor?.kyc_status 
+      status: isKycComplete ? "completed" : vendor?.kyc_status === "failed" ? "rejected" : "pending"
     },
     { 
       id: "location-photos", 
@@ -661,11 +680,9 @@ export default function VendorDetailsPage() {
                         <i className="pi pi-exclamation-triangle" />
                         <span>
                           All verification sections must be complete before approving vendor. 
-                          {!isBusinessProfileComplete && " Missing: Business Profile."}
-                          {!isKycComplete && vendor?.kyc_status !== 'completed' && " KYC must be verified (currently: " + vendor?.kyc_status.toUpperCase() + ")."}
-                          {!isKycComplete && vendor?.kyc_status === 'completed' && " Missing: Identity & KYC data."}
-                          {!isLocationPhotosComplete && " Missing: Location Photos."}
-                          {!isBankingComplete && " Missing: Banking Details."}
+                          {verification?.missingItems?.length
+                            ? ` Missing: ${verification.missingItems.join("; ")}.`
+                            : " Verification status unavailable."}
                         </span>
                       </p>
                     </div>
@@ -772,7 +789,7 @@ export default function VendorDetailsPage() {
                     <div className="flex items-center gap-3">
                       <StatusBadge status={vendor.kyc_status} />
                       {/* Verify/Reject Buttons */}
-                      {vendor.kyc_status !== 'completed' && (
+                      {vendor.kyc_status !== 'completed' && hasIdentityData && (
                         <Button
                           onClick={() => handleVerifyVendor('VERIFIED')}
                           className="bg-green-600 hover:bg-green-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
