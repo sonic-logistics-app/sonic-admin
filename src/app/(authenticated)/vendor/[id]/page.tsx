@@ -71,6 +71,7 @@ interface VendorDetails {
       documentsUploaded?: boolean;
     };
     missingItems: string[];
+    missingProfileFields?: string[];
   };
   orders_count?: number;
   last_order_date?: string;
@@ -360,6 +361,22 @@ export default function VendorDetailsPage() {
   const hasIdentityData =
     (vendor?.verification_type === "bvn" && !!vendor.bvn) ||
     (vendor?.verification_type === "nin" && !!vendor.nin);
+  const kycRejected = vendor?.kyc_status === "failed";
+  const kycMarkedWithoutData = vendor?.kyc_status === "completed" && !hasIdentityData;
+  const profileFieldLabels: Record<string, string> = {
+    logo: "Logo",
+    name: "Business name",
+    business_type: "Business type",
+    phone: "Phone",
+    address: "Address with GPS (landmark address, latitude and longitude)",
+  };
+  const missingProfileLabels = (verification?.missingProfileFields ?? []).map((f) => profileFieldLabels[f] ?? f);
+  const checklist = [
+    { tab: "business-profile", label: "Business Profile", ok: isBusinessProfileComplete },
+    { tab: "kyc", label: "Identity & KYC", ok: isKycComplete },
+    { tab: "location-photos", label: "Location Photos", ok: isLocationPhotosComplete },
+    { tab: "banking", label: "Banking Details", ok: isBankingComplete },
+  ];
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "pi-home" },
@@ -686,10 +703,19 @@ export default function VendorDetailsPage() {
                       <p className="text-[13px] text-orange-800 flex items-center justify-center gap-2">
                         <i className="pi pi-exclamation-triangle" />
                         <span>
-                          All verification sections must be complete before approving vendor. 
-                          {verification?.missingItems?.length
-                            ? ` Missing: ${verification.missingItems.join("; ")}.`
-                            : " Verification status unavailable."}
+                          Approval is blocked until these sections are complete:
+                          {verification
+                            ? checklist.filter((c) => !c.ok).map((c) => (
+                                <button
+                                  key={c.tab}
+                                  type="button"
+                                  onClick={() => setActiveTab(c.tab)}
+                                  className="ml-2 underline font-semibold hover:text-orange-950"
+                                >
+                                  {c.label}
+                                </button>
+                              ))
+                            : " verification status unavailable."}
                         </span>
                       </p>
                     </div>
@@ -789,12 +815,23 @@ export default function VendorDetailsPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-[18px] font-semibold text-[#111827]">Identity & KYC Verification</h3>
-                      <p className="text-[13px] text-[#525866]">
-                        KYC Status: {vendor.kyc_status.toUpperCase()}
+                      <p className={`text-[13px] font-medium ${
+                        isKycComplete ? "text-[#059669]" : kycRejected ? "text-[#DC2626]" : "text-[#D97706]"
+                      }`}>
+                        {isKycComplete
+                          ? "Identity verified. This section passes the approval checklist."
+                          : kycRejected
+                          ? "KYC was rejected. Identity cannot be used for approval."
+                          : !hasIdentityData
+                          ? "Identity not submitted. The vendor has not provided a BVN or NIN."
+                          : "Identity submitted. Waiting for your review."}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <StatusBadge status={vendor.kyc_status} />
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] uppercase tracking-wider text-[#525866] mb-1">Admin review result</span>
+                        <StatusBadge status={vendor.kyc_status} />
+                      </div>
                       {/* Verify/Reject Buttons */}
                       {vendor.kyc_status !== 'completed' && hasIdentityData && (
                         <Button
@@ -805,7 +842,7 @@ export default function VendorDetailsPage() {
                           Verify Vendor
                         </Button>
                       )}
-                      {vendor.kyc_status !== 'failed' && (
+                      {vendor.kyc_status !== 'failed' && (hasIdentityData || kycMarkedWithoutData) && (
                         <Button
                           onClick={() => handleVerifyVendor('REJECTED')}
                           className="bg-red-600 hover:bg-red-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
@@ -817,6 +854,14 @@ export default function VendorDetailsPage() {
                     </div>
                   </div>
 
+                  {kycMarkedWithoutData && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6 text-[13px] text-orange-800">
+                      KYC is marked <strong>completed</strong>, but no BVN or NIN is on file. The completed status is not backed
+                      by any identity data, so approval stays blocked. Reject it to correct the status, or ask the vendor to
+                      verify their BVN or NIN in the vendor app.
+                    </div>
+                  )}
+
                   {/* Identity Verification Details */}
                   <div className="border border-[#E1E4EA] rounded-lg p-6 mb-6">
                     <h4 className="text-[15px] font-semibold text-[#111827] mb-4">Identity Verification</h4>
@@ -825,8 +870,8 @@ export default function VendorDetailsPage() {
                         <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                           Verification Method
                         </label>
-                        <p className="text-[13px] text-[#111827] uppercase font-semibold">
-                          {vendor.verification_type || "Not Verified"}
+                        <p className={`text-[13px] uppercase font-semibold ${vendor.verification_type ? "text-[#111827]" : "text-[#9CA3AF]"}`}>
+                          {vendor.verification_type || "Not submitted"}
                         </p>
                       </div>
                       {vendor.verification_type === "bvn" && vendor.bvn && (
@@ -918,12 +963,26 @@ export default function VendorDetailsPage() {
                           </label>
                           <StatusBadge status={vendor.cac_number ? "VERIFIED" : "PENDING"} />
                         </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
+                            Business Registration Number
+                          </label>
+                          <p className={`text-[13px] font-mono ${vendor.business_registration_number ? "text-[#111827]" : "text-[#DC2626]"}`}>
+                            {vendor.business_registration_number || "Not provided (required for registered businesses)"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* KYC Documents */}
                   <h4 className="text-[15px] font-semibold text-[#111827] mb-4 mt-6">Uploaded Documents</h4>
+                  {!(vendor.kyc_documents?.business_registration || vendor.kyc_documents?.tax_id || vendor.kyc_documents?.owner_id || vendor.kyc_documents?.bank_verification) && (
+                    <div className="text-center py-8 bg-[#F9FAFB] rounded-lg">
+                      <i className="pi pi-file text-[#9CA3AF] text-3xl mb-2" />
+                      <p className="text-[13px] text-[#525866]">No documents uploaded</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {vendor.kyc_documents?.business_registration && (
                       <div className="border border-[#E1E4EA] rounded-lg p-4">
@@ -991,6 +1050,11 @@ export default function VendorDetailsPage() {
 
             {activeTab === "business-profile" && (
               <div className="space-y-6">
+                {!isBusinessProfileComplete && missingProfileLabels.length > 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-[13px] text-orange-800">
+                    Required for approval, still missing: <strong>{missingProfileLabels.join(", ")}</strong>.
+                  </div>
+                )}
                 {/* Business Information */}
                 <div className="border border-[#E1E4EA] rounded-lg p-6">
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Information</h3>
@@ -1059,6 +1123,11 @@ export default function VendorDetailsPage() {
                       <p className="text-[13px] text-[#111827]">
                         {vendor.VendorAddress?.landmark_address || vendor.VendorAddress?.dropoff_address || vendor.address || "N/A"}
                       </p>
+                      {!vendor.VendorAddress?.landmark_address && (
+                        <p className="text-[11px] text-[#DC2626] mt-1">
+                          No landmark address on file. Approval needs a landmark address.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -1076,6 +1145,12 @@ export default function VendorDetailsPage() {
                 </div>
 
                 {/* Business Logo */}
+                {!vendor.logo_url && (
+                  <div className="border border-[#E1E4EA] rounded-lg p-6">
+                    <h3 className="text-[15px] font-semibold text-[#111827] mb-2">Business Logo</h3>
+                    <p className="text-[13px] text-[#DC2626]">No logo uploaded. A logo is required for approval.</p>
+                  </div>
+                )}
                 {vendor.logo_url && (
                   <div className="border border-[#E1E4EA] rounded-lg p-6">
                     <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Logo</h3>
@@ -1169,6 +1244,9 @@ export default function VendorDetailsPage() {
                         Photos of the business storefront, entrance, and interior
                       </p>
                     </div>
+                    {!isLocationPhotosComplete && (
+                      <span className="text-[13px] font-semibold text-[#D97706]">At least 1 photo required for approval</span>
+                    )}
                     {vendor.location_photos && vendor.location_photos.length > 0 && (
                       <div className="flex items-center gap-2">
                         <i className="pi pi-check-circle text-green-600" />
@@ -1225,13 +1303,18 @@ export default function VendorDetailsPage() {
               <div className="space-y-6">
                 <div className="border border-[#E1E4EA] rounded-lg p-6">
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Bank Account Details</h3>
+                  {!isBankingComplete && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4 text-[13px] text-orange-800">
+                      Required for approval: account holder name, account number and bank name.
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
                         Account Holder Name
                       </label>
                       <p className="text-[16px] text-[#111827] font-semibold">
-                        {vendor.account_name || "N/A"}
+                        {vendor.account_name || <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
                       </p>
                     </div>
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
@@ -1239,7 +1322,7 @@ export default function VendorDetailsPage() {
                         Account Number
                       </label>
                       <p className="text-[16px] text-[#111827] font-mono font-semibold">
-                        {vendor.account_number || "N/A"}
+                        {vendor.account_number || <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
                       </p>
                     </div>
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
@@ -1247,7 +1330,7 @@ export default function VendorDetailsPage() {
                         Bank Name
                       </label>
                       <p className="text-[16px] text-[#111827] font-semibold">
-                        {vendor.bank_name || "N/A"}
+                        {vendor.bank_name || <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
                       </p>
                     </div>
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
