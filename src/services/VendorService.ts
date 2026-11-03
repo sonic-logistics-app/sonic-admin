@@ -3,17 +3,6 @@ import AuthService from './AuthService';
 const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
 const authService = new AuthService();
 
-export interface KycMismatchVendor {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  status: string;
-  kyc_status: string;
-  verification_type: string | null;
-  created_at: string;
-}
-
 export interface VendorFilterParams {
   page?: number;
   limit?: number;
@@ -196,25 +185,6 @@ export default class VendorService {
       .catch(error => {
         throw error;
       });
-  }
-
-  // TEMPORARY: KYC status clean-up (see /kyc-cleanup)
-  async listKycMismatches(): Promise<{ vendors: KycMismatchVendor[]; total: number; checked: number }> {
-    const res = await fetch(`${apiUrl}/vendor/kyc-mismatches`, { headers: authService.getAuthHeaders() });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body?.message || `HTTP error! status: ${res.status}`);
-    return body.data;
-  }
-
-  async resetKycMismatches(vendorIds: string[]): Promise<{ reset: number; skipped: number; reset_ids: string[] }> {
-    const res = await fetch(`${apiUrl}/vendor/kyc-mismatches/reset`, {
-      method: 'POST',
-      headers: { ...authService.getAuthHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ vendor_ids: vendorIds }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(body?.message || `HTTP error! status: ${res.status}`);
-    return body.data;
   }
 
   deleteVendor(vendorId: string) {
