@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Payout, WalletRow, getPayouts, getWallets } from "@/lib/api/admin/ops";
@@ -44,23 +45,36 @@ export function PayoutsTab() {
   }, [load]);
 
   const columns = [
-    { field: "vendor_name", header: "Vendor", body: (r: Payout) => <span className="font-medium text-[#111827]">{r.vendor_name || "Unknown"}</span> },
-    { field: "period", header: "Period", body: (r: Payout) => `${day(r.period_start_date)} to ${day(r.period_end_date)}` },
-    { field: "orders_count", header: "Orders" },
-    { field: "gross_amount", header: "Gross", body: (r: Payout) => naira(r.gross_amount) },
-    { field: "fees", header: "Fees", body: (r: Payout) => naira(r.commission_amount + r.processing_fee) },
+    {
+      field: "vendor_name",
+      header: "Vendor / period",
+      body: (r: Payout) => (
+        <CellStack primary={r.vendor_name || "Unknown"} secondary={`${day(r.period_start_date)} to ${day(r.period_end_date)}`} />
+      ),
+    },
+    {
+      field: "gross_amount",
+      header: "Orders / gross",
+      body: (r: Payout) => (
+        <CellStack
+          primary={naira(r.gross_amount)}
+          secondary={`${r.orders_count} orders`}
+          tertiary={`Fees ${naira(r.commission_amount + r.processing_fee)}`}
+        />
+      ),
+    },
     { field: "net_amount", header: "Net", body: (r: Payout) => <span className="font-semibold">{naira(r.net_amount)}</span> },
     {
       field: "status",
-      header: "Status",
+      header: "Status / paid on",
       body: (r: Payout) => (
-        <div>
+        <div className="flex flex-col items-start gap-1">
           <StatusBadge status={r.status} />
-          {r.failure_reason && <p className="text-[11px] text-[#DC2626] mt-1 max-w-[220px]">{r.failure_reason}</p>}
+          <span className="text-[11px] text-[#525866]">{r.processed_date ? `Paid ${day(r.processed_date)}` : "Not paid yet"}</span>
+          {r.failure_reason && <p className="text-[11px] text-[#DC2626] max-w-[220px]">{r.failure_reason}</p>}
         </div>
       ),
     },
-    { field: "processed_date", header: "Paid on", body: (r: Payout) => day(r.processed_date) },
     { field: "provider_reference", header: "Provider reference", body: (r: Payout) => <span className="font-mono text-[11px]">{r.provider_reference || "—"}</span> },
   ];
 
@@ -129,10 +143,16 @@ export function WalletsTab() {
   }, [load]);
 
   const columns = [
-    { field: "owner_name", header: type === "vendor" ? "Vendor" : "Driver", body: (r: WalletRow) => <span className="font-medium text-[#111827]">{r.owner_name}</span> },
-    { field: "owner_email", header: "Email", body: (r: WalletRow) => r.owner_email || "N/A" },
-    { field: "balance", header: "Balance", body: (r: WalletRow) => <span className="font-semibold">{naira(r.balance)}</span> },
-    { field: "updated_at", header: "Last updated", body: (r: WalletRow) => day(r.updated_at) },
+    {
+      field: "owner_name",
+      header: type === "vendor" ? "Vendor" : "Driver",
+      body: (r: WalletRow) => <CellStack primary={r.owner_name} secondary={r.owner_email || "N/A"} />,
+    },
+    {
+      field: "balance",
+      header: "Balance / updated",
+      body: (r: WalletRow) => <CellStack primary={naira(r.balance)} secondary={`Updated ${day(r.updated_at)}`} />,
+    },
   ];
 
   return (

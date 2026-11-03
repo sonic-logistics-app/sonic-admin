@@ -12,6 +12,7 @@ import VendorReviewPanel from "@/components/vendors/VendorReviewPanel";
 import MaskedValue from "@/components/shared/MaskedValue";
 import VendorCataloguePanel from "@/components/vendors/VendorCataloguePanel";
 import VendorFinancePanel from "@/components/vendors/VendorFinancePanel";
+import { getNextPendingVendor } from "@/lib/api/admin/ops";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -92,6 +93,7 @@ interface VendorDetails {
 export default function VendorDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const [nextPending, setNextPending] = useState<{ code: string; name: string; remaining: number } | null>(null);
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
 
@@ -119,6 +121,14 @@ export default function VendorDetailsPage() {
       loadVendorDetails();
     }
   }, [params.id]);
+
+  // The longest-waiting pending vendor other than this one, so a reviewer can keep working the queue
+  useEffect(() => {
+    if (!params.id) return;
+    getNextPendingVendor(String(params.id))
+      .then(({ data }) => setNextPending(data.next ? { code: data.next.short_code || data.next.id, name: data.next.name, remaining: data.remaining } : null))
+      .catch(() => setNextPending(null));
+  }, [params.id, vendor?.status]);
 
   const loadVendorDetails = async () => {
     try {
@@ -496,6 +506,12 @@ export default function VendorDetailsPage() {
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={vendor.status} />
+            {nextPending && (
+              <Button variant="outline" onClick={() => router.push(`/vendor/${nextPending.code}`)}>
+                Next pending ({nextPending.remaining})
+                <i className="pi pi-arrow-right ml-2" />
+              </Button>
+            )}
             <Button
               variant="danger"
               onClick={confirmDelete}

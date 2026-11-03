@@ -6,6 +6,8 @@ import CustomerService from "@/lib/api/admin/customers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
+import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -49,6 +51,7 @@ interface Customer {
 export default function UserListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { createdFrom, createdTo } = useRegisteredRange();
   const [filtersReady, setFiltersReady] = useState(false);
   const toast = useRef<ToastRef>(null);
   const customerService = new CustomerService();
@@ -97,12 +100,12 @@ export default function UserListPage() {
   useEffect(() => {
     if (!filtersReady) return;
     loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-  }, [filtersReady, pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
+  }, [filtersReady, pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, createdFrom, createdTo]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
+  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, createdFrom, createdTo]);
 
   const loadCustomers = async (page: number, search: string, isVerified: string, provider: string, otpVerified: string) => {
     try {
@@ -114,6 +117,8 @@ export default function UserListPage() {
         is_verified: isVerified || undefined,
         provider: provider || undefined,
         otp_verified: otpVerified || undefined,
+        created_from: createdFrom || undefined,
+        created_to: createdTo || undefined,
       });
 
       const formattedCustomers = result.data.map((customer) => ({
@@ -318,61 +323,52 @@ export default function UserListPage() {
   const columns = [
     {
       field: "name",
-      header: "Name",
+      header: "Customer",
       sortable: true,
       body: (rowData: Customer) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {(rowData.picture || rowData.profile_image_url) ? (
             <img
               src={rowData.picture || rowData.profile_image_url || undefined}
               alt={rowData.name}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-[11px] font-semibold">
+            <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
               {getInitials(rowData.first_name, rowData.last_name)}
             </div>
           )}
-          <span>{rowData.name}</span>
-          {rowData.suspended_at && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-semibold">Suspended</span>
-          )}
+          <CellStack
+            primary={
+              <>
+                {rowData.name}
+                {rowData.suspended_at && (
+                  <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-semibold">Suspended</span>
+                )}
+              </>
+            }
+            secondary={<span className="font-mono">{rowData.short_code || "—"}</span>}
+          />
         </div>
       ),
     },
     {
-      field: "short_code",
-      header: "Code",
-      body: (rowData: Customer) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
-    },
-    {
       field: "email",
-      header: "Email",
-      sortable: true,
-      body: (rowData: Customer) => rowData.email || "N/A",
-    },
-    {
-      field: "phone",
-      header: "Phone",
-      sortable: true,
-      body: (rowData: Customer) => rowData.phone || "N/A",
-    },
-    {
-      field: "is_verified",
-      header: "Verified",
+      header: "Contact",
       sortable: true,
       body: (rowData: Customer) => (
-        <StatusBadge status={rowData.is_verified ? "VERIFIED" : "PENDING"} />
+        <CellStack primary={rowData.email || "N/A"} secondary={rowData.phone || "No phone"} />
       ),
     },
     {
-      field: "provider",
-      header: "Provider",
+      field: "is_verified",
+      header: "Verified / sign-up",
       sortable: true,
       body: (rowData: Customer) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.provider}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={rowData.is_verified ? "VERIFIED" : "PENDING"} />
+          <span className="text-[11px] text-[#525866]">via {rowData.provider}</span>
+        </div>
       ),
     },
     {
@@ -430,6 +426,8 @@ export default function UserListPage() {
           is_verified: isVerifiedFilter || undefined,
           provider: providerFilter || undefined,
           otp_verified: otpVerifiedFilter || undefined,
+          created_from: createdFrom || undefined,
+          created_to: createdTo || undefined,
         }),
       );
       if (rows.length === 0) {
@@ -484,6 +482,8 @@ export default function UserListPage() {
         </div>
 
         {/* Search Bar */}
+        <RegisteredRangeChip />
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[250px]">
             <SearchBar

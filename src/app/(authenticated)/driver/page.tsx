@@ -6,6 +6,8 @@ import DriverService from "@/lib/api/admin/drivers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
+import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -59,6 +61,7 @@ interface Driver {
 export default function DriverListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { createdFrom, createdTo } = useRegisteredRange();
   const [filtersReady, setFiltersReady] = useState(false);
   const toast = useRef<ToastRef>(null);
   const driverService = new DriverService();
@@ -104,12 +107,12 @@ export default function DriverListPage() {
   useEffect(() => {
     if (!filtersReady) return;
     loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
-  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter, createdFrom, createdTo]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
+  }, [debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter, createdFrom, createdTo]);
 
   const loadDrivers = async (page: number, search: string, status: string, kycStatus: string, isVerified: string, isRejected: string, provider: string) => {
     try {
@@ -123,6 +126,8 @@ export default function DriverListPage() {
         is_verified: isVerified || undefined,
         is_rejected: isRejected || undefined,
         provider: provider || undefined,
+        created_from: createdFrom || undefined,
+        created_to: createdTo || undefined,
       });
 
       const formatted = result.data.map((driver) => ({
@@ -215,58 +220,45 @@ export default function DriverListPage() {
   const columns = [
     {
       field: "name",
-      header: "Name",
+      header: "Driver",
       sortable: true,
       body: (rowData: Driver) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {(rowData.picture || rowData.profile_image_url || rowData.uploaded_files?.profile_image) ? (
             <img
               src={rowData.picture || rowData.profile_image_url || rowData.uploaded_files?.profile_image}
               alt={rowData.name}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#9c27b0] text-white flex items-center justify-center text-[11px] font-semibold">
+            <div className="w-9 h-9 rounded-full bg-[#9c27b0] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
               {getInitials(rowData.first_name, rowData.last_name)}
             </div>
           )}
-          <span>{rowData.name}</span>
+          <CellStack
+            primary={rowData.name}
+            secondary={<span className="font-mono">{rowData.short_code || "—"}</span>}
+          />
         </div>
       ),
     },
     {
-      field: "short_code",
-      header: "Code",
-      body: (rowData: Driver) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
-    },
-    {
       field: "email",
-      header: "Email",
-      sortable: true,
-      body: (rowData: Driver) => rowData.email || "N/A",
-    },
-    {
-      field: "phone",
-      header: "Phone",
-      sortable: true,
-      body: (rowData: Driver) => rowData.phone || "N/A",
-    },
-    {
-      field: "status",
-      header: "Status",
+      header: "Contact",
       sortable: true,
       body: (rowData: Driver) => (
-        <StatusBadge status={rowData.status} />
+        <CellStack primary={rowData.email || "N/A"} secondary={rowData.phone || "No phone"} />
       ),
     },
     {
-      field: "kyc_status",
-      header: "KYC Status",
+      field: "status",
+      header: "Status / KYC",
       sortable: true,
       body: (rowData: Driver) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.kyc_status.toUpperCase()}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={rowData.status} />
+          <span className="text-[11px] text-[#525866]">KYC: {rowData.kyc_status.replace(/_/g, " ")}</span>
+        </div>
       ),
     },
     {
@@ -319,6 +311,8 @@ export default function DriverListPage() {
           is_verified: isVerifiedFilter || undefined,
           is_rejected: isRejectedFilter || undefined,
           provider: providerFilter || undefined,
+          created_from: createdFrom || undefined,
+          created_to: createdTo || undefined,
         }),
       );
       if (rows.length === 0) {
@@ -372,6 +366,8 @@ export default function DriverListPage() {
           </button>
           </div>
         </div>
+
+        <RegisteredRangeChip />
 
         {/* Search Bar and Filters */}
         <div className="flex flex-wrap items-center gap-3">

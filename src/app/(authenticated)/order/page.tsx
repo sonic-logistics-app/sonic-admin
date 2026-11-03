@@ -7,6 +7,7 @@ import OrderService from "@/lib/api/admin/orders";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -237,58 +238,37 @@ export default function OrderListPage() {
               {getInitials(rowData.user?.first_name, rowData.user?.last_name)}
             </div>
           )}
-          <span className="text-[13px]">
-            {rowData.user?.first_name} {rowData.user?.last_name}
-          </span>
+          <CellStack
+            primary={`${rowData.user?.first_name ?? ""} ${rowData.user?.last_name ?? ""}`.trim() || "—"}
+            secondary={rowData.user?.phone || undefined}
+          />
         </div>
       ),
     },
-
     {
       field: "order_status",
-      header: "Status",
+      header: "Status / type",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge status={rowData.order_status} />
-      ),
-    },
-    {
-      field: "order_type",
-      header: "Type",
-      sortable: true,
-      body: (rowData: Order) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.order_type}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={rowData.order_status} />
+          <span className="text-[11px] text-[#525866]">{rowData.order_type}</span>
+        </div>
       ),
     },
     {
       field: "payment_status",
-      header: "Payment",
+      header: "Payment / voucher",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge
-          status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status}
-        />
-      ),
-    },
-    {
-      field: "voucher_info",
-      header: "Voucher",
-      sortable: false,
-      body: (rowData: Order) => (
-        <div className="flex flex-col">
-          {rowData.payment_details?.voucher_used ? (
-            <>
-              <span className="text-[11px] px-2 py-1 rounded-full bg-[#ECFDF3] text-[#059669] font-medium">
-                {rowData.payment_details.voucher_used.code}
-              </span>
-              <span className="text-[10px] text-[#525866] mt-1">
-                -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)}
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] text-[#9CA3AF]">—</span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge
+            status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status}
+          />
+          {rowData.payment_details?.voucher_used && (
+            <span className="text-[11px] text-[#059669]">
+              {rowData.payment_details.voucher_used.code} · -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)}
+            </span>
           )}
         </div>
       ),

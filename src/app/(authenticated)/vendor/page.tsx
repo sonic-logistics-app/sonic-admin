@@ -6,6 +6,9 @@ import VendorService from "@/lib/api/admin/vendors";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
+import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
+import { RegistrationStats, getNextPendingVendor, getRegistrationStats, getVendorLocalities } from "@/lib/api/admin/ops";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -53,11 +56,14 @@ interface Vendor {
   onboarding_completed: boolean;
   VendorAddress?: { landmark_address?: string | null } | null;
   verification?: { isComplete: boolean; completionPercentage: number; missingItems: string[] };
+  locality?: string | null;
+  evidence?: { passed: number; total: number; location_photos: number; products: number; products_missing_images: number };
 }
 
 export default function VendorListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { createdFrom, createdTo } = useRegisteredRange();
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
 
@@ -72,6 +78,10 @@ export default function VendorListPage() {
   const [isAcceptingOrdersFilter, setIsAcceptingOrdersFilter] = useState<string>("");
   const [isOpenFilter, setIsOpenFilter] = useState<string>("");
   const [readyFilter, setReadyFilter] = useState<string>("");
+  const [localityFilter, setLocalityFilter] = useState<string>("");
+  const [reviewFilter, setReviewFilter] = useState<string>("");
+  const [localities, setLocalities] = useState<{ name: string; vendors: number }[]>([]);
+  const [queue, setQueue] = useState<RegistrationStats["attention"] | null>(null);
   // Links from the dashboard open this list already filtered (?status=...&ready=...)
   const [filtersReady, setFiltersReady] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -93,17 +103,25 @@ export default function VendorListPage() {
     setStatusFilter(searchParams.get("status") || "");
     setKycStatusFilter(searchParams.get("kyc_status") || "");
     setReadyFilter(searchParams.get("ready") || "");
+    setLocalityFilter(searchParams.get("locality") || "");
+    setReviewFilter(searchParams.get("review") || "");
     setFiltersReady(true);
   }, [searchParams]);
+
+  // Queue counts and neighbourhoods for the triage cards and the locality filter
+  useEffect(() => {
+    getRegistrationStats().then(({ data }) => setQueue(data.attention)).catch(() => undefined);
+    getVendorLocalities().then(({ data }) => setLocalities(data.localities)).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!filtersReady) return;
     loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter);
-  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter]);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter, localityFilter, reviewFilter, createdFrom, createdTo]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter]);
+  }, [debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter, localityFilter, reviewFilter, createdFrom, createdTo]);
 
   const loadVendors = async (page: number, search: string, status: string, category: string, kycStatus: string, isAccepting: string, isOpen: string, ready: string) => {
     try {
@@ -118,6 +136,10 @@ export default function VendorListPage() {
         is_accepting_orders: isAccepting || undefined,
         is_open: isOpen || undefined,
         ready: ready || undefined,
+        locality: localityFilter || undefined,
+        review: reviewFilter || undefined,
+        created_from: createdFrom || undefined,
+        created_to: createdTo || undefined,
       });
       setVendors(result.data);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
@@ -173,62 +195,71 @@ export default function VendorListPage() {
   const columns = [
     {
       field: "name",
-      header: "Vendor Name",
+      header: "Business / category",
       sortable: true,
       body: (rowData: Vendor) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {rowData.logo_url ? (
             <img
               src={rowData.logo_url}
               alt={rowData.name}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-9 h-9 rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[11px] font-semibold">
+            <div className="w-9 h-9 rounded-full bg-[#F59E0B] text-white flex items-center justify-center text-[11px] font-semibold shrink-0">
               {getInitials(rowData.name)}
             </div>
           )}
-          <span>{rowData.name}</span>
+          <CellStack
+            primary={rowData.name}
+            secondary={businessTypeLabel(rowData.business_type)}
+            tertiary={<span className="font-mono">{rowData.short_code || "—"}</span>}
+          />
         </div>
       ),
     },
     {
-      field: "short_code",
-      header: "Code",
-      body: (rowData: Vendor) => <span className="font-mono text-[12px]">{rowData.short_code || "—"}</span>,
-    },
-    {
       field: "email",
-      header: "Email",
-      sortable: true,
-      body: (rowData: Vendor) => rowData.email || "N/A",
-    },
-    {
-      field: "business_type",
-      header: "Business Type",
+      header: "Contact",
       sortable: true,
       body: (rowData: Vendor) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {businessTypeLabel(rowData.business_type)}
-        </span>
+        <CellStack primary={rowData.email || "N/A"} secondary={rowData.phone || "No phone"} />
       ),
+    },
+    {
+      field: "locality",
+      header: "Locality",
+      body: (rowData: Vendor) => <span className="text-[13px] text-[#111827]">{rowData.locality || <span className="text-[#9CA3AF]">Unknown</span>}</span>,
+    },
+    {
+      field: "evidence",
+      header: "Evidence / products",
+      body: (rowData: Vendor) => {
+        const e = rowData.evidence;
+        if (!e) return <span className="text-[#9CA3AF]">—</span>;
+        return (
+          <CellStack
+            primary={<span className={e.passed === e.total ? "text-[#059669]" : "text-[#92400E]"}>{e.passed}/{e.total} checks</span>}
+            secondary={`${e.location_photos} location photo${e.location_photos === 1 ? "" : "s"}`}
+            tertiary={
+              <>
+                {e.products} product{e.products === 1 ? "" : "s"}
+                {e.products_missing_images > 0 && <span className="text-[#D97706]"> · {e.products_missing_images} missing images</span>}
+              </>
+            }
+          />
+        );
+      },
     },
     {
       field: "status",
-      header: "Status",
+      header: "Status / KYC",
       sortable: true,
       body: (rowData: Vendor) => (
-        <StatusBadge status={rowData.status} />
-      ),
-    },
-    {
-      field: "kyc_status",
-      header: "KYC Status",
-      sortable: true,
-      body: (rowData: Vendor) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.kyc_status.toUpperCase()}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={rowData.status} />
+          <span className="text-[11px] text-[#525866]">KYC: {rowData.kyc_status.replace(/_/g, " ")}</span>
+        </div>
       ),
     },
     {
@@ -250,20 +281,15 @@ export default function VendorListPage() {
       },
     },
     {
-      field: "commission_rate",
-      header: "Vendor Commission",
+      field: "created_at",
+      header: "Joined / commission",
       sortable: true,
       body: (rowData: Vendor) => (
-        <span className="text-[13px] font-semibold text-[#059669]">
-          {100 - rowData.commission_rate}%
-        </span>
+        <CellStack
+          primary={formatDate(rowData.created_at)}
+          secondary={<span className="font-semibold text-[#059669]">{100 - rowData.commission_rate}% to vendor</span>}
+        />
       ),
-    },
-    {
-      field: "created_at",
-      header: "Joined Date",
-      sortable: true,
-      body: (rowData: Vendor) => formatDate(rowData.created_at),
     },
     {
       field: "actions",
@@ -284,6 +310,21 @@ export default function VendorListPage() {
     },
   ];
 
+  // Opens the vendor that has waited longest for a decision
+  const reviewOldest = async () => {
+    try {
+      const { data } = await getNextPendingVendor();
+      if (!data.next) {
+        toast.current?.show({ severity: "info", summary: "Queue is clear", detail: "No vendors are waiting for approval", life: 3000 });
+        return;
+      }
+      router.push(`/vendor/${data.next.short_code || data.next.id}`);
+    } catch (caught) {
+      const error = caught as Error;
+      toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Could not load the queue", life: 3000 });
+    }
+  };
+
   const exportVendors = async () => {
     try {
       const rows = await fetchAllPages<Vendor>((page, limit) =>
@@ -296,6 +337,11 @@ export default function VendorListPage() {
           kyc_status: kycStatusFilter || undefined,
           is_accepting_orders: isAcceptingOrdersFilter || undefined,
           is_open: isOpenFilter || undefined,
+          ready: readyFilter || undefined,
+          locality: localityFilter || undefined,
+          review: reviewFilter || undefined,
+          created_from: createdFrom || undefined,
+          created_to: createdTo || undefined,
         }),
       );
       if (rows.length === 0) {
@@ -341,6 +387,12 @@ export default function VendorListPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Vendor Management</h1>
           <div className="flex items-center gap-2">
+            <button
+              onClick={reviewOldest}
+              className="px-4 py-2 border border-[#2563EB] text-[#2563EB] rounded-lg text-[13px] font-semibold hover:bg-[#EFF6FF] transition-colors"
+            >
+              Review oldest pending
+            </button>
             <ExcelExportButton onExport={exportVendors} />
           <button
             onClick={() => router.push("/vendor/create")}
@@ -351,6 +403,30 @@ export default function VendorListPage() {
           </button>
           </div>
         </div>
+
+        {/* Review queue */}
+        {queue && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: "Pending approval", value: queue.vendors_pending_approval, href: "/vendor?status=pending_approval", on: statusFilter === "pending_approval" && !readyFilter && !reviewFilter },
+              { label: "Ready to approve", value: queue.vendors_ready_to_approve, href: "/vendor?status=pending_approval&ready=true", on: readyFilter === "true" },
+              { label: "Needs correction", value: queue.vendors_with_open_corrections, href: "/vendor?review=corrections", on: reviewFilter === "corrections" },
+              { label: "Flagged", value: queue.vendors_with_open_flags, href: "/vendor?review=flags", on: reviewFilter === "flags" },
+            ].map((card) => (
+              <button
+                key={card.label}
+                type="button"
+                onClick={() => router.push(card.on ? "/vendor" : card.href)}
+                className={`text-left border rounded-lg px-4 py-3 ${card.on ? "border-[#2563EB] bg-[#F8FAFF]" : "border-[#E1E4EA] bg-white hover:border-[#2563EB]"}`}
+              >
+                <p className="text-[11px] uppercase tracking-wider text-[#525866]">{card.label}</p>
+                <p className={`text-[20px] font-bold ${card.value > 0 ? "text-[#111827]" : "text-[#9CA3AF]"}`}>{card.value}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <RegisteredRangeChip />
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
@@ -386,6 +462,14 @@ export default function VendorListPage() {
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
             <option value="failed">Failed</option>
+          </select>
+
+          <select value={localityFilter} onChange={(e) => setLocalityFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
+            <option value="">All Localities</option>
+            {localities.map((l) => (
+              <option key={l.name} value={l.name}>{l.name} ({l.vendors})</option>
+            ))}
           </select>
 
           <select value={readyFilter} onChange={(e) => setReadyFilter(e.target.value)}

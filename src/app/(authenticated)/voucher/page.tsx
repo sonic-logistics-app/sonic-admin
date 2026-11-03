@@ -5,6 +5,7 @@ import VoucherService, { Voucher } from "@/lib/api/admin/vouchers";
 import VoucherFormDialog from "@/components/vouchers/VoucherFormDialog";
 import VoucherUsageDialog from "@/components/vouchers/VoucherUsageDialog";
 import DataTable from "@/components/shared/DataTable";
+import CellStack from "@/components/shared/CellStack";
 import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -119,64 +120,28 @@ export default function VoucherListPage() {
   const columns = [
     {
       field: "code",
-      header: "Code",
+      header: "Voucher",
       sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          {rowData.code}
-        </span>
-      ),
-    },
-    {
-      field: "name",
-      header: "Name",
-      sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[13px] text-[#111827]">
-          {rowData.name}
-        </span>
-      ),
+      body: (rowData: Voucher) => <CellStack primary={rowData.code} secondary={rowData.name} />,
     },
     {
       field: "amount",
-      header: "Amount",
+      header: "Amount / expiry",
       sortable: true,
       body: (rowData: Voucher) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          ₦{rowData.amount?.toLocaleString() || "0"}
-        </span>
-      ),
-    },
-    {
-      field: "expiry_type",
-      header: "Expiry",
-      sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.expiry_type}
-        </span>
+        <CellStack primary={`₦${rowData.amount?.toLocaleString() || "0"}`} secondary={rowData.expiry_type} />
       ),
     },
     {
       field: "used",
-      header: "Given to",
+      header: "Given / redeemed",
       sortable: true,
       body: (rowData: Voucher) => (
-        <span className="text-[13px] text-[#111827]">
-          {rowData.used || 0} users
-        </span>
-      ),
-    },
-    {
-      field: "redeemed",
-      header: "Redeemed by",
-      body: (rowData: Voucher) => <span className="text-[13px] text-[#111827]">{rowData.redeemed ?? 0} users</span>,
-    },
-    {
-      field: "discount_given",
-      header: "Discount given",
-      body: (rowData: Voucher) => (
-        <span className="text-[13px] font-semibold text-[#111827]">₦{(rowData.discount_given ?? 0).toLocaleString("en-NG")}</span>
+        <CellStack
+          primary={`${rowData.used || 0} given`}
+          secondary={`${rowData.redeemed ?? 0} redeemed`}
+          tertiary={`₦${(rowData.discount_given ?? 0).toLocaleString("en-NG")} discount`}
+        />
       ),
     },
     {

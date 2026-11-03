@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RegistrationStats, getRegistrationStats } from "@/lib/api/admin/ops";
+import RegistrationTrendChart from "@/components/dashboard/RegistrationTrendChart";
 
 interface Counts {
   total: number;
@@ -20,16 +21,22 @@ const trend = (now: number, before: number) => {
   return { text: `${pct >= 0 ? "+" : ""}${pct}% vs previous 7 days`, tone: pct >= 0 ? "text-[#059669]" : "text-[#DC2626]" };
 };
 
+/** Lagos calendar day (YYYY-MM-DD), `back` days before the stats snapshot. */
+const lagosDay = (asOf: string, back: number) =>
+  new Date(new Date(asOf).getTime() + 60 * 60 * 1000 - back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
 function AccountCard({
   title,
   icon,
   href,
+  asOf,
   counts,
   rows,
 }: {
   title: string;
   icon: string;
   href: string;
+  asOf: string;
   counts: Counts;
   rows: { label: string; value: number; href?: string; tone?: string }[];
 }) {
@@ -45,8 +52,18 @@ function AccountCard({
       <div>
         <p className="text-[24px] font-bold text-[#111827]">{counts.total.toLocaleString()}</p>
         <p className="text-[12px] text-[#525866]">
-          <strong className="text-[#111827]">{counts.new_today}</strong> today · <strong className="text-[#111827]">{counts.new_last_7_days}</strong> in 7 days ·{" "}
-          <strong className="text-[#111827]">{counts.new_last_30_days}</strong> in 30 days
+          {[
+            { n: counts.new_today, text: "today", back: 0 },
+            { n: counts.new_last_7_days, text: "in 7 days", back: 6 },
+            { n: counts.new_last_30_days, text: "in 30 days", back: 29 },
+          ].map((w, i) => (
+            <span key={w.text}>
+              {i > 0 && " · "}
+              <Link href={`${href}?created_from=${lagosDay(asOf, w.back)}&created_to=${lagosDay(asOf, 0)}`} className="hover:text-[#2563EB]">
+                <strong className="text-[#111827]">{w.n}</strong> {w.text}
+              </Link>
+            </span>
+          ))}
         </p>
         <p className={`text-[11px] ${t.tone}`}>{t.text}</p>
       </div>
@@ -93,8 +110,8 @@ export default function RegistrationOverview() {
   const attention: { label: string; value: number; href: string }[] = [
     { label: "Vendors waiting for approval", value: a.vendors_pending_approval, href: "/vendor?status=pending_approval" },
     { label: "Of those, ready to approve", value: a.vendors_ready_to_approve, href: "/vendor?status=pending_approval&ready=true" },
-    { label: "Vendors with open corrections", value: a.vendors_with_open_corrections, href: "/vendor?status=pending_approval" },
-    { label: "Vendors with suspicion flags", value: a.vendors_with_open_flags, href: "/vendor?status=pending_approval" },
+    { label: "Vendors with open corrections", value: a.vendors_with_open_corrections, href: "/vendor?review=corrections" },
+    { label: "Vendors with suspicion flags", value: a.vendors_with_open_flags, href: "/vendor?review=flags" },
     { label: "Drivers awaiting verification", value: a.drivers_pending_verification, href: "/driver?verified=false" },
     { label: "Unverified customers", value: a.users_unverified, href: "/user?verified=false" },
     { label: "Orders stuck without a driver", value: a.orders_stuck_without_driver, href: "/order?stuck=true" },
@@ -115,6 +132,7 @@ export default function RegistrationOverview() {
           title="Customers"
           icon="pi-user"
           href="/user"
+          asOf={stats.as_of}
           counts={stats.users}
           rows={[
             { label: "Verified", value: stats.users.verified },
@@ -125,6 +143,7 @@ export default function RegistrationOverview() {
           title="Drivers"
           icon="pi-car"
           href="/driver"
+          asOf={stats.as_of}
           counts={stats.drivers}
           rows={[
             { label: "Verified", value: stats.drivers.verified },
@@ -137,6 +156,7 @@ export default function RegistrationOverview() {
           title="Vendors"
           icon="pi-shop"
           href="/vendor"
+          asOf={stats.as_of}
           counts={stats.vendors}
           rows={[
             { label: "Active", value: stats.vendors.active, href: "/vendor?status=active" },
@@ -146,6 +166,8 @@ export default function RegistrationOverview() {
           ]}
         />
       </div>
+
+      <RegistrationTrendChart />
 
       <div className="p-4 rounded-2xl border border-[#E1E4EA] bg-white">
         <h3 className="text-[13px] font-semibold text-[#111827] mb-3">Needs attention</h3>

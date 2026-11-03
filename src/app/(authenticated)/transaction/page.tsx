@@ -7,6 +7,7 @@ import TransactionService, { Transaction, TransactionSummary } from "@/lib/api/a
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -184,32 +185,25 @@ function TransactionsTab() {
   const columns = [
     {
       field: "short_code",
-      header: "Transaction Code",
+      header: "Transaction / type",
       sortable: false,
       body: (rowData: Transaction) => (
-        <span className="text-[13px] font-semibold text-[#111827] font-mono">
-          {rowData.short_code ?? (rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id)}
-        </span>
-      ),
-    },
-    {
-      field: "type",
-      header: "Type",
-      sortable: true,
-      body: (rowData: Transaction) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {getTransactionTypeLabel(rowData.type)}
-        </span>
+        <CellStack
+          mono
+          primary={rowData.short_code ?? (rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id)}
+          secondary={getTransactionTypeLabel(rowData.type)}
+        />
       ),
     },
     {
       field: "order_id",
-      header: "Order ID",
+      header: "Order / method",
       sortable: true,
       body: (rowData: Transaction) => (
-        <span className="text-[13px] font-semibold text-[#2563EB]">
-          {rowData.order_number || rowData.order_id}
-        </span>
+        <CellStack
+          primary={<span className="text-[#2563EB]">{rowData.order_number || rowData.order_id}</span>}
+          secondary={rowData.method || rowData.vendor_transaction_type || "—"}
+        />
       ),
     },
     {
@@ -278,16 +272,6 @@ function TransactionsTab() {
       sortable: true,
       body: (rowData: Transaction) => (
         <StatusBadge status={getStatusVariant(rowData.status, rowData.type)} />
-      ),
-    },
-    {
-      field: "method",
-      header: "Method",
-      sortable: true,
-      body: (rowData: Transaction) => (
-        <span className="text-[13px] text-[#525866]">
-          {rowData.method || rowData.vendor_transaction_type || "—"}
-        </span>
       ),
     },
     {

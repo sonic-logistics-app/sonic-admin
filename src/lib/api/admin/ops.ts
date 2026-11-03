@@ -292,3 +292,20 @@ export interface VendorFinance {
 }
 
 export const getVendorFinance = (vendorId: string) => request<VendorFinance>(`/vendor/${vendorId}/finance`);
+
+// ---------------------------------------------------------------- vendor queue and reporting
+
+export interface RegistrationTrend {
+  days: number;
+  timezone: string;
+  series: { date: string; users: number; drivers: number; vendors: number }[];
+}
+
+export const getRegistrationTrend = (days = 30) => request<RegistrationTrend>(`/dashboard/registrations/trend?days=${days}`);
+
+export const getVendorLocalities = () => request<{ localities: { name: string; vendors: number }[] }>("/vendor/localities");
+
+export const getNextPendingVendor = (exclude?: string) =>
+  request<{ next: { id: string; short_code: string; name: string } | null; remaining: number }>(
+    `/vendor/next-pending${exclude ? `?exclude=${encodeURIComponent(exclude)}` : ""}`,
+  );
