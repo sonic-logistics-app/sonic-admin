@@ -1,5 +1,7 @@
 "use client";
 
+import { Bar, KpiTileSkeleton } from "@/components/shared/Skeleton";
+
 export interface DailySignupCount {
   today: number;
   yesterday: number;
@@ -52,7 +54,19 @@ function SignupCard({ label, icon, tint, count }: { label: string; icon: string;
 }
 
 export default function DailySignups({ daily, loading }: DailySignupsProps) {
-  if (loading || !daily) return null;
+  if (loading) {
+    return (
+      <section aria-label="Signups today" role="status">
+        <Bar className="h-3 w-40 mb-3" />
+        <div className="grid grid-cols-3 gap-3 w-full">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <KpiTileSkeleton key={i} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+  if (!daily) return null;
 
   return (
     <section aria-label="Signups today">
@@ -60,9 +74,9 @@ export default function DailySignups({ daily, loading }: DailySignupsProps) {
         New today · {formatDate(daily.date)}
       </h2>
       <div className="grid grid-cols-3 gap-3 w-full">
-        <SignupCard label="NEW VENDORS" icon="pi-shop" tint="bg-[#EDE9FE] text-[#7C3AED]" count={daily.new_vendors} />
-        <SignupCard label="NEW CUSTOMERS" icon="pi-user" tint="bg-[#D1FAE5] text-[#059669]" count={daily.new_users} />
-        <SignupCard label="NEW DRIVERS" icon="pi-users" tint="bg-[#CFFAFE] text-[#0891B2]" count={daily.new_drivers} />
+        <SignupCard label="NEW BUSINESS PARTNERS" icon="pi-shop" tint="bg-[#EDE9FE] text-[#7C3AED]" count={daily.new_vendors} />
+        <SignupCard label="NEW USERS" icon="pi-user" tint="bg-[#D1FAE5] text-[#059669]" count={daily.new_users} />
+        <SignupCard label="NEW MOVERS" icon="pi-users" tint="bg-[#CFFAFE] text-[#0891B2]" count={daily.new_drivers} />
       </div>
     </section>
   );

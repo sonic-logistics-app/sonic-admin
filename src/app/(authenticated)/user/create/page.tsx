@@ -1,11 +1,12 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CustomerService, { CreateUserData } from "@/services/CustomerService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 
-export default function CreateUserPage() {
+function CreateUserPageInner() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const customerService = new CustomerService();
@@ -323,5 +324,13 @@ export default function CreateUserPage() {
         </form>
       </div>
     </>
+  );
+}
+
+export default function CreateUserPage() {
+  return (
+    <PermissionGate permission="account.create" what="create users">
+      <CreateUserPageInner />
+    </PermissionGate>
   );
 }

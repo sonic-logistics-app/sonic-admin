@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import VendorService, { CreateVendorData } from "@/services/VendorService";
@@ -17,7 +18,7 @@ interface MenuCategory {
   is_active: boolean;
 }
 
-export default function CreateVendorPage() {
+function CreateVendorPageInner() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
@@ -173,21 +174,21 @@ export default function CreateVendorPage() {
         toast.current?.show({
           severity: "success",
           summary: "Success",
-          detail: "Vendor created successfully",
+          detail: "Business Partner created successfully",
           life: 3000,
         });
         setTimeout(() => {
-          router.push("/vendor");
+          router.push("/business-partner");
         }, 1500);
       } else {
-        throw new Error(result.message || "Failed to create vendor");
+        throw new Error(result.message || "Failed to create business partner");
       }
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: error.message || "Failed to create vendor",
+        detail: error.message || "Failed to create business partner",
         life: 3000,
       });
     } finally {
@@ -256,8 +257,8 @@ export default function CreateVendorPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">Create New Vendor</h1>
-            <p className="text-[13px] text-[#525866] mt-1">Add a new vendor to the system</p>
+            <h1 className="text-[24px] font-bold text-[#111827]">Create New Business Partner</h1>
+            <p className="text-[13px] text-[#525866] mt-1">Add a new business partner to the system</p>
           </div>
           <button
             onClick={() => router.back()}
@@ -275,7 +276,7 @@ export default function CreateVendorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                  Vendor Name *
+                  Business Partner Name *
                 </label>
                 <input
                   type="text"
@@ -295,7 +296,7 @@ export default function CreateVendorPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="vendor@example.com"
+                  placeholder="partner@example.com"
                   className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                   required
                 />
@@ -351,7 +352,7 @@ export default function CreateVendorPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Brief description of the vendor"
+                  placeholder="Brief description of the business partner"
                   rows={3}
                   className="w-full px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] text-[#111827] focus:outline-none focus:border-[#2563EB]"
                 />
@@ -737,7 +738,7 @@ export default function CreateVendorPage() {
               ) : (
                 <>
                   <i className="pi pi-check" />
-                  Create Vendor
+                  Create Business Partner
                 </>
               )}
             </button>
@@ -745,5 +746,13 @@ export default function CreateVendorPage() {
         </form>
       </div>
     </>
+  );
+}
+
+export default function CreateVendorPage() {
+  return (
+    <PermissionGate permission="account.create" what="create business partners">
+      <CreateVendorPageInner />
+    </PermissionGate>
   );
 }

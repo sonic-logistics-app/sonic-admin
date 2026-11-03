@@ -1,17 +1,20 @@
 "use client";
 
+import StatCards from "@/components/shared/StatCards";
+import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PayoutsTab, WalletsTab } from "@/components/finance/FinanceTabs";
 import TransactionService, { Transaction, TransactionSummary } from "@/lib/api/admin/transactions";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { businessTypeLabel } from "@/lib/businessTypes";
 
-export default function TransactionListPage() {
+function TransactionsTab() {
   const toast = useRef<ToastRef>(null);
   const searchParams = useSearchParams();
   const transactionService = new TransactionService();
@@ -143,7 +146,7 @@ export default function TransactionListPage() {
       case "payment":
         return "Payment";
       case "vendor_earning":
-        return "Vendor Earning";
+        return "Business Partner Earning";
       default:
         return type;
     }
@@ -183,37 +186,30 @@ export default function TransactionListPage() {
   const columns = [
     {
       field: "short_code",
-      header: "Transaction Code",
+      header: "Transaction / type",
       sortable: false,
       body: (rowData: Transaction) => (
-        <span className="text-[13px] font-semibold text-[#111827] font-mono">
-          {rowData.short_code ?? (rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id)}
-        </span>
-      ),
-    },
-    {
-      field: "type",
-      header: "Type",
-      sortable: true,
-      body: (rowData: Transaction) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {getTransactionTypeLabel(rowData.type)}
-        </span>
+        <CellStack
+          mono
+          primary={rowData.short_code ?? (rowData.id.length > 12 ? `${rowData.id.substring(0, 12)}...` : rowData.id)}
+          secondary={getTransactionTypeLabel(rowData.type)}
+        />
       ),
     },
     {
       field: "order_id",
-      header: "Order ID",
+      header: "Order / method",
       sortable: true,
       body: (rowData: Transaction) => (
-        <span className="text-[13px] font-semibold text-[#2563EB]">
-          {rowData.order_number || rowData.order_id}
-        </span>
+        <CellStack
+          primary={<span className="text-[#2563EB]">{rowData.order_number || rowData.order_id}</span>}
+          secondary={rowData.method || rowData.vendor_transaction_type || "—"}
+        />
       ),
     },
     {
       field: "customer",
-      header: "Customer",
+      header: "User",
       sortable: false,
       body: (rowData: Transaction) => (
         <div className="flex flex-col">
@@ -228,7 +224,7 @@ export default function TransactionListPage() {
     },
     {
       field: "vendor",
-      header: "Vendor",
+      header: "Business Partner",
       sortable: false,
       body: (rowData: Transaction) => (
         <div className="flex flex-col">
@@ -280,16 +276,6 @@ export default function TransactionListPage() {
       ),
     },
     {
-      field: "method",
-      header: "Method",
-      sortable: true,
-      body: (rowData: Transaction) => (
-        <span className="text-[13px] text-[#525866]">
-          {rowData.method || rowData.vendor_transaction_type || "—"}
-        </span>
-      ),
-    },
-    {
       field: "created_at",
       header: "Date",
       sortable: true,
@@ -299,93 +285,27 @@ export default function TransactionListPage() {
         </span>
       ),
     },
-    {
-      field: "actions",
-      header: "Actions",
-      body: (rowData: Transaction) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRowClick(rowData);
-          }}
-          className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-        >
-          View Details
-        </button>
-      ),
-    },
   ];
 
   return (
     <>
       <Toast ref={toast} />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Transaction Management</h1>
         </div>
 
-        {/* Summary Cards */}
+        {/* Totals for the current filters: figures, not filters */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Total Payments
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.total_payment_amount)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    {summary.total_successful_payments} successful transactions
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#ECFDF3] flex items-center justify-center">
-                  <i className="pi pi-credit-card text-[#059669] text-lg" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Vendor Earnings
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.total_vendor_amount)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    {summary.total_vendor_transactions} transactions
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <i className="pi pi-shop text-[#2563EB] text-lg" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Net Revenue
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.net_payment_revenue)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    After {formatCurrency(summary.total_discount_given)} discounts
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#FEF3C7] flex items-center justify-center">
-                  <i className="pi pi-chart-line text-[#D97706] text-lg" />
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCards
+            cards={[
+              { key: "payments", label: "Total payments", text: formatCurrency(summary.total_payment_amount), hint: `${summary.total_successful_payments} successful` },
+              { key: "earnings", label: "Business Partner earnings", text: formatCurrency(summary.total_vendor_amount), hint: `${summary.total_vendor_transactions} transactions` },
+              { key: "net", label: "Net revenue", text: formatCurrency(summary.net_payment_revenue), hint: `After ${formatCurrency(summary.total_discount_given)} discounts` },
+            ]}
+          />
         )}
 
         {/* Filters */}
@@ -405,7 +325,7 @@ export default function TransactionListPage() {
           >
             <option value="all">All Types</option>
             <option value="payment">Payments</option>
-            <option value="vendor_earning">Vendor Earnings</option>
+            <option value="vendor_earning">Business Partner Earnings</option>
           </select>
 
           <select
@@ -446,7 +366,7 @@ export default function TransactionListPage() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={transactions}
@@ -456,7 +376,6 @@ export default function TransactionListPage() {
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={handleRowClick}
             emptyMessage="No transactions found"
-            className="flex-1 min-h-0"
           />
         )}
       </div>
@@ -487,7 +406,7 @@ export default function TransactionListPage() {
                     Transaction Details
                   </h2>
                   <p className="text-[13px] text-[#525866]">
-                    {selectedTransaction.type === "payment" ? "Payment Transaction" : "Vendor Earning"}
+                    {selectedTransaction.type === "payment" ? "Payment Transaction" : "Business Partner Earning"}
                   </p>
                 </div>
               </div>
@@ -580,7 +499,7 @@ export default function TransactionListPage() {
 
               {/* Customer Information */}
               <div>
-                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Customer Information</h3>
+                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">User Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -608,7 +527,7 @@ export default function TransactionListPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Customer code
+                      User code
                     </label>
                     <p className="text-[13px] text-[#525866] font-mono">
                       {selectedTransaction.customer?.short_code ?? selectedTransaction.customer?.id ?? "—"}
@@ -620,7 +539,7 @@ export default function TransactionListPage() {
               {/* Vendor Information */}
               {selectedTransaction.vendor && (
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Vendor Information</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Partner Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -661,7 +580,7 @@ export default function TransactionListPage() {
               {/* Driver Information */}
               {selectedTransaction.driver && (
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Driver Information</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Mover Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -689,7 +608,7 @@ export default function TransactionListPage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Driver code
+                        Mover code
                       </label>
                       <p className="text-[13px] text-[#525866] font-mono">
                         {selectedTransaction.driver.short_code ?? selectedTransaction.driver.id}
@@ -761,7 +680,7 @@ export default function TransactionListPage() {
                       Order Type
                     </label>
                     <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-                      {selectedTransaction.order_details.order_type}
+                      {displayOrderType(selectedTransaction.order_details.order_type)}
                     </span>
                   </div>
                   <div>
@@ -969,5 +888,32 @@ export default function TransactionListPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function TransactionPage() {
+  const [tab, setTab] = useState<"transactions" | "payouts" | "wallets">("transactions");
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div role="tablist" aria-label="Finance" className="inline-flex self-start rounded-lg border border-[#E1E4EA] bg-white p-1">
+        {([
+          ["transactions", "Transactions"],
+          ["payouts", "Business Partner payouts"],
+          ["wallets", "Wallets"],
+        ] as const).map(([id, text]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors ${tab === id ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+      {tab === "transactions" ? <TransactionsTab /> : tab === "payouts" ? <PayoutsTab /> : <WalletsTab />}
+    </div>
   );
 }

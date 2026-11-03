@@ -1,6 +1,8 @@
 "use client";
 
-export default function APIDocsPage() {
+import { devToolsVisible } from "@/lib/devTools";
+
+function APIDocsContent() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
   const baseUrl = backendUrl.replace('/api/admin', '');
   const swaggerUrl = `${baseUrl}/api-docs`;
@@ -44,7 +46,7 @@ export default function APIDocsPage() {
           <i className="pi pi-database text-[32px] text-[#7C3AED] mb-3 block"></i>
           <h3 className="text-[16px] font-semibold text-[#111827] mb-2">Complete Coverage</h3>
           <p className="text-[13px] text-[#525866]">
-            All admin endpoints including users, drivers, vendors, orders & more
+            All admin endpoints including users, movers, business partners, orders & more
           </p>
         </div>
 
@@ -75,4 +77,17 @@ export default function APIDocsPage() {
       </div>
     </div>
   );
+}
+
+export default function APIDocsPage() {
+  if (!devToolsVisible) {
+    return (
+      <div className="bg-white border border-[#E1E4EA] rounded-2xl p-12 text-center">
+        <i className="pi pi-lock text-[40px] text-[#9CA3AF] mb-4 block" />
+        <h1 className="text-[20px] font-bold text-[#111827] mb-2">Turned off in production</h1>
+        <p className="text-[13px] text-[#525866]">This developer tool is only available in development and staging.</p>
+      </div>
+    );
+  }
+  return <APIDocsContent />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import FAQService, { FAQ, FAQFormData } from "@/services/FAQService";
@@ -10,12 +11,12 @@ const categories = [
   "Account",
   "Orders",
   "Payment",
-  "Vendors",
-  "Drivers",
+  "Business Partners",
+  "Movers",
   "Support",
 ];
 
-export default function FAQEditPage() {
+function FAQEditPageInner() {
   const params = useParams();
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
@@ -212,5 +213,13 @@ export default function FAQEditPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function FAQEditPage() {
+  return (
+    <PermissionGate permission="faq.manage" what="edit FAQs">
+      <FAQEditPageInner />
+    </PermissionGate>
   );
 }

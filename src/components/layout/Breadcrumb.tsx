@@ -12,8 +12,10 @@ interface BreadcrumbItem {
 const pathLabels: Record<string, string> = {
   dashboard: "Dashboard",
   user: "Users",
-  driver: "Drivers",
-  vendor: "Vendors",
+  mover: "Movers",
+  "business-partner": "Business Partners",
+  driver: "Movers",
+  vendor: "Business Partners",
   order: "Orders",
   refund: "Refund Management",
   voucher: "Vouchers",
@@ -22,6 +24,8 @@ const pathLabels: Record<string, string> = {
   profile: "Profile",
   create: "Create",
   "api-docs": "API Documentation",
+  team: "Team",
+  "audit-log": "Audit Log",
 };
 
 export default function Breadcrumb() {
@@ -38,6 +42,11 @@ export default function Breadcrumb() {
 
     if (!isNaN(Number(segment))) {
       breadcrumbs.push({ label: `#${segment}` });
+      return;
+    }
+
+    if (/^(VND|USR|DRV|SNK)-[A-Z0-9]+$/i.test(segment)) {
+      breadcrumbs.push({ label: segment.toUpperCase() });
       return;
     }
 

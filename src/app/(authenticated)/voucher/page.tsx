@@ -3,15 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import VoucherService, { Voucher } from "@/lib/api/admin/vouchers";
 import VoucherFormDialog from "@/components/vouchers/VoucherFormDialog";
+import VoucherUsageDialog from "@/components/vouchers/VoucherUsageDialog";
 import DataTable from "@/components/shared/DataTable";
+import CellStack from "@/components/shared/CellStack";
 import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermissions } from "@/lib/auth/permissions";
 
 export default function VoucherListPage() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const voucherService = new VoucherService();
 
@@ -27,6 +30,7 @@ export default function VoucherListPage() {
   const debouncedMin = useDebounce(minAmount, 600);
   const debouncedMax = useDebounce(maxAmount, 600);
   const [showDialog, setShowDialog] = useState(false);
+  const [usageVoucherId, setUsageVoucherId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -117,52 +121,28 @@ export default function VoucherListPage() {
   const columns = [
     {
       field: "code",
-      header: "Code",
+      header: "Voucher",
       sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          {rowData.code}
-        </span>
-      ),
-    },
-    {
-      field: "name",
-      header: "Name",
-      sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[13px] text-[#111827]">
-          {rowData.name}
-        </span>
-      ),
+      body: (rowData: Voucher) => <CellStack primary={rowData.code} secondary={rowData.name} />,
     },
     {
       field: "amount",
-      header: "Amount",
+      header: "Amount / expiry",
       sortable: true,
       body: (rowData: Voucher) => (
-        <span className="text-[13px] font-semibold text-[#111827]">
-          ₦{rowData.amount?.toLocaleString() || "0"}
-        </span>
-      ),
-    },
-    {
-      field: "expiry_type",
-      header: "Expiry",
-      sortable: true,
-      body: (rowData: Voucher) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.expiry_type}
-        </span>
+        <CellStack primary={`₦${rowData.amount?.toLocaleString() || "0"}`} secondary={rowData.expiry_type} />
       ),
     },
     {
       field: "used",
-      header: "Used",
+      header: "Given / redeemed",
       sortable: true,
       body: (rowData: Voucher) => (
-        <span className="text-[13px] text-[#111827]">
-          {rowData.used || 0} times
-        </span>
+        <CellStack
+          primary={`${rowData.used || 0} given`}
+          secondary={`${rowData.redeemed ?? 0} redeemed`}
+          tertiary={`₦${(rowData.discount_given ?? 0).toLocaleString("en-NG")} discount`}
+        />
       ),
     },
     {
@@ -179,18 +159,29 @@ export default function VoucherListPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setUsageVoucherId(rowData.id);
+            }}
+            className="text-[#525866] hover:underline text-[13px] font-semibold"
+          >
+            Usage
+          </button>
+          <button
+            disabled={!can("voucher.manage")}
+            onClick={(e) => {
+              e.stopPropagation();
               handleEdit(rowData);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Edit
           </button>
           <button
+            disabled={!can("voucher.manage")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -212,10 +203,10 @@ export default function VoucherListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Voucher Management</h1>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} disabled={!can("voucher.manage")}>
             <i className="pi pi-plus mr-2" />
             New Voucher
           </Button>
@@ -243,7 +234,7 @@ export default function VoucherListPage() {
         </div>
 
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={vouchers}
@@ -251,12 +242,12 @@ export default function VoucherListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
-            emptyMessage="No vouchers found"
-            className="flex-1 min-h-0"
+            emptyMessage="No vouchers found"
           />
         )}
       </div>
 
+      <VoucherUsageDialog voucherId={usageVoucherId} onClose={() => setUsageVoucherId(null)} />
       <VoucherFormDialog
         visible={showDialog}
         editMode={editMode}

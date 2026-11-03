@@ -12,6 +12,7 @@ export function middleware(request: NextRequest) {
   // Public routes that don't require authentication
   const publicRoutes = [
     "/login",
+    "/accept-invite",
     "/api/admin/login", 
     "/api/admin/refresh",
     "/api/admin/status",

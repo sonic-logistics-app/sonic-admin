@@ -13,6 +13,11 @@ export interface PaginationParams {
   kyc_status?: string;
   is_accepting_orders?: string;
   is_open?: string;
+  ready?: string;
+  locality?: string;
+  review?: string;
+  created_from?: string;
+  created_to?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -79,6 +84,11 @@ export default class VendorService {
     if (params?.kyc_status) queryParams.append("kyc_status", params.kyc_status);
     if (params?.is_accepting_orders) queryParams.append("is_accepting_orders", params.is_accepting_orders);
     if (params?.is_open) queryParams.append("is_open", params.is_open);
+    if (params?.ready) queryParams.append("ready", params.ready);
+    if (params?.locality) queryParams.append("locality", params.locality);
+    if (params?.review) queryParams.append("review", params.review);
+    if (params?.created_from) queryParams.append("created_from", params.created_from);
+    if (params?.created_to) queryParams.append("created_to", params.created_to);
 
     return fetch(`${apiUrl}/vendor?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),

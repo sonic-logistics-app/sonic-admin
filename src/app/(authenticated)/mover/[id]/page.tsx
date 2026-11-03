@@ -1,5 +1,6 @@
 "use client";
 
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DriverService from "@/services/DriverService";
@@ -9,6 +10,8 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DocumentViewer from "@/components/driver/DocumentViewer";
 import VehicleViewer from "@/components/driver/VehicleViewer";
+import DriverPerformancePanel from "@/components/driver/DriverPerformancePanel";
+import { usePermissions } from "@/lib/auth/permissions";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -124,6 +127,7 @@ interface DriverDetails {
 }
 
 export default function DriverDetailsPage() {
+  const { can } = usePermissions();
   const router = useRouter();
   const params = useParams();
   const toast = useRef<ToastRef>(null);
@@ -167,7 +171,7 @@ export default function DriverDetailsPage() {
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: "Failed to load driver details",
+        detail: "Failed to load mover details",
         life: 3000,
       });
     } finally {
@@ -177,6 +181,10 @@ export default function DriverDetailsPage() {
 
   const handleVerifyComponent = async (component: keyof VerificationStatus) => {
     if (!driver) return;
+    if (!can("account.verify")) {
+      toast.current?.show({ severity: "error", summary: "Not allowed", detail: "Your role does not allow this action.", life: 4000 });
+      return;
+    }
     
     try {
       const verificationData = {
@@ -206,6 +214,10 @@ export default function DriverDetailsPage() {
 
   const handleRejectComponent = async (component: keyof VerificationStatus) => {
     if (!driver) return;
+    if (!can("account.verify")) {
+      toast.current?.show({ severity: "error", summary: "Not allowed", detail: "Your role does not allow this action.", life: 4000 });
+      return;
+    }
     
     try {
       const rejectionData = {
@@ -253,16 +265,16 @@ export default function DriverDetailsPage() {
       toast.current?.show({
         severity: "success",
         summary: "Success",
-        detail: `Driver ${driver.full_name} deleted successfully`,
+        detail: `Mover ${driver.full_name} deleted successfully`,
         life: 3000,
       });
-      router.push("/driver");
+      router.push("/mover");
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",
-        detail: error.message || "Failed to delete driver",
+        detail: error.message || "Failed to delete mover",
         life: 3000,
       });
     }
@@ -362,14 +374,7 @@ export default function DriverDetailsPage() {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Loading driver details...</p>
-        </div>
-      </div>
-    );
+    return <DetailPageSkeleton tabs={5} />;
   }
 
   if (!driver) {
@@ -377,13 +382,13 @@ export default function DriverDetailsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <i className="pi pi-exclamation-triangle text-[#DC2626] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Driver not found</p>
+          <p className="text-[16px] text-[#525866]">Mover not found</p>
           <Button
             variant="outline"
-            onClick={() => router.push("/driver")}
+            onClick={() => router.push("/mover")}
             className="mt-4"
           >
-            Back to Drivers
+            Back to Movers
           </Button>
         </div>
       </div>
@@ -410,14 +415,14 @@ export default function DriverDetailsPage() {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/driver")}
+              onClick={() => router.push("/mover")}
               className="px-3 py-2"
             >
               <i className="pi pi-arrow-left mr-2" />
               Back
             </Button>
             <div>
-              <h1 className="text-[24px] font-bold text-[#111827]">Driver Details</h1>
+              <h1 className="text-[24px] font-bold text-[#111827]">Mover Details</h1>
               <p className="text-[13px] text-[#525866]">
                 Code: {driver.short_code}
               </p>
@@ -430,7 +435,7 @@ export default function DriverDetailsPage() {
               onClick={confirmDelete}
             >
               <i className="pi pi-trash mr-2" />
-              Delete Driver
+              Delete Mover
             </Button>
           </div>
         </div>
@@ -441,7 +446,7 @@ export default function DriverDetailsPage() {
             {(driver.picture || driver.profile_image_url || driver.uploaded_files?.profile_image) ? (
               <img
                 src={driver.picture || driver.profile_image_url || driver.uploaded_files?.profile_image}
-                alt={driver.full_name || "Driver"}
+                alt={driver.full_name || "Mover"}
                 className="w-20 h-20 rounded-full object-cover"
               />
             ) : (
@@ -511,6 +516,34 @@ export default function DriverDetailsPage() {
           <div className="p-6">
             {activeTab === "overview" && (
               <div className="space-y-6">
+                {/* Dispatch readiness: what is still missing before this driver can take deliveries */}
+                <div className="border border-[#E1E4EA] rounded-lg p-4">
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-3">Readiness for dispatch</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      ["Personal info", driver.verificationStatus.personal_info],
+                      ["Documents", driver.verificationStatus.document],
+                      ["Vehicle", driver.verificationStatus.vehicle],
+                      ["ID confirmation", driver.verificationStatus.id_confirmation],
+                      ["Bank account", driver.verificationStatus.bank_account],
+                    ] as const).map(([name, state]) => (
+                      <span
+                        key={name}
+                        className={`text-[12px] px-3 py-1 rounded-full font-semibold ${
+                          state === "VERIFIED" ? "bg-[#D1FAE5] text-[#065F46]" : state === "REJECTED" ? "bg-[#FEE2E2] text-[#991B1B]" : "bg-[#FEF3C7] text-[#92400E]"
+                        }`}
+                      >
+                        {name}: {state === "VERIFIED" ? "done" : state === "REJECTED" ? "rejected" : "missing or pending"}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-[12px] text-[#525866] mt-2">
+                    {Object.values(driver.verificationStatus).every((v) => v === "VERIFIED")
+                      ? "Every section is verified. Online availability is separate and is set by the mover."
+                      : "Dispatch needs every section verified. Online or offline is separate from verification."}
+                  </p>
+                </div>
+
                 {/* Personal Information */}
                 <div>
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Personal Information</h3>
@@ -568,7 +601,7 @@ export default function DriverDetailsPage() {
 
                 {/* Driver Status */}
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Driver Status</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Mover Status</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -705,6 +738,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("document")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify All Documents
@@ -712,6 +746,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("document")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject All Documents
@@ -830,7 +865,7 @@ export default function DriverDetailsPage() {
                       <div>
                         <h3 className="text-[18px] font-semibold text-[#111827]">Personal Information Verification</h3>
                         <p className="text-[13px] text-[#525866]">
-                          Review and verify driver&apos;s basic profile information and KYC status
+                          Review and verify mover&apos;s basic profile information and KYC status
                         </p>
                       </div>
                     </div>
@@ -893,6 +928,7 @@ export default function DriverDetailsPage() {
                       <Button
                         variant="success"
                         onClick={() => handleVerifyComponent("personal_info")}
+                        disabled={!can("account.verify")}
                       >
                         <i className="pi pi-check mr-2" />
                         Verify Personal Information
@@ -900,6 +936,7 @@ export default function DriverDetailsPage() {
                       <Button
                         variant="danger"
                         onClick={() => handleRejectComponent("personal_info")}
+                        disabled={!can("account.verify")}
                       >
                         <i className="pi pi-times mr-2" />
                         Reject Personal Information
@@ -985,6 +1022,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("id_confirmation")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify ID Confirmation
@@ -992,6 +1030,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("id_confirmation")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject ID Confirmation
@@ -1028,7 +1067,7 @@ export default function DriverDetailsPage() {
                         <div>
                           <h3 className="text-[18px] font-semibold text-[#111827]">Bank Account Verification</h3>
                           <p className="text-[13px] text-[#525866]">
-                            Review and verify driver&apos;s bank account details
+                            Review and verify mover&apos;s bank account details
                           </p>
                         </div>
                       </div>
@@ -1091,6 +1130,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("bank_account")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify Bank Account
@@ -1098,6 +1138,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("bank_account")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject Bank Account
@@ -1146,6 +1187,7 @@ export default function DriverDetailsPage() {
                             variant="success"
                             size="sm"
                             onClick={() => handleVerifyComponent("personal_info")}
+                            disabled={!can("account.verify")}
                           >
                             <i className="pi pi-check mr-1" />
                             Verify
@@ -1154,6 +1196,7 @@ export default function DriverDetailsPage() {
                             variant="danger"
                             size="sm"
                             onClick={() => handleRejectComponent("personal_info")}
+                            disabled={!can("account.verify")}
                           >
                             <i className="pi pi-times mr-1" />
                             Reject
@@ -1195,6 +1238,7 @@ export default function DriverDetailsPage() {
                               variant="success"
                               size="sm"
                               onClick={() => handleVerifyComponent("id_confirmation")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-check mr-1" />
                               Verify
@@ -1203,6 +1247,7 @@ export default function DriverDetailsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => handleRejectComponent("id_confirmation")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-times mr-1" />
                               Reject
@@ -1255,6 +1300,7 @@ export default function DriverDetailsPage() {
                               variant="success"
                               size="sm"
                               onClick={() => handleVerifyComponent("bank_account")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-check mr-1" />
                               Verify
@@ -1263,6 +1309,7 @@ export default function DriverDetailsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => handleRejectComponent("bank_account")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-times mr-1" />
                               Reject
@@ -1297,6 +1344,7 @@ export default function DriverDetailsPage() {
 
             {activeTab === "activity" && (
               <div className="space-y-6">
+                <DriverPerformancePanel driverId={driver.id} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="border border-[#E1E4EA] rounded-lg p-4">
                     <h4 className="text-[13px] font-semibold text-[#111827] mb-2">Joined Date</h4>

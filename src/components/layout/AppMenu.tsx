@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import AdminAuth from "@/lib/auth/admin-auth";
+import { usePermissions, AdminPermission } from "@/lib/auth/permissions";
 import AppSubmenu from "./AppSubmenu";
 import { MenuModel, MenuItem } from "@/types/menu";
+import { getRegistrationStats, getTickets } from "@/lib/api/admin/ops";
 
 interface AppMenuProps {
   model: MenuModel[];
@@ -14,6 +17,32 @@ interface AppMenuProps {
 
 export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   const router = useRouter();
+  const { can } = usePermissions();
+
+  // Counts shown as badges: vendors waiting for approval and open support cases.
+  // A failed request just leaves the badge off.
+  const [badges, setBadges] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const next: Record<string, string> = {};
+      try {
+        const pending = (await getRegistrationStats()).data.attention.vendors_pending_approval;
+        if (pending > 0) next["/business-partner"] = String(pending);
+      } catch {}
+      try {
+        const open = (await getTickets({ status: "OPEN", limit: 1 })).meta?.total ?? 0;
+        if (open > 0) next["/support"] = String(open);
+      } catch {}
+      if (!cancelled) setBadges(next);
+    };
+    load();
+    const timer = setInterval(load, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -30,8 +59,9 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   // Separate logout item from other menu items
   const processedModel = model.map(section => ({
     ...section,
-    items: section.items.filter(item => item.commandKey !== "logout").map(item => ({
+    items: section.items.filter(item => item.commandKey !== "logout" && (!item.permission || can(item.permission as AdminPermission))).map(item => ({
       ...item,
+      badge: item.to ? badges[item.to] ?? item.badge : item.badge,
       command: item.commandKey === "logout" ? handleLogout : item.command,
     }))
   })).filter(section => section.items.length > 0); // Remove empty sections

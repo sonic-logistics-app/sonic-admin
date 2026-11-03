@@ -1,13 +1,16 @@
 "use client";
 
+import { usePermissions } from "@/lib/auth/permissions";
 import { useState, useEffect, useRef } from "react";
 import SupportService, { ContactInfo } from "@/services/SupportService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import Button from "@/components/shared/Button";
 import BusinessHoursInput from "@/components/shared/BusinessHoursInput";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import SupportCases from "@/components/support/SupportCases";
 
-export default function SupportPage() {
+function ContactInfoTab() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const supportService = new SupportService();
 
@@ -313,7 +316,7 @@ export default function SupportPage() {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !can("contact.manage")}
               className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
@@ -322,5 +325,35 @@ export default function SupportPage() {
         )}
       </div>
     </>
+  );
+}
+
+export default function SupportPage() {
+  const [tab, setTab] = useState<"cases" | "contact">("cases");
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-[24px] font-bold text-[#111827]">Support</h1>
+        <p className="text-[13px] text-[#525866]">Work business partner support cases and manage the contact details shown in the apps.</p>
+      </div>
+      <div role="tablist" aria-label="Support" className="inline-flex self-start rounded-lg border border-[#E1E4EA] bg-white p-1">
+        {([
+          ["cases", "Cases"],
+          ["contact", "Contact info"],
+        ] as const).map(([id, text]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors ${tab === id ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+      {tab === "cases" ? <SupportCases /> : <ContactInfoTab />}
+    </div>
   );
 }

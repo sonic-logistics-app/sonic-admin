@@ -1,13 +1,17 @@
 "use client";
 
+import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import OrderService from "@/lib/api/admin/orders";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import CellStack from "@/components/shared/CellStack";
+import StatCards from "@/components/shared/StatCards";
+import { useListStats } from "@/hooks/useListStats";
 import Toast, { ToastRef } from "@/components/shared/Toast";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Order {
@@ -105,11 +109,16 @@ export default function OrderListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const { counts: orderCounts, reload: reloadOrderCounts } = useListStats("orders");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
   const [dispatchStatusFilter, setDispatchStatusFilter] = useState<string>("");
   const [refundStatusFilter, setRefundStatusFilter] = useState<string>("");
   const [voucherUsedFilter, setVoucherUsedFilter] = useState<string>("");
+  // Orders waiting too long for a driver (or whose dispatch failed)
+  const [stuckFilter, setStuckFilter] = useState<string>("");
+  const searchParams = useSearchParams();
+  const [filtersReady, setFiltersReady] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [minPriceFilter, setMinPriceFilter] = useState<string>("");
@@ -119,18 +128,27 @@ export default function OrderListPage() {
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
+  // Dashboard links open this list already filtered (?stuck=true, ?refund=refund_pending)
   useEffect(() => {
-    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice);
-  }, [pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+    setStuckFilter(searchParams.get("stuck") || "");
+    setRefundStatusFilter(searchParams.get("refund") || "");
+    setSearchQuery(searchParams.get("search") || "");
+    setFiltersReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter]);
 
   const loadOrders = async (
     page: number, search: string, status: string, orderType: string,
     paymentStatus: string, dispatchStatus: string, refundStatus: string,
-    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string
+    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string, stuck: string
   ) => {
     try {
       setLoading(true);
@@ -141,6 +159,7 @@ export default function OrderListPage() {
         order_type: orderType || undefined,
         payment_status: paymentStatus || undefined,
         dispatch_status: dispatchStatus || undefined,
+        stuck: stuck || undefined,
         refund_status: refundStatus || undefined,
         voucher_used: voucherUsed || undefined,
         date_from: dateFrom || undefined,
@@ -150,6 +169,7 @@ export default function OrderListPage() {
       });
       setOrders(result.data as unknown as Order[]);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
+      reloadOrderCounts();
     } catch (error) {
       toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load orders", life: 3000 });
     } finally {
@@ -200,14 +220,14 @@ export default function OrderListPage() {
     },
     {
       field: "user",
-      header: "Customer",
+      header: "User",
       sortable: false,
       body: (rowData: Order) => (
         <div className="flex items-center gap-2">
           {rowData.user?.picture ? (
             <img
               src={rowData.user.picture}
-              alt={rowData.user.first_name || "Customer"}
+              alt={rowData.user.first_name || "User"}
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
@@ -215,58 +235,37 @@ export default function OrderListPage() {
               {getInitials(rowData.user?.first_name, rowData.user?.last_name)}
             </div>
           )}
-          <span className="text-[13px]">
-            {rowData.user?.first_name} {rowData.user?.last_name}
-          </span>
+          <CellStack
+            primary={`${rowData.user?.first_name ?? ""} ${rowData.user?.last_name ?? ""}`.trim() || "—"}
+            secondary={rowData.user?.phone || undefined}
+          />
         </div>
       ),
     },
-
     {
       field: "order_status",
-      header: "Status",
+      header: "Status / type",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge status={rowData.order_status} />
-      ),
-    },
-    {
-      field: "order_type",
-      header: "Type",
-      sortable: true,
-      body: (rowData: Order) => (
-        <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-          {rowData.order_type}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={rowData.order_status} />
+          <span className="text-[11px] text-[#525866]">{displayOrderType(rowData.order_type)}</span>
+        </div>
       ),
     },
     {
       field: "payment_status",
-      header: "Payment",
+      header: "Payment / voucher",
       sortable: true,
       body: (rowData: Order) => (
-        <StatusBadge
-          status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status}
-        />
-      ),
-    },
-    {
-      field: "voucher_info",
-      header: "Voucher",
-      sortable: false,
-      body: (rowData: Order) => (
-        <div className="flex flex-col">
-          {rowData.payment_details?.voucher_used ? (
-            <>
-              <span className="text-[11px] px-2 py-1 rounded-full bg-[#ECFDF3] text-[#059669] font-medium">
-                {rowData.payment_details.voucher_used.code}
-              </span>
-              <span className="text-[10px] text-[#525866] mt-1">
-                -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)}
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] text-[#9CA3AF]">—</span>
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge
+            status={rowData.refund_details ? rowData.refund_details.refund_status : rowData.payment_status}
+          />
+          {rowData.payment_details?.voucher_used && (
+            <span className="text-[11px] text-[#059669]">
+              {rowData.payment_details.voucher_used.code} · -{formatCurrency(rowData.payment_details.voucher_used.discount_applied)}
+            </span>
           )}
         </div>
       ),
@@ -299,29 +298,13 @@ export default function OrderListPage() {
       sortable: true,
       body: (rowData: Order) => formatDate(rowData.created_at),
     },
-    {
-      field: "actions",
-      header: "Actions",
-      sortable: false,
-      body: (rowData: Order) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/order/${rowData.id}`);
-          }}
-          className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-        >
-          View Details
-        </button>
-      ),
-    },
   ];
 
   return (
     <>
       <Toast ref={toast} />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Order Management</h1>
@@ -334,13 +317,37 @@ export default function OrderListPage() {
           </button>
         </div>
 
+        <StatCards
+          cards={(() => {
+            const IN_PROGRESS = "DRIVER_SELECTED,IN_PAYMENT,CONFIRMED,ACCEPTED,PREPARING,READY,PICKUP,IN_TRANSIT";
+            const CANCELLED = "CANCELLED,DRIVER_CANCELLED,REJECTED";
+            // One card at a time: choosing a card replaces the status, stuck and refund filters
+            const pick = (status: string, stuck = "", refund = "") => () => {
+              setStatusFilter(status);
+              setStuckFilter(stuck);
+              setRefundStatusFilter(refund);
+            };
+            const toggle = (on: boolean, status: string, stuck = "", refund = "") => (on ? pick("") : pick(status, stuck, refund));
+            const isStatus = (value: string) => statusFilter === value && !stuckFilter && !refundStatusFilter;
+            return [
+              { key: "all", label: "All orders", value: orderCounts?.total, active: !statusFilter && !stuckFilter && !refundStatusFilter, onClick: pick("") },
+              { key: "pending", label: "Pending", value: orderCounts?.pending, tone: "warn" as const, active: isStatus("PENDING"), onClick: toggle(isStatus("PENDING"), "PENDING") },
+              { key: "progress", label: "In progress", value: orderCounts?.in_progress, active: isStatus(IN_PROGRESS), onClick: toggle(isStatus(IN_PROGRESS), IN_PROGRESS) },
+              { key: "delivered", label: "Delivered", value: orderCounts?.delivered, tone: "good" as const, active: isStatus("DELIVERED"), onClick: toggle(isStatus("DELIVERED"), "DELIVERED") },
+              { key: "cancelled", label: "Cancelled", value: orderCounts?.cancelled, active: isStatus(CANCELLED), onClick: toggle(isStatus(CANCELLED), CANCELLED) },
+              { key: "stuck", label: "Stuck without mover", value: orderCounts?.stuck, tone: "bad" as const, active: stuckFilter === "true", onClick: toggle(stuckFilter === "true", "", "true") },
+              { key: "refund", label: "Refund pending", value: orderCounts?.refund_pending, tone: "warn" as const, active: refundStatusFilter === "refund_pending", onClick: toggle(refundStatusFilter === "refund_pending", "", "", "refund_pending") },
+            ];
+          })()}
+        />
+
         {/* Search Bar and Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-62.5">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search by order number, order ID, customer, driver, or vendor..."
+              placeholder="Search by order number, order ID, user, mover, or business partner..."
             />
           </div>
 
@@ -361,7 +368,7 @@ export default function OrderListPage() {
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Types</option>
             <option value="PACKAGE">Package</option>
-            <option value="VENDOR">Vendor</option>
+            <option value="VENDOR">Business Partner</option>
           </select>
 
           <select value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value)}
@@ -380,6 +387,17 @@ export default function OrderListPage() {
           </select>
 
           <button
+            onClick={() => setStuckFilter(stuckFilter === "true" ? "" : "true")}
+            title="Orders being prepared with no mover, where dispatch failed or the wait is over 20 minutes"
+            className={`px-4 py-2 border rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2 ${
+              stuckFilter === "true" ? "border-[#D97706] bg-[#FFFBEB] text-[#92400E]" : "border-[#E1E4EA] bg-white text-[#525866] hover:bg-gray-50"
+            }`}
+          >
+            <i className="pi pi-exclamation-triangle text-sm" />
+            Stuck without mover
+          </button>
+
+          <button
             onClick={() => setShowFiltersModal(true)}
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
@@ -393,7 +411,7 @@ export default function OrderListPage() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={orders}
@@ -401,8 +419,8 @@ export default function OrderListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
-            emptyMessage="No orders found"
-            className="flex-1 min-h-0"
+            onRowClick={(order) => router.push(`/order/${order.order_number || order.id}`)}
+            emptyMessage="No orders found"
           />
         )}
       </div>

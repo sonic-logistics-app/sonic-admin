@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import FAQService, { FAQFormData } from "@/services/FAQService";
@@ -11,8 +12,8 @@ const categories = [
   "Account",
   "Orders",
   "Payment",
-  "Vendors",
-  "Drivers",
+  "Business Partners",
+  "Movers",
   "Support",
 ];
 
@@ -22,7 +23,7 @@ const defaultFormData: FAQFormData = {
   category: "General",
 };
 
-export default function FAQCreatePage() {
+function FAQCreatePageInner() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const faqService = new FAQService();
@@ -156,5 +157,13 @@ export default function FAQCreatePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function FAQCreatePage() {
+  return (
+    <PermissionGate permission="faq.manage" what="add FAQs">
+      <FAQCreatePageInner />
+    </PermissionGate>
   );
 }

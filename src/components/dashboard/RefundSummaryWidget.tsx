@@ -1,5 +1,6 @@
 "use client";
 
+import { Bar } from "@/components/shared/Skeleton";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import RefundService, { RefundSummary } from "@/lib/api/admin/refunds";
@@ -35,12 +36,10 @@ export default function RefundSummaryWidget() {
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-8 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
+        <div className="flex flex-col gap-3" role="status" aria-label="Loading refunds">
+          <Bar className="h-5 w-40" />
+          <Bar className="h-8 w-full" />
+          <Bar className="h-4 w-2/3" />
         </div>
       </div>
     );

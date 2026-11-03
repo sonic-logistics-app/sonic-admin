@@ -12,6 +12,9 @@ export interface PaginationParams {
   otp_verified?: string;
   provider?: string;
   status?: string;
+  suspended?: string;
+  created_from?: string;
+  created_to?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -34,6 +37,9 @@ export default class CustomerService {
     if (params?.otp_verified) queryParams.append("otp_verified", params.otp_verified);
     if (params?.provider) queryParams.append("provider", params.provider);
     if (params?.status) queryParams.append("status", params.status);
+    if (params?.suspended) queryParams.append("suspended", params.suspended);
+    if (params?.created_from) queryParams.append("created_from", params.created_from);
+    if (params?.created_to) queryParams.append("created_to", params.created_to);
 
     const url = `${apiUrl}/user?${queryParams.toString()}`;
 

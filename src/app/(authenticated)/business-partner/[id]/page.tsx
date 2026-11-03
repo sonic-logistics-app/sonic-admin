@@ -1,5 +1,7 @@
 "use client";
 
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
+import { PARTNER_SHARE_PERCENT } from "@/lib/commission";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import VendorService from "@/services/VendorService";
@@ -8,6 +10,13 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { businessTypeLabel } from "@/lib/businessTypes";
+import VendorReviewPanel from "@/components/vendors/VendorReviewPanel";
+import MaskedValue from "@/components/shared/MaskedValue";
+import VendorCataloguePanel from "@/components/vendors/VendorCataloguePanel";
+import VendorFinancePanel from "@/components/vendors/VendorFinancePanel";
+import { getNextPendingVendor } from "@/lib/api/admin/ops";
+import VendorCategoriesPanel from "@/components/vendors/VendorCategoriesPanel";
+import { usePermissions } from "@/lib/auth/permissions";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -73,6 +82,8 @@ interface VendorDetails {
     missingItems: string[];
     missingProfileFields?: string[];
   };
+  open_flags?: number;
+  open_corrections?: number;
   orders_count?: number;
   last_order_date?: string;
   VendorAddress?: {
@@ -86,6 +97,8 @@ interface VendorDetails {
 export default function VendorDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const { can } = usePermissions();
+  const [nextPending, setNextPending] = useState<{ code: string; name: string; remaining: number } | null>(null);
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
 
@@ -114,6 +127,14 @@ export default function VendorDetailsPage() {
     }
   }, [params.id]);
 
+  // The longest-waiting pending vendor other than this one, so a reviewer can keep working the queue
+  useEffect(() => {
+    if (!params.id) return;
+    getNextPendingVendor(String(params.id))
+      .then(({ data }) => setNextPending(data.next ? { code: data.next.short_code || data.next.id, name: data.next.name, remaining: data.remaining } : null))
+      .catch(() => setNextPending(null));
+  }, [params.id, vendor?.status]);
+
   const loadVendorDetails = async () => {
     try {
       setLoading(true);
@@ -123,11 +144,20 @@ export default function VendorDetailsPage() {
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: "Failed to load vendor details",
+        detail: "Failed to load business partner details",
         life: 3000,
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Reload without the full-page spinner (used after review actions so the open tab stays put)
+  const refreshVendor = async () => {
+    try {
+      setVendor(await vendorService.getVendorById(params.id as string));
+    } catch {
+      /* keep the data already on screen */
     }
   };
 
@@ -136,8 +166,8 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: "Approve Vendor",
-      message: `Are you sure you want to approve ${vendor.name}? This will activate the vendor and allow them to start receiving orders.`,
+      title: "Approve Business Partner",
+      message: `Are you sure you want to approve ${vendor.name}? This will activate the business partner and allow them to start receiving orders.`,
       variant: "success",
       onConfirm: async () => {
         try {
@@ -145,7 +175,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: "Vendor approved successfully",
+            detail: "Business Partner approved successfully",
             life: 3000,
           });
           loadVendorDetails();
@@ -154,7 +184,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "error",
             summary: "Approval Failed",
-            detail: error.message || "Failed to approve vendor",
+            detail: error.message || "Failed to approve business partner",
             life: 3000,
           });
         }
@@ -168,8 +198,8 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: "Reject Vendor",
-      message: `Are you sure you want to reject ${vendor.name}? This will deactivate the vendor and prevent them from receiving orders.`,
+      title: "Reject Business Partner",
+      message: `Are you sure you want to reject ${vendor.name}? This will deactivate the business partner and prevent them from receiving orders.`,
       variant: "danger",
       onConfirm: async () => {
         try {
@@ -177,7 +207,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: "Vendor rejected successfully",
+            detail: "Business Partner rejected successfully",
             life: 3000,
           });
           loadVendorDetails();
@@ -186,7 +216,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "error",
             summary: "Rejection Failed",
-            detail: error.message || "Failed to reject vendor",
+            detail: error.message || "Failed to reject business partner",
             life: 3000,
           });
         }
@@ -203,8 +233,8 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: `${status === 'VERIFIED' ? 'Verify' : 'Reject'} Vendor KYC`,
-      message: `Are you sure you want to ${action} this vendor's KYC verification? This will ${status === 'VERIFIED' ? 'allow them to receive payments' : 'prevent them from receiving payments'}.`,
+      title: `${status === 'VERIFIED' ? 'Verify' : 'Reject'} Business Partner KYC`,
+      message: `Are you sure you want to ${action} this business partner's KYC verification? This will ${status === 'VERIFIED' ? 'allow them to receive payments' : 'prevent them from receiving payments'}.`,
       variant: status === 'VERIFIED' ? 'success' : 'danger',
       onConfirm: async () => {
         try {
@@ -212,7 +242,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: `Vendor KYC ${actionPast} successfully`,
+            detail: `Business Partner KYC ${actionPast} successfully`,
             life: 3000,
           });
           loadVendorDetails();
@@ -221,7 +251,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "error",
             summary: "Error",
-            detail: error.message || `Failed to ${action} vendor KYC`,
+            detail: error.message || `Failed to ${action} business partner KYC`,
             life: 3000,
           });
         }
@@ -235,7 +265,7 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: "Suspend Vendor",
+      title: "Suspend Business Partner",
       message: `Are you sure you want to suspend ${vendor.name}? This will temporarily disable their operations. They can be reactivated later.`,
       variant: "danger",
       onConfirm: async () => {
@@ -244,7 +274,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: "Vendor suspended successfully",
+            detail: "Business Partner suspended successfully",
             life: 3000,
           });
           loadVendorDetails();
@@ -253,7 +283,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "error",
             summary: "Suspension Failed",
-            detail: error.message || "Failed to suspend vendor",
+            detail: error.message || "Failed to suspend business partner",
             life: 3000,
           });
         }
@@ -267,8 +297,8 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: "Activate Vendor",
-      message: `Are you sure you want to activate ${vendor.name}? This will set the vendor to active status and allow them to receive orders.`,
+      title: "Activate Business Partner",
+      message: `Are you sure you want to activate ${vendor.name}? This will set the business partner to active status and allow them to receive orders.`,
       variant: "success",
       onConfirm: async () => {
         try {
@@ -276,7 +306,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "success",
             summary: "Success",
-            detail: "Vendor activated successfully",
+            detail: "Business Partner activated successfully",
             life: 3000,
           });
           loadVendorDetails();
@@ -285,7 +315,7 @@ export default function VendorDetailsPage() {
           toast.current?.show({
             severity: "error",
             summary: "Activation Failed",
-            detail: error.message || "Failed to activate vendor",
+            detail: error.message || "Failed to activate business partner",
             life: 3000,
           });
         }
@@ -299,8 +329,8 @@ export default function VendorDetailsPage() {
     
     setConfirmDialog({
       visible: true,
-      title: "Confirm Vendor Deletion",
-      message: `Are you sure you want to delete ${vendor.name}? This is a soft delete - the vendor can be restored later by activating them.`,
+      title: "Confirm Business Partner Deletion",
+      message: `Are you sure you want to delete ${vendor.name}? This is a soft delete - the business partner can be restored later by activating them.`,
       onConfirm: handleDelete,
       variant: "danger",
     });
@@ -314,16 +344,16 @@ export default function VendorDetailsPage() {
       toast.current?.show({
         severity: "success",
         summary: "Success",
-        detail: `Vendor ${vendor.name} has been deleted successfully (soft delete - can be restored)`,
+        detail: `Business Partner ${vendor.name} has been deleted successfully (soft delete - can be restored)`,
         life: 3000,
       });
-      router.push("/vendor"); // Navigate back since vendor is now deleted and won't appear in normal queries
+      router.push("/business-partner"); // Navigate back since vendor is now deleted and won't appear in normal queries
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",
-        detail: error.message || "Failed to delete vendor",
+        detail: error.message || "Failed to delete business partner",
         life: 3000,
       });
     }
@@ -356,7 +386,10 @@ export default function VendorDetailsPage() {
   const isKycComplete = !!reqs?.identityVerified && reqs.cacVerified !== false && reqs.documentsUploaded !== false;
   const isLocationPhotosComplete = !!reqs?.locationPhotosUploaded;
   const isBankingComplete = !!reqs?.bankAccountAdded;
+  const openFlags = vendor?.open_flags ?? 0;
+  const openCorrections = vendor?.open_corrections ?? 0;
   const allTabsComplete = !!verification?.isComplete;
+  const canApprove = allTabsComplete && openFlags === 0;
   // Same rule the API applies before it accepts a KYC "verified" review
   const hasIdentityData =
     (vendor?.verification_type === "bvn" && !!vendor.bvn) ||
@@ -404,18 +437,18 @@ export default function VendorDetailsPage() {
       icon: "pi-credit-card",
       status: isBankingComplete ? "completed" : "pending"
     },
+    { id: "catalogue", label: "Catalogue", icon: "pi-box" },
+    {
+      id: "review",
+      label: "Review",
+      icon: "pi-flag",
+      status: openFlags > 0 ? "rejected" : openCorrections > 0 ? "pending" : undefined,
+    },
     { id: "activity", label: "Activity", icon: "pi-clock" },
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Loading vendor details...</p>
-        </div>
-      </div>
-    );
+    return <DetailPageSkeleton tabs={7} />;
   }
 
   if (!vendor) {
@@ -423,13 +456,13 @@ export default function VendorDetailsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <i className="pi pi-exclamation-triangle text-[#DC2626] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Vendor not found</p>
+          <p className="text-[16px] text-[#525866]">Business Partner not found</p>
           <Button
             variant="outline"
-            onClick={() => router.push("/vendor")}
+            onClick={() => router.push("/business-partner")}
             className="mt-4"
           >
-            Back to Vendors
+            Back to Business Partners
           </Button>
         </div>
       </div>
@@ -456,14 +489,14 @@ export default function VendorDetailsPage() {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/vendor")}
+              onClick={() => router.push("/business-partner")}
               className="px-3 py-2"
             >
               <i className="pi pi-arrow-left mr-2" />
               Back
             </Button>
             <div>
-              <h1 className="text-[24px] font-bold text-[#111827]">Vendor Details</h1>
+              <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Details</h1>
               <p className="text-[13px] text-[#525866]">
                 Code: {vendor.short_code}
               </p>
@@ -471,12 +504,19 @@ export default function VendorDetailsPage() {
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={vendor.status} />
+            {nextPending && (
+              <Button variant="outline" onClick={() => router.push(`/business-partner/${nextPending.code}`)}>
+                Next pending ({nextPending.remaining})
+                <i className="pi pi-arrow-right ml-2" />
+              </Button>
+            )}
             <Button
               variant="danger"
               onClick={confirmDelete}
+              disabled={!can("account.delete")}
             >
               <i className="pi pi-trash mr-2" />
-              Delete Vendor
+              Delete Business Partner
             </Button>
           </div>
         </div>
@@ -514,12 +554,6 @@ export default function VendorDetailsPage() {
                     {vendor.kyc_status.toUpperCase()}
                   </span>
                   <span className="text-[11px] text-[#525866]">KYC</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-[#059669]">
-                    {100 - vendor.commission_rate}%
-                  </span>
-                  <span className="text-[11px] text-[#525866]">Commission</span>
                 </div>
               </div>
             </div>
@@ -567,10 +601,10 @@ export default function VendorDetailsPage() {
                           Current Status: {vendor.status.replace('_', ' ').toUpperCase()}
                         </p>
                         <p className="text-[11px] text-[#525866]">
-                          {vendor.status === "active" && "Vendor is active and can receive orders"}
-                          {vendor.status === "inactive" && "Vendor is deactivated - can be reactivated anytime"}
-                          {vendor.status === "suspended" && "Vendor is temporarily suspended - can be reactivated"}
-                          {vendor.status === "pending_approval" && "Vendor is awaiting approval to start operations"}
+                          {vendor.status === "active" && "Business Partner is active and can receive orders"}
+                          {vendor.status === "inactive" && "Business Partner is deactivated - can be reactivated anytime"}
+                          {vendor.status === "suspended" && "Business Partner is temporarily suspended - can be reactivated"}
+                          {vendor.status === "pending_approval" && "Business Partner is awaiting approval to start operations"}
                         </p>
                       </div>
                     </div>
@@ -582,29 +616,29 @@ export default function VendorDetailsPage() {
                       <ul className="list-disc list-inside space-y-1 ml-2">
                         {vendor.status === "active" && (
                           <>
-                            <li>Suspend: Temporarily disable vendor operations (reversible)</li>
-                            <li>Delete: Soft delete vendor (can be restored via activate)</li>
+                            <li>Suspend: Temporarily disable business partner operations (reversible)</li>
+                            <li>Delete: Soft delete business partner (can be restored via activate)</li>
                           </>
                         )}
                         {vendor.status === "inactive" && (
                           <>
-                            <li>Activate: Set vendor to active status</li>
+                            <li>Activate: Set business partner to active status</li>
                             <li>Suspend: Move to suspended status</li>
-                            <li>Delete: Soft delete vendor (can be restored via activate)</li>
+                            <li>Delete: Soft delete business partner (can be restored via activate)</li>
                           </>
                         )}
                         {vendor.status === "suspended" && (
                           <>
-                            <li>Activate: Restore vendor to active status</li>
-                            <li>Delete: Soft delete vendor (can be restored via activate)</li>
+                            <li>Activate: Restore business partner to active status</li>
+                            <li>Delete: Soft delete business partner (can be restored via activate)</li>
                           </>
                         )}
                         {vendor.status === "pending_approval" && (
                           <>
-                            <li>Approve: Activate vendor for operations</li>
-                            <li>Reject: Decline vendor application</li>
+                            <li>Approve: Activate business partner for operations</li>
+                            <li>Reject: Decline business partner application</li>
                             <li>Suspend: Move to suspended status</li>
-                            <li>Delete: Soft delete vendor (can be restored via activate)</li>
+                            <li>Delete: Soft delete business partner (can be restored via activate)</li>
                           </>
                         )}
                       </ul>
@@ -698,6 +732,15 @@ export default function VendorDetailsPage() {
 
                 {/* Enhanced Status Management Actions */}
                 <div className="flex flex-col items-center gap-4 pt-6 border-t border-[#E1E4EA]">
+                  {vendor.status === "pending_approval" && openFlags > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center max-w-2xl text-[13px] text-red-800">
+                      This business partner has {openFlags} unresolved suspicion flag{openFlags > 1 ? "s" : ""}. Approval is blocked until{" "}
+                      <button type="button" onClick={() => setActiveTab("review")} className="underline font-semibold">
+                        the flag is resolved
+                      </button>
+                      .
+                    </div>
+                  )}
                   {vendor.status === "pending_approval" && !allTabsComplete && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center max-w-2xl">
                       <p className="text-[13px] text-orange-800 flex items-center justify-center gap-2">
@@ -721,28 +764,33 @@ export default function VendorDetailsPage() {
                     </div>
                   )}
                   
+                  {!can("vendor.decide") && (
+                    <p className="text-[12px] text-[#525866] mb-3">Your role can view this business partner but not approve, reject, suspend or delete it.</p>
+                  )}
                   <div className="flex gap-4">
                     {vendor.status === "pending_approval" && (
                       <>
                         <Button
                           variant="success"
                           onClick={handleApprove}
-                          disabled={!allTabsComplete}
-                          className={!allTabsComplete ? "opacity-50 cursor-not-allowed" : ""}
+                          disabled={!canApprove || !can("vendor.decide")}
+                          className={!canApprove ? "opacity-50 cursor-not-allowed" : ""}
                         >
                           <i className="pi pi-check mr-2" />
-                          Approve Vendor
+                          Approve Business Partner
                         </Button>
                         <Button
                           variant="danger"
                           onClick={handleReject}
+                          disabled={!can("vendor.decide")}
                         >
                           <i className="pi pi-times mr-2" />
-                          Reject Vendor
+                          Reject Business Partner
                         </Button>
                         <Button
                           variant="outline"
                           onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                         >
                           <i className="pi pi-pause mr-2" />
                           Suspend
@@ -755,9 +803,10 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="outline"
                         onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-pause mr-2" />
-                        Suspend Vendor
+                        Suspend Business Partner
                       </Button>
                     </>
                   )}
@@ -767,9 +816,10 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="success"
                         onClick={handleActivate}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-play mr-2" />
-                        Activate Vendor
+                        Activate Business Partner
                       </Button>
                     </>
                   )}
@@ -779,13 +829,15 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="success"
                         onClick={handleActivate}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-refresh mr-2" />
-                        Activate Vendor
+                        Activate Business Partner
                       </Button>
                       <Button
                         variant="outline"
                         onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-pause mr-2" />
                         Suspend
@@ -798,10 +850,11 @@ export default function VendorDetailsPage() {
                     <Button
                       variant="danger"
                       onClick={confirmDelete}
+              disabled={!can("account.delete")}
                       className="text-[12px]"
                     >
                       <i className="pi pi-trash mr-2" />
-                      Delete Vendor
+                      Delete Business Partner
                     </Button>
                   </div>
                   </div>
@@ -823,7 +876,7 @@ export default function VendorDetailsPage() {
                           : kycRejected
                           ? "KYC was rejected. Identity cannot be used for approval."
                           : !hasIdentityData
-                          ? "Identity not submitted. The vendor has not provided a BVN or NIN."
+                          ? "Identity not submitted. The business partner has not provided a BVN or NIN."
                           : "Identity submitted. Waiting for your review."}
                       </p>
                     </div>
@@ -836,15 +889,17 @@ export default function VendorDetailsPage() {
                       {vendor.kyc_status !== 'completed' && hasIdentityData && (
                         <Button
                           onClick={() => handleVerifyVendor('VERIFIED')}
+                          disabled={!can("vendor.decide")}
                           className="bg-green-600 hover:bg-green-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
                         >
                           <i className="pi pi-check-circle" />
-                          Verify Vendor
+                          Verify Business Partner
                         </Button>
                       )}
                       {vendor.kyc_status !== 'failed' && (hasIdentityData || kycMarkedWithoutData) && (
                         <Button
                           onClick={() => handleVerifyVendor('REJECTED')}
+                          disabled={!can("vendor.decide")}
                           className="bg-red-600 hover:bg-red-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
                         >
                           <i className="pi pi-times-circle" />
@@ -857,8 +912,8 @@ export default function VendorDetailsPage() {
                   {kycMarkedWithoutData && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6 text-[13px] text-orange-800">
                       KYC is marked <strong>completed</strong>, but no BVN or NIN is on file. The completed status is not backed
-                      by any identity data, so approval stays blocked. Reject it to correct the status, or ask the vendor to
-                      verify their BVN or NIN in the vendor app.
+                      by any identity data, so approval stays blocked. Reject it to correct the status, or ask the business partner to
+                      verify their BVN or NIN in the business partner app.
                     </div>
                   )}
 
@@ -880,7 +935,7 @@ export default function VendorDetailsPage() {
                             Bank Verification Number (BVN)
                           </label>
                           <p className="text-[13px] text-[#111827] font-mono">
-                            {vendor.bvn}
+                            <MaskedValue value={vendor.bvn} />
                           </p>
                         </div>
                       )}
@@ -890,7 +945,7 @@ export default function VendorDetailsPage() {
                             National Identification Number (NIN)
                           </label>
                           <p className="text-[13px] text-[#111827] font-mono">
-                            {vendor.nin}
+                            <MaskedValue value={vendor.nin} />
                           </p>
                         </div>
                       )}
@@ -1055,6 +1110,7 @@ export default function VendorDetailsPage() {
                     Required for approval, still missing: <strong>{missingProfileLabels.join(", ")}</strong>.
                   </div>
                 )}
+                <VendorCategoriesPanel vendorId={vendor.id} onChanged={refreshVendor} />
                 {/* Business Information */}
                 <div className="border border-[#E1E4EA] rounded-lg p-6">
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Information</h3>
@@ -1080,7 +1136,7 @@ export default function VendorDetailsPage() {
                         Registration Type
                       </label>
                       <p className="text-[13px] text-[#111827]">
-                        {vendor.is_registered_business ? "Registered Business" : "Individual Vendor"}
+                        {vendor.is_registered_business ? "Registered Business" : "Individual Business Partner"}
                       </p>
                     </div>
                     {vendor.is_registered_business && vendor.cac_number && (
@@ -1181,13 +1237,13 @@ export default function VendorDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Vendor Commission
+                        Business Partner Commission
                       </label>
                       <p className="text-[13px] text-[#059669] font-semibold">
-                        {100 - vendor.commission_rate}%
+                        {PARTNER_SHARE_PERCENT}%
                       </p>
                       <p className="text-[11px] text-[#525866] mt-1">
-                        Vendor receives this percentage from each order
+                        Every business partner receives this share of their item sales
                       </p>
                     </div>
                     <div>
@@ -1322,7 +1378,7 @@ export default function VendorDetailsPage() {
                         Account Number
                       </label>
                       <p className="text-[16px] text-[#111827] font-mono font-semibold">
-                        {vendor.account_number || <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
+                        {vendor.account_number ? <MaskedValue value={vendor.account_number} visibleEnd={4} /> : <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
                       </p>
                     </div>
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
@@ -1343,8 +1399,13 @@ export default function VendorDetailsPage() {
                     </div>
                   </div>
                 </div>
+                <VendorFinancePanel vendorId={vendor.id} />
               </div>
             )}
+
+            {activeTab === "catalogue" && <VendorCataloguePanel vendorId={vendor.id} />}
+
+            {activeTab === "review" && <VendorReviewPanel vendorId={vendor.id} onChanged={refreshVendor} />}
 
             {activeTab === "activity" && (
               <div className="space-y-6">

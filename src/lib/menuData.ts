@@ -1,4 +1,5 @@
 import { MenuModel } from "@/types/menu";
+import { devToolsVisible } from "@/lib/devTools";
 
 export const menuData: MenuModel[] = [
   {
@@ -6,8 +7,8 @@ export const menuData: MenuModel[] = [
     items: [
       { label: "Dashboard", icon: "pi pi-fw pi-home", to: "/dashboard" },
       { label: "User", icon: "pi pi-fw pi-user", to: "/user" },
-      { label: "Driver", icon: "pi pi-fw pi-car", to: "/driver" },
-      { label: "Vendor", icon: "pi pi-fw pi-shop", to: "/vendor" },
+      { label: "Mover", icon: "pi pi-fw pi-car", to: "/mover" },
+      { label: "Business Partner", icon: "pi pi-fw pi-shop", to: "/business-partner" },
       { label: "Order", icon: "pi pi-fw pi-truck", to: "/order" },
       { label: "Transaction", icon: "pi pi-fw pi-credit-card", to: "/transaction" },
       { label: "Voucher", icon: "pi pi-fw pi-ticket", to: "/voucher" },
@@ -17,8 +18,9 @@ export const menuData: MenuModel[] = [
   {
     label: "Tools",
     items: [
-      { label: "Seed Data", icon: "pi pi-fw pi-database", to: "/seed" },
-      { label: "API Docs", icon: "pi pi-fw pi-book", to: "/api-docs" },
+      { label: "Audit Log", icon: "pi pi-fw pi-history", to: "/audit-log", permission: "audit.read" },
+      { label: "Team", icon: "pi pi-fw pi-users", to: "/team", permission: "admin.manage" },
+      { label: "API Docs", icon: "pi pi-fw pi-book", to: "/api-docs", visible: devToolsVisible },
     ],
   },
   {

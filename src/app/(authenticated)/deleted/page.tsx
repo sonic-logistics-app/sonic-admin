@@ -7,13 +7,13 @@ import SearchBar from "@/components/shared/SearchBar";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermissions } from "@/lib/auth/permissions";
 
 const TABS: { kind: DeletedKind; label: string; singular: string }[] = [
-  { kind: "vendors", label: "Vendors", singular: "vendor" },
-  { kind: "users", label: "Customers", singular: "customer" },
-  { kind: "drivers", label: "Drivers", singular: "driver" },
+  { kind: "vendors", label: "Business Partners", singular: "business partner" },
+  { kind: "users", label: "Users", singular: "user" },
+  { kind: "drivers", label: "Movers", singular: "mover" },
 ];
 
 const formatDate = (value: string | null) =>
@@ -22,6 +22,7 @@ const formatDate = (value: string | null) =>
     : "N/A";
 
 export default function DeletedAccountsPage() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const service = useRef(new DeletedAccountsService()).current;
 
@@ -122,10 +123,10 @@ export default function DeletedAccountsPage() {
       header: "Actions",
       body: (r: DeletedAccount) => (
         <div className="flex items-center gap-2">
-          <Button variant="success" size="sm" icon="pi pi-replay" onClick={() => askRestore(r)}>
+          <Button variant="success" size="sm" icon="pi pi-replay" disabled={!can("account.delete")} onClick={() => askRestore(r)}>
             Restore
           </Button>
-          <Button variant="danger" size="sm" icon="pi pi-trash" onClick={() => askDeleteForever(r)}>
+          <Button variant="danger" size="sm" icon="pi pi-trash" disabled={!can("account.delete")} onClick={() => askDeleteForever(r)}>
             Delete forever
           </Button>
         </div>
@@ -147,7 +148,7 @@ export default function DeletedAccountsPage() {
         icon={confirm.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-[24px] font-bold text-[#111827]">Deleted accounts</h1>
           <p className="text-[13px] text-[#525866]">Accounts removed with a soft delete. Restore them or delete them permanently.</p>
@@ -182,7 +183,7 @@ export default function DeletedAccountsPage() {
         </div>
 
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={8} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={rows}
@@ -190,8 +191,7 @@ export default function DeletedAccountsPage() {
             loading={loading}
             pagination={pagination}
             onPaginationChange={changePage}
-            emptyMessage={`No deleted ${tab.label.toLowerCase()}`}
-            className="flex-1 min-h-0"
+            emptyMessage={`No deleted ${tab.label.toLowerCase()}`}
           />
         )}
       </div>

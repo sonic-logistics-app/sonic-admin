@@ -1,5 +1,6 @@
 "use client";
 
+import { KpiTileSkeleton } from "@/components/shared/Skeleton";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 interface DashboardStatsData {
@@ -22,7 +23,13 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ stats, loading, error }: DashboardStatsProps) {
   if (loading) {
-    return <SkeletonLoader type="stats" />;
+    return (
+      <div className="grid grid-cols-4 gap-3 w-full" role="status" aria-label="Loading totals">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <KpiTileSkeleton key={i} />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -70,7 +77,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         <div className="flex justify-between items-center gap-2">
           <div className="flex flex-col gap-1 flex-1 overflow-hidden">
             <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
-              CUSTOMERS
+              USERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
               {error ? "Error" : stats.totalCustomer.toLocaleString()}
@@ -93,7 +100,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         <div className="flex justify-between items-center gap-2">
           <div className="flex flex-col gap-1 flex-1 overflow-hidden">
             <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
-              DRIVERS
+              MOVERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
               {error ? "Error" : stats.totalDriver.toLocaleString()}
@@ -116,7 +123,7 @@ export default function DashboardStats({ stats, loading, error }: DashboardStats
         <div className="flex justify-between items-center gap-2">
           <div className="flex flex-col gap-1 flex-1 overflow-hidden">
             <h3 className="text-[#525866] text-[11px] font-medium uppercase tracking-wider">
-              VENDORS
+              BUSINESS PARTNERS
             </h3>
             <p className="text-[20px] md:text-[24px] font-bold text-[#111827] truncate">
               {error ? "Error" : stats.totalVendor.toLocaleString()}

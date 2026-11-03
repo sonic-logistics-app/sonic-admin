@@ -5,6 +5,7 @@
 
 "use client";
 
+import { TableSkeleton } from "./Skeleton";
 import React, { useState } from "react";
 import StatusBadge from "./StatusBadge";
 
@@ -39,7 +40,6 @@ interface DataTableProps<T = unknown> {
   onRowClick?: (rowData: T) => void;
   emptyMessage?: string;
   className?: string;
-  tableMaxHeight?: string;
   /** Adds a checkbox column. Omit it and the table behaves exactly as before. */
   selection?: SelectionConfig<T>;
 }
@@ -56,7 +56,6 @@ export default function DataTable<T extends object>({
   onRowClick,
   emptyMessage = "No data found",
   className = "",
-  tableMaxHeight = "calc(100vh - 300px)",
   selection,
 }: DataTableProps<T>) {
   const [sortField, setSortField] = useState<string | undefined>(undefined);
@@ -118,23 +117,11 @@ export default function DataTable<T extends object>({
     }
   };
 
-  // Render loading skeleton
+  // Loading: the real column headers and rows shaped like the data, so nothing jumps when it arrives
   if (loading) {
     return (
-      <div className={`rounded-2xl border border-[#E1E4EA] bg-white overflow-hidden ${className}`}>
-        <div className="p-6">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 flex items-center gap-6 px-6 border-b border-[#E1E4EA]">
-              {columns.map((col, j) => (
-                <div
-                  key={j}
-                  className="h-4 bg-gray-200 rounded-md animate-pulse"
-                  style={{ width: col.width || "100px" }}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+      <div className={`w-full ${className}`}>
+        <TableSkeleton headers={columns.map((c) => c.header)} rows={Math.min(pagination?.limit ?? 8, 10)} />
       </div>
     );
   }
@@ -182,10 +169,10 @@ export default function DataTable<T extends object>({
     : data.length;
 
   return (
-    <div className={`w-full flex flex-col min-h-0 flex-1 ${className}`}>
+    <div className={`w-full flex flex-col ${className}`}>
       {/* Desktop Table View */}
-      <div className="hidden md:flex flex-col flex-1 min-h-0 rounded-2xl border border-[#E1E4EA] bg-white overflow-hidden w-full">
-        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 w-full">
+      <div className="hidden md:flex flex-col rounded-2xl border border-[#E1E4EA] bg-white overflow-hidden w-full">
+        <div className="overflow-x-auto w-full">
           <table className="w-full">
             {/* Header — sticky */}
             <thead className="bg-white border-b border-[#E1E4EA] sticky top-0 z-10">

@@ -13,6 +13,8 @@ export interface PaginationParams {
   is_verified?: string;
   is_rejected?: string;
   provider?: string;
+  created_from?: string;
+  created_to?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -32,6 +34,8 @@ export default class DriverService {
     if (params?.is_verified) queryParams.append("is_verified", params.is_verified);
     if (params?.is_rejected) queryParams.append("is_rejected", params.is_rejected);
     if (params?.provider) queryParams.append("provider", params.provider);
+    if (params?.created_from) queryParams.append("created_from", params.created_from);
+    if (params?.created_to) queryParams.append("created_to", params.created_to);
 
     return fetch(`${apiUrl}/driver?${queryParams.toString()}`, {
       headers: authService.getAuthHeaders(),

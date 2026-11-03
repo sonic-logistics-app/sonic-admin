@@ -7,6 +7,7 @@ import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ConnectionStatus from "@/components/shared/ConnectionStatus";
 import { menuData } from "@/lib/menuData";
+import { refreshPermissions } from "@/lib/auth/permissions";
 
 export default function AuthenticatedLayout({
   children,
@@ -30,6 +31,11 @@ export default function AuthenticatedLayout({
   const onMenuItemClick = () => {
     setMobileMenuActive(false);
   };
+
+  // Pick up a role change made since this admin signed in
+  useEffect(() => {
+    refreshPermissions();
+  }, []);
 
   useEffect(() => {
     if (mobileMenuActive) {
