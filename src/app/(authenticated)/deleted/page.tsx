@@ -9,6 +9,7 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermissions } from "@/lib/auth/permissions";
 
 const TABS: { kind: DeletedKind; label: string; singular: string }[] = [
   { kind: "vendors", label: "Vendors", singular: "vendor" },
@@ -22,6 +23,7 @@ const formatDate = (value: string | null) =>
     : "N/A";
 
 export default function DeletedAccountsPage() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const service = useRef(new DeletedAccountsService()).current;
 
@@ -122,7 +124,7 @@ export default function DeletedAccountsPage() {
       header: "Actions",
       body: (r: DeletedAccount) => (
         <div className="flex items-center gap-2">
-          <Button variant="success" size="sm" icon="pi pi-replay" onClick={() => askRestore(r)}>
+          <Button variant="success" size="sm" icon="pi pi-replay" disabled={!can("account.delete")} onClick={() => askRestore(r)}>
             Restore
           </Button>
           <Button variant="danger" size="sm" icon="pi pi-trash" onClick={() => askDeleteForever(r)}>

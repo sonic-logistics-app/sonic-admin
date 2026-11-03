@@ -9,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
 import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
 import { RegistrationStats, getNextPendingVendor, getRegistrationStats, getVendorLocalities } from "@/lib/api/admin/ops";
+import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -57,11 +58,13 @@ interface Vendor {
   VendorAddress?: { landmark_address?: string | null } | null;
   verification?: { isComplete: boolean; completionPercentage: number; missingItems: string[] };
   locality?: string | null;
+  additional_business_types?: string[];
   evidence?: { passed: number; total: number; location_photos: number; products: number; products_missing_images: number };
 }
 
 export default function VendorListPage() {
   const router = useRouter();
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
   const { createdFrom, createdTo } = useRegisteredRange();
   const toast = useRef<ToastRef>(null);
@@ -212,7 +215,16 @@ export default function VendorListPage() {
           )}
           <CellStack
             primary={rowData.name}
-            secondary={businessTypeLabel(rowData.business_type)}
+            secondary={
+              <>
+                {businessTypeLabel(rowData.business_type)}
+                {(rowData.additional_business_types?.length ?? 0) > 0 && (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-[#EFF6FF] text-[#1D4ED8] font-semibold" title={rowData.additional_business_types!.map(businessTypeLabel).join(", ")}>
+                    +{rowData.additional_business_types!.length}
+                  </span>
+                )}
+              </>
+            }
             tertiary={<span className="font-mono">{rowData.short_code || "—"}</span>}
           />
         </div>
@@ -297,11 +309,12 @@ export default function VendorListPage() {
       body: (rowData: Vendor) => (
         <div className="flex items-center gap-2">
           <button
+            disabled={!can("account.delete")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -395,6 +408,7 @@ export default function VendorListPage() {
             </button>
             <ExcelExportButton onExport={exportVendors} />
           <button
+            disabled={!can("account.create")}
             onClick={() => router.push("/vendor/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >

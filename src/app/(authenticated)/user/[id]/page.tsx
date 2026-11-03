@@ -8,6 +8,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import { UserDetail, getUserDetail, suspendUser, unsuspendUser } from "@/lib/api/admin/ops";
+import { usePermissions } from "@/lib/auth/permissions";
 
 const naira = (value: number | null | undefined) => `₦${(value ?? 0).toLocaleString("en-NG")}`;
 const day = (iso: string | null) =>
@@ -16,6 +17,7 @@ const day = (iso: string | null) =>
 export default function UserActivityPage() {
   const params = useParams();
   const router = useRouter();
+  const { can } = usePermissions();
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const toast = useRef<ToastRef>(null);
@@ -80,7 +82,7 @@ export default function UserActivityPage() {
         <div className="flex items-center gap-2">
           <StatusBadge status={user.is_verified ? "VERIFIED" : "PENDING"} />
           {user.suspended_at && <span className="text-[11px] px-2 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] font-semibold">Suspended {day(user.suspended_at)}</span>}
-          {!user.deleted_at && (user.suspended_at ? (
+          {!user.deleted_at && can("account.suspend") && (user.suspended_at ? (
             <Button size="sm" variant="success" loading={saving} onClick={() => applySuspension(false)}>Reinstate</Button>
           ) : (
             <Button size="sm" variant="danger" onClick={() => setSuspending(true)}>Suspend</Button>

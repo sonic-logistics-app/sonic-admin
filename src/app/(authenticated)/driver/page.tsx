@@ -8,6 +8,7 @@ import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
 import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
+import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -60,6 +61,7 @@ interface Driver {
 
 export default function DriverListPage() {
   const router = useRouter();
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
   const { createdFrom, createdTo } = useRegisteredRange();
   const [filtersReady, setFiltersReady] = useState(false);
@@ -286,11 +288,12 @@ export default function DriverListPage() {
       body: (rowData: Driver) => (
         <div className="flex items-center gap-2">
           <button
+            disabled={!can("account.delete")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>

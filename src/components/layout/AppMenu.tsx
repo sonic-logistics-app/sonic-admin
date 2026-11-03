@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import AdminAuth from "@/lib/auth/admin-auth";
+import { usePermissions, AdminPermission } from "@/lib/auth/permissions";
 import AppSubmenu from "./AppSubmenu";
 import { MenuModel, MenuItem } from "@/types/menu";
 import { getRegistrationStats, getTickets } from "@/lib/api/admin/ops";
@@ -16,6 +17,7 @@ interface AppMenuProps {
 
 export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   const router = useRouter();
+  const { can } = usePermissions();
 
   // Counts shown as badges: vendors waiting for approval and open support cases.
   // A failed request just leaves the badge off.
@@ -57,7 +59,7 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   // Separate logout item from other menu items
   const processedModel = model.map(section => ({
     ...section,
-    items: section.items.filter(item => item.commandKey !== "logout").map(item => ({
+    items: section.items.filter(item => item.commandKey !== "logout" && (!item.permission || can(item.permission as AdminPermission))).map(item => ({
       ...item,
       badge: item.to ? badges[item.to] ?? item.badge : item.badge,
       command: item.commandKey === "logout" ? handleLogout : item.command,

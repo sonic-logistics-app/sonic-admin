@@ -10,6 +10,7 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DocumentViewer from "@/components/driver/DocumentViewer";
 import VehicleViewer from "@/components/driver/VehicleViewer";
 import DriverPerformancePanel from "@/components/driver/DriverPerformancePanel";
+import { usePermissions } from "@/lib/auth/permissions";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -125,6 +126,7 @@ interface DriverDetails {
 }
 
 export default function DriverDetailsPage() {
+  const { can } = usePermissions();
   const router = useRouter();
   const params = useParams();
   const toast = useRef<ToastRef>(null);
@@ -178,6 +180,10 @@ export default function DriverDetailsPage() {
 
   const handleVerifyComponent = async (component: keyof VerificationStatus) => {
     if (!driver) return;
+    if (!can("account.verify")) {
+      toast.current?.show({ severity: "error", summary: "Not allowed", detail: "Your role does not allow this action.", life: 4000 });
+      return;
+    }
     
     try {
       const verificationData = {
@@ -207,6 +213,10 @@ export default function DriverDetailsPage() {
 
   const handleRejectComponent = async (component: keyof VerificationStatus) => {
     if (!driver) return;
+    if (!can("account.verify")) {
+      toast.current?.show({ severity: "error", summary: "Not allowed", detail: "Your role does not allow this action.", life: 4000 });
+      return;
+    }
     
     try {
       const rejectionData = {

@@ -8,6 +8,7 @@ import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
 import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
+import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
@@ -50,6 +51,7 @@ interface Customer {
 
 export default function UserListPage() {
   const router = useRouter();
+  const { can } = usePermissions();
   const searchParams = useSearchParams();
   const { createdFrom, createdTo } = useRegisteredRange();
   const [filtersReady, setFiltersReady] = useState(false);
@@ -391,7 +393,7 @@ export default function UserListPage() {
           >
             Activity
           </button>
-          {!rowData.is_verified && (
+          {!rowData.is_verified && can("account.verify") && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -403,11 +405,12 @@ export default function UserListPage() {
             </button>
           )}
           <button
+            disabled={!can("account.delete")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>

@@ -10,8 +10,10 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermissions } from "@/lib/auth/permissions";
 
 export default function FAQListPage() {
+  const { can } = usePermissions();
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const faqService = new FAQService();
@@ -149,20 +151,22 @@ export default function FAQListPage() {
             View
           </button>
           <button
+            disabled={!can("faq.manage")}
             onClick={(e) => {
               e.stopPropagation();
               router.push(`/faq/${rowData.id}/edit`);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Edit
           </button>
           <button
+            disabled={!can("faq.manage")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -188,7 +192,7 @@ export default function FAQListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">FAQ Management</h1>
-          <Button onClick={() => router.push("/faq/create")}>
+          <Button onClick={() => router.push("/faq/create")} disabled={!can("faq.manage")}>
             <i className="pi pi-plus mr-2" />
             New FAQ
           </Button>

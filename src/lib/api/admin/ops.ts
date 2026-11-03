@@ -309,3 +309,69 @@ export const getNextPendingVendor = (exclude?: string) =>
   request<{ next: { id: string; short_code: string; name: string } | null; remaining: number }>(
     `/vendor/next-pending${exclude ? `?exclude=${encodeURIComponent(exclude)}` : ""}`,
   );
+
+// ---------------------------------------------------------------- admin team
+
+export interface TeamAdmin {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: "super_admin" | "operations" | "support";
+  status: "active" | "pending" | "disabled";
+  invite_expired: boolean;
+  invite_expires_at: string | null;
+  created_at: string;
+}
+
+export const getTeam = () => request<{ admins: TeamAdmin[] }>("/admins");
+
+export const inviteAdmin = (body: { email: string; first_name: string; last_name: string; role: TeamAdmin["role"] }) =>
+  request<{ admin: TeamAdmin; email_sent: boolean; expires_at: string }>("/admins/invite", { method: "POST", body: JSON.stringify(body) });
+
+export const resendAdminInvite = (id: string) =>
+  request<{ email_sent: boolean; expires_at: string }>(`/admins/${id}/resend-invite`, { method: "POST", body: "{}" });
+
+export const revokeAdminInvite = (id: string) => request<object>(`/admins/${id}/invite`, { method: "DELETE" });
+
+export const changeAdminRole = (id: string, role: TeamAdmin["role"]) =>
+  request<{ admin: TeamAdmin }>(`/admins/${id}/role`, { method: "PUT", body: JSON.stringify({ role }) });
+
+export const setAdminDisabled = (id: string, disabled: boolean) =>
+  request<{ admin: TeamAdmin }>(`/admins/${id}/${disabled ? "disable" : "enable"}`, { method: "PUT", body: "{}" });
+
+// Public: used by the set-password page, no sign-in needed
+const publicPost = async <T>(path: string, body: object): Promise<T> => {
+  const res = await fetch(`${apiUrl}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || `Request failed (${res.status})`);
+  return json.data as T;
+};
+
+export const checkAdminInvite = (token: string) => publicPost<{ email: string; first_name: string; role: TeamAdmin["role"] }>("/invite/check", { token });
+export const acceptAdminInvite = (token: string, password: string) => publicPost<{ email: string }>("/accept-invite", { token, password });
+
+// ---------------------------------------------------------------- vendor categories
+
+export interface VendorCategories {
+  primary: string | null;
+  additional: string[];
+  max_additional: number;
+  live_in_customer_app: boolean;
+  history: {
+    id: string;
+    admin_email: string | null;
+    reason: string | null;
+    created_at: string;
+    before: { primary: string | null; additional: string[] } | null;
+    after: { primary: string | null; additional: string[] } | null;
+  }[];
+}
+
+export const getVendorCategories = (vendorId: string) => request<VendorCategories>(`/vendor/${vendorId}/categories`);
+
+export const saveVendorCategories = (vendorId: string, additional: string[], reason: string) =>
+  request<{ primary: string | null; additional: string[] }>(`/vendor/${vendorId}/categories`, {
+    method: "PUT",
+    body: JSON.stringify({ additional_business_types: additional, reason }),
+  });

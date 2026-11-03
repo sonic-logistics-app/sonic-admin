@@ -11,6 +11,8 @@ export interface MenuItem {
   class?: string;
   disabled?: boolean;
   visible?: boolean | (() => boolean);
+  /** Hidden unless the signed-in admin's role holds this permission */
+  permission?: string;
   command?: (event: { originalEvent: React.MouseEvent; item: MenuItem }) => void;
   commandKey?: string;
 }

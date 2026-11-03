@@ -13,6 +13,8 @@ import MaskedValue from "@/components/shared/MaskedValue";
 import VendorCataloguePanel from "@/components/vendors/VendorCataloguePanel";
 import VendorFinancePanel from "@/components/vendors/VendorFinancePanel";
 import { getNextPendingVendor } from "@/lib/api/admin/ops";
+import VendorCategoriesPanel from "@/components/vendors/VendorCategoriesPanel";
+import { usePermissions } from "@/lib/auth/permissions";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -93,6 +95,7 @@ interface VendorDetails {
 export default function VendorDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const { can } = usePermissions();
   const [nextPending, setNextPending] = useState<{ code: string; name: string; remaining: number } | null>(null);
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
@@ -515,6 +518,7 @@ export default function VendorDetailsPage() {
             <Button
               variant="danger"
               onClick={confirmDelete}
+              disabled={!can("account.delete")}
             >
               <i className="pi pi-trash mr-2" />
               Delete Vendor
@@ -771,13 +775,16 @@ export default function VendorDetailsPage() {
                     </div>
                   )}
                   
+                  {!can("vendor.decide") && (
+                    <p className="text-[12px] text-[#525866] mb-3">Your role can view this vendor but not approve, reject, suspend or delete it.</p>
+                  )}
                   <div className="flex gap-4">
                     {vendor.status === "pending_approval" && (
                       <>
                         <Button
                           variant="success"
                           onClick={handleApprove}
-                          disabled={!canApprove}
+                          disabled={!canApprove || !can("vendor.decide")}
                           className={!canApprove ? "opacity-50 cursor-not-allowed" : ""}
                         >
                           <i className="pi pi-check mr-2" />
@@ -786,6 +793,7 @@ export default function VendorDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={handleReject}
+                          disabled={!can("vendor.decide")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject Vendor
@@ -793,6 +801,7 @@ export default function VendorDetailsPage() {
                         <Button
                           variant="outline"
                           onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                         >
                           <i className="pi pi-pause mr-2" />
                           Suspend
@@ -805,6 +814,7 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="outline"
                         onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-pause mr-2" />
                         Suspend Vendor
@@ -817,6 +827,7 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="success"
                         onClick={handleActivate}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-play mr-2" />
                         Activate Vendor
@@ -829,6 +840,7 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="success"
                         onClick={handleActivate}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-refresh mr-2" />
                         Activate Vendor
@@ -836,6 +848,7 @@ export default function VendorDetailsPage() {
                       <Button
                         variant="outline"
                         onClick={handleSuspend}
+                        disabled={!can("vendor.decide")}
                       >
                         <i className="pi pi-pause mr-2" />
                         Suspend
@@ -848,6 +861,7 @@ export default function VendorDetailsPage() {
                     <Button
                       variant="danger"
                       onClick={confirmDelete}
+              disabled={!can("account.delete")}
                       className="text-[12px]"
                     >
                       <i className="pi pi-trash mr-2" />
@@ -886,6 +900,7 @@ export default function VendorDetailsPage() {
                       {vendor.kyc_status !== 'completed' && hasIdentityData && (
                         <Button
                           onClick={() => handleVerifyVendor('VERIFIED')}
+                          disabled={!can("vendor.decide")}
                           className="bg-green-600 hover:bg-green-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
                         >
                           <i className="pi pi-check-circle" />
@@ -895,6 +910,7 @@ export default function VendorDetailsPage() {
                       {vendor.kyc_status !== 'failed' && (hasIdentityData || kycMarkedWithoutData) && (
                         <Button
                           onClick={() => handleVerifyVendor('REJECTED')}
+                          disabled={!can("vendor.decide")}
                           className="bg-red-600 hover:bg-red-700 text-white text-[13px] px-4 py-2 rounded-lg flex items-center gap-2"
                         >
                           <i className="pi pi-times-circle" />
@@ -1105,6 +1121,7 @@ export default function VendorDetailsPage() {
                     Required for approval, still missing: <strong>{missingProfileLabels.join(", ")}</strong>.
                   </div>
                 )}
+                <VendorCategoriesPanel vendorId={vendor.id} onChanged={refreshVendor} />
                 {/* Business Information */}
                 <div className="border border-[#E1E4EA] rounded-lg p-6">
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Information</h3>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/shared/Button";
+import { usePermissions } from "@/lib/auth/permissions";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import {
   VendorReview,
@@ -45,6 +46,7 @@ interface Props {
 }
 
 export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const [review, setReview] = useState<VendorReview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
             )}
             <span className="text-[11px] text-[#525866]">{when(event.created_at)}</span>
           </div>
-          {event.type !== "NOTE" && event.status === "open" && (
+          {event.type !== "NOTE" && event.status === "open" && can("vendor.review") && (
             <Button size="sm" variant="outline" onClick={() => setResolving({ id: event.id, text: "" })}>
               Resolve
             </Button>
@@ -183,7 +185,8 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
             Corrections and notes are recorded here. A correction request only reaches the vendor if you tick "Notify the vendor" when saving it.
           </p>
         </div>
-        <div className="flex gap-2">
+        {!can("vendor.review") && <p className="text-[12px] text-[#525866]">Your role can read the review history but not add to it.</p>}
+        <div className={`flex gap-2 ${can("vendor.review") ? "" : "hidden"}`}>
           <Button size="sm" variant="outline" onClick={() => setForm("correction")}>Request corrections</Button>
           <Button size="sm" variant="danger" onClick={() => setForm("flag")}>Flag as suspicious</Button>
           <Button size="sm" variant="ghost" onClick={() => setForm("note")}>Add note</Button>

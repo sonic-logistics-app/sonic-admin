@@ -12,8 +12,10 @@ import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
+import { usePermissions } from "@/lib/auth/permissions";
 
 export default function VoucherListPage() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const voucherService = new VoucherService();
 
@@ -165,20 +167,22 @@ export default function VoucherListPage() {
             Usage
           </button>
           <button
+            disabled={!can("voucher.manage")}
             onClick={(e) => {
               e.stopPropagation();
               handleEdit(rowData);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Edit
           </button>
           <button
+            disabled={!can("voucher.manage")}
             onClick={(e) => {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -203,7 +207,7 @@ export default function VoucherListPage() {
       <div className="flex flex-col gap-4 h-full min-h-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Voucher Management</h1>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} disabled={!can("voucher.manage")}>
             <i className="pi pi-plus mr-2" />
             New Voucher
           </Button>

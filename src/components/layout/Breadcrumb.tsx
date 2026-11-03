@@ -22,6 +22,8 @@ const pathLabels: Record<string, string> = {
   profile: "Profile",
   create: "Create",
   "api-docs": "API Documentation",
+  team: "Team",
+  "audit-log": "Audit Log",
 };
 
 export default function Breadcrumb() {

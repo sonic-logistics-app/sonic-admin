@@ -18,7 +18,8 @@ export const menuData: MenuModel[] = [
   {
     label: "Tools",
     items: [
-      { label: "Audit Log", icon: "pi pi-fw pi-history", to: "/audit-log" },
+      { label: "Audit Log", icon: "pi pi-fw pi-history", to: "/audit-log", permission: "audit.read" },
+      { label: "Team", icon: "pi pi-fw pi-users", to: "/team", permission: "admin.manage" },
       { label: "API Docs", icon: "pi pi-fw pi-book", to: "/api-docs", visible: devToolsVisible },
     ],
   },
