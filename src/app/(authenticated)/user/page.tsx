@@ -61,15 +61,9 @@ export default function UserListPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editedCustomer, setEditedCustomer] = useState<Customer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
-  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
-  const [bulkVerifying, setBulkVerifying] = useState(false);
   const [otpVerifiedFilter, setOtpVerifiedFilter] = useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const { data: optimisticCustomers, optimisticUpdate, resetData } = useOptimisticUpdate<Customer>(customers);
@@ -129,7 +123,6 @@ export default function UserListPage() {
       }));
 
       setCustomers(formattedCustomers);
-      setSelectedIds(new Set()); // a new page or filter starts with nothing selected
       resetData(formattedCustomers);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
@@ -169,51 +162,6 @@ export default function UserListPage() {
         });
       }
     );
-  };
-
-  const confirmBulkVerify = () => {
-    const count = selectedIds.size;
-    setConfirmDialog({
-      visible: true,
-      title: "Verify selected customers",
-      message: `Verify ${count} customer${count === 1 ? "" : "s"}? Each one gets the welcome voucher and an in-app notification. No email is sent.`,
-      onConfirm: handleBulkVerify,
-      variant: "success",
-    });
-  };
-
-  const handleBulkVerify = async () => {
-    const ids = Array.from(selectedIds).map(Number);
-    if (ids.length === 0) return;
-
-    setBulkVerifying(true);
-    try {
-      const result = await customerService.verifyCustomers(ids);
-      const { verified, already_verified, not_found, failed } = result.data;
-      const extras = [
-        already_verified ? `${already_verified} already verified` : "",
-        not_found ? `${not_found} not found` : "",
-        failed ? `${failed} failed` : "",
-      ].filter(Boolean);
-
-      toast.current?.show({
-        severity: failed > 0 ? "warn" : "success",
-        summary: "Verification complete",
-        detail: `${verified} verified${extras.length ? `, ${extras.join(", ")}` : ""}`,
-        life: 5000,
-      });
-      setSelectedIds(new Set());
-      loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-    } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: error instanceof Error ? error.message : "Failed to verify users",
-        life: 4000,
-      });
-    } finally {
-      setBulkVerifying(false);
-    }
   };
 
   const confirmVerify = (customer: Customer) => {
@@ -274,52 +222,7 @@ export default function UserListPage() {
   };
 
   const handleRowClick = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setEditedCustomer(customer);
-    setIsEditMode(false);
-    setShowDetailsModal(true);
-  };
-
-  const handleEditToggle = () => {
-    if (isEditMode) {
-      // Cancel edit - reset to original
-      setEditedCustomer(selectedCustomer);
-    }
-    setIsEditMode(!isEditMode);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editedCustomer) return;
-
-    try {
-      await customerService.updateCustomer(editedCustomer.id, {
-        first_name: editedCustomer.first_name,
-        last_name: editedCustomer.last_name,
-        email: editedCustomer.email,
-        phone: editedCustomer.phone,
-      });
-
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "User updated successfully",
-        life: 3000,
-      });
-
-      setSelectedCustomer(editedCustomer);
-      setIsEditMode(false);
-      
-      // Reload the list
-      loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-    } catch (caught) {
-      const error = caught as Error;
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: error.message || "Failed to update user",
-        life: 3000,
-      });
-    }
+    router.push(`/user/${customer.short_code || customer.id}`);
   };
 
   const columns = [
@@ -384,15 +287,6 @@ export default function UserListPage() {
       header: "Actions",
       body: (rowData: Customer) => (
         <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/user/${rowData.short_code || rowData.id}`);
-            }}
-            className="text-[#525866] hover:underline text-[13px] font-semibold"
-          >
-            Activity
-          </button>
           {!rowData.is_verified && can("account.verify") && (
             <button
               onClick={(e) => {
@@ -534,39 +428,7 @@ export default function UserListPage() {
           <SkeletonLoader type="table" rows={10} />
         ) : (
           <>
-          {selectedIds.size > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3">
-              <span className="text-[13px] font-semibold text-[#1E40AF]">
-                {selectedIds.size} customer{selectedIds.size === 1 ? "" : "s"} selected
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds(new Set())}
-                  disabled={bulkVerifying}
-                  className="px-3 py-1.5 text-[13px] font-semibold text-[#525866] hover:text-[#111827] disabled:opacity-50"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmBulkVerify}
-                  disabled={bulkVerifying}
-                  className="px-4 py-2 bg-[#059669] text-white rounded-lg text-[13px] font-semibold hover:bg-[#047857] transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <i className={`pi ${bulkVerifying ? "pi-spinner pi-spin" : "pi-check"} text-sm`} />
-                  {bulkVerifying ? "Verifying..." : "Verify selected"}
-                </button>
-              </div>
-            </div>
-          )}
           <DataTable
-            selection={{
-              selectedKeys: selectedIds,
-              onChange: setSelectedIds,
-              getKey: (c: Customer) => c.id,
-              isSelectable: (c: Customer) => !c.is_verified,
-            }}
             data={optimisticCustomers}
             columns={columns}
             loading={false}
@@ -581,333 +443,6 @@ export default function UserListPage() {
           </>
         )}
       </div>
-
-      {/* User Details Modal */}
-      {selectedCustomer && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
-            showDetailsModal ? "block" : "hidden"
-          }`}
-        >
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setShowDetailsModal(false)}
-          />
-
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl border border-[#E1E4EA] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[#E1E4EA]">
-              <div className="flex items-center gap-3">
-                {(selectedCustomer.picture || selectedCustomer.profile_image_url) ? (
-                  <img
-                    src={selectedCustomer.picture || selectedCustomer.profile_image_url || undefined}
-                    alt={selectedCustomer.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-[16px] font-semibold">
-                    {getInitials(selectedCustomer.first_name, selectedCustomer.last_name)}
-                  </div>
-                )}
-                <div>
-                  <h2 className="text-[18px] font-semibold text-[#111827]">
-                    {selectedCustomer.name}
-                  </h2>
-                  <p className="text-[13px] text-[#525866]">
-                    Code: {selectedCustomer.short_code}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {!isEditMode && (
-                  <button
-                    onClick={handleEditToggle}
-                    className="px-3 py-2 text-[13px] font-semibold text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <i className="pi pi-pencil" />
-                    Edit
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    setIsEditMode(false);
-                  }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-                >
-                  <i className="pi pi-times text-[#525866]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Personal Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      First Name
-                    </label>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={editedCustomer?.first_name || ""}
-                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, first_name: e.target.value} : null)}
-                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
-                      />
-                    ) : (
-                      <p className="text-[13px] text-[#111827]">
-                        {selectedCustomer.first_name || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Last Name
-                    </label>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={editedCustomer?.last_name || ""}
-                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, last_name: e.target.value} : null)}
-                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
-                      />
-                    ) : (
-                      <p className="text-[13px] text-[#111827]">
-                        {selectedCustomer.last_name || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Email
-                    </label>
-                    {isEditMode ? (
-                      <input
-                        type="email"
-                        value={editedCustomer?.email || ""}
-                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, email: e.target.value} : null)}
-                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
-                      />
-                    ) : (
-                      <p className="text-[13px] text-[#111827]">
-                        {selectedCustomer.email || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Phone
-                    </label>
-                    {isEditMode ? (
-                      <input
-                        type="tel"
-                        value={editedCustomer?.phone || ""}
-                        onChange={(e) => setEditedCustomer(prev => prev ? {...prev, phone: e.target.value} : null)}
-                        className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
-                      />
-                    ) : (
-                      <p className="text-[13px] text-[#111827]">
-                        {selectedCustomer.phone || "N/A"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Status */}
-              <div>
-                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Account Status</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Verification Status
-                    </label>
-                    <StatusBadge status={selectedCustomer.is_verified ? "VERIFIED" : "PENDING"} />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      OTP Verified
-                    </label>
-                    <StatusBadge status={selectedCustomer.otp_verified ? "VERIFIED" : "PENDING"} />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Login Provider
-                    </label>
-                    <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-                      {selectedCustomer.provider}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Currently Logged In
-                    </label>
-                    <StatusBadge status={selectedCustomer.is_login ? "ACTIVE" : "INACTIVE"} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Activity Information */}
-              <div>
-                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Activity Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Joined Date
-                    </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {formatDate(selectedCustomer.created_at)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Last Login
-                    </label>
-                    <p className="text-[13px] text-[#111827]">
-                      {formatDate(selectedCustomer.last_login_at)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Welcome Voucher
-                    </label>
-                    {(() => {
-                      const status = selectedCustomer.voucher_status;
-                      if (!status || status === "NOT_ASSIGNED") return <span className="text-[13px] text-[#9CA3AF]">—</span>;
-                      if (status === "USED") return <span className="text-[13px]">✅ Used</span>;
-                      if (status === "EXPIRED") return <span className="text-[13px]">🔴 Expired</span>;
-                      // AVAILABLE — may include balance e.g. "AVAILABLE (₦1000 remaining)"
-                      return <span className="text-[13px]">🟢 {status.replace("AVAILABLE", "Available")}</span>;
-                    })()}
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Terms Agreed
-                    </label>
-                    <StatusBadge status={selectedCustomer.is_agree ? "AGREED" : "PENDING"} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Referral Information */}
-              {selectedCustomer.referral_code && (
-                <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Referral Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Referral Code
-                      </label>
-                      <p className="text-[13px] text-[#111827] font-mono bg-[#F3F4F6] px-2 py-1 rounded">
-                        {selectedCustomer.referral_code}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Referrals Used
-                      </label>
-                      <p className="text-[13px] text-[#111827]">
-                        {selectedCustomer.referral_used || 0}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Earnings from Referrals
-                      </label>
-                      <p className="text-[13px] text-[#111827]">
-                        ₦{selectedCustomer.earn_referral || 0}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 p-6 border-t border-[#E1E4EA]">
-              {isEditMode ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleEditToggle}
-                    className="px-4 py-2"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleSaveEdit}
-                    className="px-4 py-2 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
-                  >
-                    <i className="pi pi-check mr-2" />
-                    Save Changes
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {!selectedCustomer.is_verified && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowDetailsModal(false);
-                        confirmVerify(selectedCustomer);
-                      }}
-                      className="px-4 py-2"
-                    >
-                      <i className="pi pi-check mr-2" />
-                      Verify User
-                    </Button>
-                  )}
-                  {selectedCustomer.is_verified && (
-                    <Button
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          await customerService.ensureVoucher(selectedCustomer.id);
-                          toast.current?.show({
-                            severity: "success",
-                            summary: "Success",
-                            detail: "Welcome voucher ensured for user",
-                            life: 3000,
-                          });
-                        } catch (caught) {
-                          const error = caught as Error;
-                          toast.current?.show({
-                            severity: "error",
-                            summary: "Error",
-                            detail: error.message || "Failed to ensure voucher",
-                            life: 3000,
-                          });
-                        }
-                      }}
-                      className="px-4 py-2"
-                    >
-                      <i className="pi pi-ticket mr-2" />
-                      Ensure Welcome Voucher
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      confirmDelete(selectedCustomer);
-                    }}
-                    className="px-4 py-2 text-[#DC2626] border-[#DC2626] hover:bg-[#DC2626] hover:text-white"
-                  >
-                    <i className="pi pi-trash mr-2" />
-                    Delete User
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

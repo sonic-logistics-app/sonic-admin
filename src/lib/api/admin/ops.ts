@@ -210,6 +210,9 @@ export interface UserDetail {
     provider: string;
     is_verified: boolean;
     otp_verified: boolean;
+    is_login: boolean;
+    is_agree: boolean | null;
+    welcome_voucher_used: boolean;
     created_at: string;
     last_login_at: string | null;
     deleted_at: string | null;
