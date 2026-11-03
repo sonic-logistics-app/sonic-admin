@@ -40,12 +40,12 @@ export default function RecentOrders({ orders, loading, onRowClick }: RecentOrde
     },
     {
       field: "fullname_customer",
-      header: "Customer",
+      header: "User",
       width: "22%",
     },
     {
       field: "fullname_driver",
-      header: "Driver",
+      header: "Mover",
       width: "22%",
     },
     {

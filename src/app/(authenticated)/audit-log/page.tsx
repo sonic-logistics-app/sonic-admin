@@ -1,5 +1,6 @@
 "use client";
 
+import { displayAction, displayTerm } from "@/lib/terms";
 import { useState, useEffect, useRef, useCallback } from "react";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -13,7 +14,7 @@ const ENTITY_TYPES = ["vendor", "user", "driver", "order", "voucher", "faq", "re
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-NG", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Africa/Lagos" });
 
-const actionLabel = (action: string) => action.replace(".", " · ").replace(/-/g, " ");
+const actionLabel = displayAction;
 
 export default function AuditLogPage() {
   const toast = useRef<ToastRef>(null);
@@ -70,7 +71,7 @@ export default function AuditLogPage() {
       header: "Target",
       body: (r: AuditLog) => (
         <div>
-          <p className="text-[13px] text-[#111827]">{r.entity_name || r.entity_type}</p>
+          <p className="text-[13px] text-[#111827]">{r.entity_name || displayTerm(r.entity_type)}</p>
           {r.entity_id && <p className="text-[11px] font-mono text-[#9CA3AF]">{r.entity_id}</p>}
         </div>
       ),
@@ -125,7 +126,7 @@ export default function AuditLogPage() {
           >
             <option value="">All areas</option>
             {ENTITY_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{displayTerm(t)}</option>
             ))}
           </select>
           <label className="flex items-center gap-2 text-[12px] text-[#525866]">

@@ -52,7 +52,7 @@ export default function VendorCataloguePanel({ vendorId }: { vendorId: string })
 
       {items.length === 0 ? (
         <div className="text-center py-10 bg-[#F9FAFB] rounded-lg text-[13px] text-[#525866]">
-          This vendor has not added any products yet.
+          This business partner has not added any products yet.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

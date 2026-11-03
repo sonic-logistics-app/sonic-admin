@@ -223,14 +223,14 @@ export default function OrderListPage() {
     },
     {
       field: "user",
-      header: "Customer",
+      header: "User",
       sortable: false,
       body: (rowData: Order) => (
         <div className="flex items-center gap-2">
           {rowData.user?.picture ? (
             <img
               src={rowData.user.picture}
-              alt={rowData.user.first_name || "Customer"}
+              alt={rowData.user.first_name || "User"}
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
@@ -326,7 +326,7 @@ export default function OrderListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search by order number, order ID, customer, driver, or vendor..."
+              placeholder="Search by order number, order ID, user, mover, or business partner..."
             />
           </div>
 
@@ -347,7 +347,7 @@ export default function OrderListPage() {
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Types</option>
             <option value="PACKAGE">Package</option>
-            <option value="VENDOR">Vendor</option>
+            <option value="VENDOR">Business Partner</option>
           </select>
 
           <select value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value)}
@@ -375,13 +375,13 @@ export default function OrderListPage() {
 
           <button
             onClick={() => setStuckFilter(stuckFilter === "true" ? "" : "true")}
-            title="Orders being prepared with no driver, where dispatch failed or the wait is over 20 minutes"
+            title="Orders being prepared with no mover, where dispatch failed or the wait is over 20 minutes"
             className={`px-4 py-2 border rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2 ${
               stuckFilter === "true" ? "border-[#D97706] bg-[#FFFBEB] text-[#92400E]" : "border-[#E1E4EA] bg-white text-[#525866] hover:bg-gray-50"
             }`}
           >
             <i className="pi pi-exclamation-triangle text-sm" />
-            Stuck without driver
+            Stuck without mover
           </button>
 
           <button

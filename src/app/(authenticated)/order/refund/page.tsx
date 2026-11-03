@@ -353,7 +353,7 @@ export default function RefundManagementPage() {
                 <ul className="text-[11px] text-[#525866] space-y-1">
                   <li>• Status shows as &quot;REFUNDED&quot; instead of &quot;SUCCESS&quot;</li>
                   <li>• Original payment amount with strikethrough</li>
-                  <li>• Complete customer and order details</li>
+                  <li>• Complete user and order details</li>
                   <li>• Voucher information if applicable</li>
                   <li>• Full audit trail and transaction history</li>
                 </ul>

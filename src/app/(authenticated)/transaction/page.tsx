@@ -145,7 +145,7 @@ function TransactionsTab() {
       case "payment":
         return "Payment";
       case "vendor_earning":
-        return "Vendor Earning";
+        return "Business Partner Earning";
       default:
         return type;
     }
@@ -208,7 +208,7 @@ function TransactionsTab() {
     },
     {
       field: "customer",
-      header: "Customer",
+      header: "User",
       sortable: false,
       body: (rowData: Transaction) => (
         <div className="flex flex-col">
@@ -223,7 +223,7 @@ function TransactionsTab() {
     },
     {
       field: "vendor",
-      header: "Vendor",
+      header: "Business Partner",
       sortable: false,
       body: (rowData: Transaction) => (
         <div className="flex flex-col">
@@ -322,7 +322,7 @@ function TransactionsTab() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Vendor Earnings
+                    Business Partner Earnings
                   </p>
                   <p className="text-[20px] font-bold text-[#111827] mt-1">
                     {formatCurrency(summary.total_vendor_amount)}
@@ -375,7 +375,7 @@ function TransactionsTab() {
           >
             <option value="all">All Types</option>
             <option value="payment">Payments</option>
-            <option value="vendor_earning">Vendor Earnings</option>
+            <option value="vendor_earning">Business Partner Earnings</option>
           </select>
 
           <select
@@ -457,7 +457,7 @@ function TransactionsTab() {
                     Transaction Details
                   </h2>
                   <p className="text-[13px] text-[#525866]">
-                    {selectedTransaction.type === "payment" ? "Payment Transaction" : "Vendor Earning"}
+                    {selectedTransaction.type === "payment" ? "Payment Transaction" : "Business Partner Earning"}
                   </p>
                 </div>
               </div>
@@ -550,7 +550,7 @@ function TransactionsTab() {
 
               {/* Customer Information */}
               <div>
-                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Customer Information</h3>
+                <h3 className="text-[15px] font-semibold text-[#111827] mb-4">User Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -578,7 +578,7 @@ function TransactionsTab() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                      Customer code
+                      User code
                     </label>
                     <p className="text-[13px] text-[#525866] font-mono">
                       {selectedTransaction.customer?.short_code ?? selectedTransaction.customer?.id ?? "—"}
@@ -590,7 +590,7 @@ function TransactionsTab() {
               {/* Vendor Information */}
               {selectedTransaction.vendor && (
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Vendor Information</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Business Partner Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -631,7 +631,7 @@ function TransactionsTab() {
               {/* Driver Information */}
               {selectedTransaction.driver && (
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Driver Information</h3>
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Mover Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
@@ -659,7 +659,7 @@ function TransactionsTab() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                        Driver code
+                        Mover code
                       </label>
                       <p className="text-[13px] text-[#525866] font-mono">
                         {selectedTransaction.driver.short_code ?? selectedTransaction.driver.id}
@@ -950,7 +950,7 @@ export default function TransactionPage() {
       <div role="tablist" aria-label="Finance" className="inline-flex self-start rounded-lg border border-[#E1E4EA] bg-white p-1">
         {([
           ["transactions", "Transactions"],
-          ["payouts", "Vendor payouts"],
+          ["payouts", "Business Partner payouts"],
           ["wallets", "Wallets"],
         ] as const).map(([id, text]) => (
           <button

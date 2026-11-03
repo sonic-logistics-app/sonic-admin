@@ -46,7 +46,7 @@ function APIDocsContent() {
           <i className="pi pi-database text-[32px] text-[#7C3AED] mb-3 block"></i>
           <h3 className="text-[16px] font-semibold text-[#111827] mb-2">Complete Coverage</h3>
           <p className="text-[13px] text-[#525866]">
-            All admin endpoints including users, drivers, vendors, orders & more
+            All admin endpoints including users, movers, business partners, orders & more
           </p>
         </div>
 

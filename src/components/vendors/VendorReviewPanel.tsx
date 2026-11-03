@@ -146,7 +146,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
         <p className="text-[13px] text-[#111827] mt-2">{event.reason}</p>
         {event.fields.length > 0 && (
           <p className="text-[12px] text-[#525866] mt-1">
-            Vendor must fix: <strong>{event.fields.map(fieldLabel).join(", ")}</strong>
+            Business Partner must fix: <strong>{event.fields.map(fieldLabel).join(", ")}</strong>
             {event.due_date ? ` by ${new Date(event.due_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}` : ""}
           </p>
         )}
@@ -182,7 +182,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
         <div>
           <h3 className="text-[15px] font-semibold text-[#111827]">Review actions</h3>
           <p className="text-[13px] text-[#525866]">
-            Corrections and notes are recorded here. A correction request only reaches the vendor if you tick "Notify the vendor" when saving it.
+            Corrections and notes are recorded here. A correction request only reaches the business partner if you tick "Notify the business partner" when saving it.
           </p>
         </div>
         {!can("vendor.review") && <p className="text-[12px] text-[#525866]">Your role can read the review history but not add to it.</p>}
@@ -217,7 +217,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
               <label className="flex items-start gap-2 text-[13px] text-[#111827]">
                 <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="mt-1" />
                 <span>
-                  Notify the vendor now by email and in the app
+                  Notify the business partner now by email and in the app
                   <span className="block text-[11px] text-[#525866]">Leave unticked to record the request only.</span>
                 </span>
               </label>
@@ -237,7 +237,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             placeholder={
-              form === "correction" ? "What exactly must the vendor fix? (required)" : form === "flag" ? "Why is this account suspicious or a duplicate? (required)" : "Note (required)"
+              form === "correction" ? "What exactly must the business partner fix? (required)" : form === "flag" ? "Why is this account suspicious or a duplicate? (required)" : "Note (required)"
             }
             className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB] bg-white"
           />
@@ -278,7 +278,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
           </ol>
         ) : (
           <div className="text-center py-8 bg-[#F9FAFB] rounded-lg text-[13px] text-[#525866]">
-            No recorded admin actions for this vendor yet. Actions taken from now on appear here.
+            No recorded admin actions for this business partner yet. Actions taken from now on appear here.
           </div>
         )}
       </div>

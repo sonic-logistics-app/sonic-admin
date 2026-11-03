@@ -10,8 +10,8 @@ const categories = [
   "Account",
   "Orders",
   "Payment",
-  "Vendors",
-  "Drivers",
+  "Business Partners",
+  "Movers",
   "Support",
 ];
 

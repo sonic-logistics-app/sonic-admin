@@ -147,7 +147,7 @@ export default function VendorListPage() {
       setVendors(result.data);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
     } catch (error) {
-      toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load vendors", life: 3000 });
+      toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load business partners", life: 3000 });
     } finally {
       setInitialLoad(false);
       setLoading(false);
@@ -157,8 +157,8 @@ export default function VendorListPage() {
   const confirmDelete = (vendor: Vendor) => {
     setConfirmDialog({
       visible: true,
-      title: "Confirm Vendor Deletion",
-      message: `Are you sure you want to delete ${vendor.name}? This is a soft delete - the vendor can be restored later if needed.`,
+      title: "Confirm Business Partner Deletion",
+      message: `Are you sure you want to delete ${vendor.name}? This is a soft delete - the business partner can be restored later if needed.`,
       onConfirm: () => handleDelete(vendor),
       variant: "danger",
     });
@@ -167,11 +167,11 @@ export default function VendorListPage() {
   const handleDelete = async (vendor: Vendor) => {
     try {
       await vendorService.deleteVendor(vendor.id);
-      toast.current?.show({ severity: "success", summary: "Success", detail: `Vendor ${vendor.name} deleted successfully`, life: 3000 });
+      toast.current?.show({ severity: "success", summary: "Success", detail: `Business Partner ${vendor.name} deleted successfully`, life: 3000 });
       loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter);
     } catch (caught) {
       const error = caught as Error;
-      toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete vendor", life: 3000 });
+      toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete business partner", life: 3000 });
     }
   };
 
@@ -328,7 +328,7 @@ export default function VendorListPage() {
     try {
       const { data } = await getNextPendingVendor();
       if (!data.next) {
-        toast.current?.show({ severity: "info", summary: "Queue is clear", detail: "No vendors are waiting for approval", life: 3000 });
+        toast.current?.show({ severity: "info", summary: "Queue is clear", detail: "No business partners are waiting for approval", life: 3000 });
         return;
       }
       router.push(`/vendor/${data.next.short_code || data.next.id}`);
@@ -358,10 +358,10 @@ export default function VendorListPage() {
         }),
       );
       if (rows.length === 0) {
-        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No vendors match the current filters", life: 3000 });
+        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No business partners match the current filters", life: 3000 });
         return;
       }
-      await downloadExcel("vendors", "Vendors", [
+      await downloadExcel("business-partners", "Business Partners", [
         { header: "Business name", width: 28, value: (v: Vendor) => v.name },
         { header: "Code", width: 14, value: (v: Vendor) => v.short_code },
         { header: "Email", width: 30, value: (v: Vendor) => v.email },
@@ -374,10 +374,10 @@ export default function VendorListPage() {
         { header: "Address", width: 40, value: (v: Vendor) => v.VendorAddress?.landmark_address || v.address },
         { header: "Joined", width: 22, value: (v: Vendor) => formatExportDate(v.created_at) },
       ], rows);
-      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} vendors exported`, life: 3000 });
+      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} business partners exported`, life: 3000 });
     } catch (caught) {
       const error = caught as Error;
-      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export vendors", life: 4000 });
+      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export business partners", life: 4000 });
     }
   };
 
@@ -398,7 +398,7 @@ export default function VendorListPage() {
       <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-[#111827]">Vendor Management</h1>
+          <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Management</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={reviewOldest}
@@ -413,7 +413,7 @@ export default function VendorListPage() {
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >
             <i className="pi pi-plus text-sm" />
-            Create Vendor
+            Create Business Partner
           </button>
           </div>
         </div>
@@ -448,7 +448,7 @@ export default function VendorListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search vendors by name, email, phone, address..."
+              placeholder="Search business partners by name, email, phone, address..."
             />
           </div>
 
@@ -519,7 +519,7 @@ export default function VendorListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={(vendor) => router.push(`/vendor/${vendor.short_code || vendor.id}`)}
-            emptyMessage="No vendors found"
+            emptyMessage="No business partners found"
             className="flex-1 min-h-0"
           />
         )}

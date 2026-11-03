@@ -73,7 +73,7 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
         <div>
           <h3 className="text-[15px] font-semibold text-[#111827]">Categories</h3>
           <p className="text-[13px] text-[#525866]">
-            The customer app shows this vendor under its primary category and under each additional one.
+            The user app shows this business partner under its primary category and under each additional one.
           </p>
         </div>
         {canEdit && !editing && (
@@ -126,7 +126,7 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
           {changed && (
             <p className="text-[12px] text-[#525866]">
               {names(data.additional)} <i className="pi pi-arrow-right text-[10px] mx-1" /> {names(draft!)}. After saving, the vendor shows under: {everywhere.map(businessTypeLabel).join(", ")}.
-              {!data.live_in_customer_app && " It is not live in the customer app yet, so nothing changes for customers until it is."}
+              {!data.live_in_customer_app && " It is not live in the user app yet, so nothing changes for users until it is."}
             </p>
           )}
           {saveError && <p className="text-[13px] text-[#DC2626]">{saveError}</p>}
@@ -147,7 +147,7 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
         </div>
       )}
 
-      {!canEdit && <p className="text-[12px] text-[#9CA3AF]">Only a Super Admin can change a vendor's additional categories.</p>}
+      {!canEdit && <p className="text-[12px] text-[#9CA3AF]">Only a Super Admin can change a business partner's additional categories.</p>}
 
       {data.history.length > 0 && (
         <div className="border-t border-[#E1E4EA] pt-3">

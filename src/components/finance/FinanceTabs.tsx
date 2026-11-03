@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { displayTerm } from "@/lib/terms";
 import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -47,7 +48,7 @@ export function PayoutsTab() {
   const columns = [
     {
       field: "vendor_name",
-      header: "Vendor / period",
+      header: "Business Partner / period",
       body: (r: Payout) => (
         <CellStack primary={r.vendor_name || "Unknown"} secondary={`${day(r.period_start_date)} to ${day(r.period_end_date)}`} />
       ),
@@ -95,7 +96,7 @@ export function PayoutsTab() {
         ))}
       </div>
       <div className="flex-1 min-w-[250px]">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search payouts by vendor name..." />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search payouts by business partner name..." />
       </div>
       <DataTable
         data={rows}
@@ -145,7 +146,7 @@ export function WalletsTab() {
   const columns = [
     {
       field: "owner_name",
-      header: type === "vendor" ? "Vendor" : "Driver",
+      header: displayTerm(type),
       body: (r: WalletRow) => <CellStack primary={r.owner_name} secondary={r.owner_email || "N/A"} />,
     },
     {
@@ -169,14 +170,14 @@ export function WalletsTab() {
                 setType(t);
                 setSearch("");
               }}
-              className={`px-4 py-1.5 rounded-md text-[13px] font-medium capitalize ${type === t ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+              className={`px-4 py-1.5 rounded-md text-[13px] font-medium ${type === t ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
             >
-              {t} wallets
+              {displayTerm(t)} wallets
             </button>
           ))}
         </div>
         <div className="flex-1 min-w-[250px]">
-          <SearchBar value={search} onChange={setSearch} placeholder={`Search ${type} wallets by name...`} />
+          <SearchBar value={search} onChange={setSearch} placeholder={`Search ${displayTerm(type).toLowerCase()} wallets by name...`} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 max-w-md">

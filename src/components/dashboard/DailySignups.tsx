@@ -60,9 +60,9 @@ export default function DailySignups({ daily, loading }: DailySignupsProps) {
         New today · {formatDate(daily.date)}
       </h2>
       <div className="grid grid-cols-3 gap-3 w-full">
-        <SignupCard label="NEW VENDORS" icon="pi-shop" tint="bg-[#EDE9FE] text-[#7C3AED]" count={daily.new_vendors} />
-        <SignupCard label="NEW CUSTOMERS" icon="pi-user" tint="bg-[#D1FAE5] text-[#059669]" count={daily.new_users} />
-        <SignupCard label="NEW DRIVERS" icon="pi-users" tint="bg-[#CFFAFE] text-[#0891B2]" count={daily.new_drivers} />
+        <SignupCard label="NEW BUSINESS PARTNERS" icon="pi-shop" tint="bg-[#EDE9FE] text-[#7C3AED]" count={daily.new_vendors} />
+        <SignupCard label="NEW USERS" icon="pi-user" tint="bg-[#D1FAE5] text-[#059669]" count={daily.new_users} />
+        <SignupCard label="NEW MOVERS" icon="pi-users" tint="bg-[#CFFAFE] text-[#0891B2]" count={daily.new_drivers} />
       </div>
     </section>
   );

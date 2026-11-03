@@ -256,7 +256,7 @@ export default function SupportCases() {
                     }`}
                   >
                     <p className="text-[11px] text-[#525866] mb-1">
-                      {m.sender === "internal" ? "Internal note (vendor cannot see this)" : m.sender === "support" ? "Support reply" : "Vendor"} · {when(m.created_at)}
+                      {m.sender === "internal" ? "Internal note (business partner cannot see this)" : m.sender === "support" ? "Support reply" : "Vendor"} · {when(m.created_at)}
                     </p>
                     <p className="text-[13px] text-[#111827] whitespace-pre-wrap">{m.message}</p>
                   </div>
@@ -265,7 +265,7 @@ export default function SupportCases() {
 
               <div className="border-t border-[#E1E4EA] pt-3 flex flex-col gap-2">
                 <div className="flex gap-2">
-                  <Button size="sm" variant={mode === "reply" ? "primary" : "ghost"} onClick={() => setMode("reply")}>Reply to vendor</Button>
+                  <Button size="sm" variant={mode === "reply" ? "primary" : "ghost"} onClick={() => setMode("reply")}>Reply to business partner</Button>
                   <Button size="sm" variant={mode === "note" ? "primary" : "ghost"} onClick={() => setMode("note")}>Internal note</Button>
                 </div>
                 <textarea
@@ -273,7 +273,7 @@ export default function SupportCases() {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
                   disabled={selected.status === "CLOSED" && mode === "reply"}
-                  placeholder={mode === "reply" ? "Write a reply the vendor will see..." : "Write a note only your team can see..."}
+                  placeholder={mode === "reply" ? "Write a reply the business partner will see..." : "Write a note only your team can see..."}
                   className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] focus:outline-none focus:border-[#2563EB]"
                 />
                 <div>

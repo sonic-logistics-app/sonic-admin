@@ -5,9 +5,9 @@ import Link from "next/link";
 import { RegistrationTrend, getRegistrationTrend } from "@/lib/api/admin/ops";
 
 const SERIES = [
-  { key: "users", label: "Customers", color: "#2563EB", href: "/user" },
-  { key: "drivers", label: "Drivers", color: "#9C27B0", href: "/driver" },
-  { key: "vendors", label: "Vendors", color: "#F59E0B", href: "/vendor" },
+  { key: "users", label: "Users", color: "#2563EB", href: "/user" },
+  { key: "drivers", label: "Movers", color: "#9C27B0", href: "/driver" },
+  { key: "vendors", label: "Business Partners", color: "#F59E0B", href: "/vendor" },
 ] as const;
 
 const RANGES = [7, 30, 90];
@@ -90,7 +90,7 @@ export default function RegistrationTrendChart() {
           const total = totals[i];
           return (
             <g key={d.date} onClick={() => setPicked(picked === d.date ? null : d.date)} className="cursor-pointer">
-              <title>{`${shortDay(d.date)}: ${d.users} customers, ${d.drivers} drivers, ${d.vendors} vendors`}</title>
+              <title>{`${shortDay(d.date)}: ${d.users} users, ${d.drivers} movers, ${d.vendors} business partners`}</title>
               <rect x={x} y={0} width={bar} height={height} fill={picked === d.date ? "#EFF6FF" : "transparent"} />
               {SERIES.map((s) => {
                 const h = (d[s.key] / max) * height;

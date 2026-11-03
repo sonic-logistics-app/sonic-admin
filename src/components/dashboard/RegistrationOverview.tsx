@@ -108,13 +108,13 @@ export default function RegistrationOverview() {
 
   const a = stats.attention;
   const attention: { label: string; value: number; href: string }[] = [
-    { label: "Vendors waiting for approval", value: a.vendors_pending_approval, href: "/vendor?status=pending_approval" },
+    { label: "Business Partners waiting for approval", value: a.vendors_pending_approval, href: "/vendor?status=pending_approval" },
     { label: "Of those, ready to approve", value: a.vendors_ready_to_approve, href: "/vendor?status=pending_approval&ready=true" },
-    { label: "Vendors with open corrections", value: a.vendors_with_open_corrections, href: "/vendor?review=corrections" },
-    { label: "Vendors with suspicion flags", value: a.vendors_with_open_flags, href: "/vendor?review=flags" },
-    { label: "Drivers awaiting verification", value: a.drivers_pending_verification, href: "/driver?verified=false" },
-    { label: "Unverified customers", value: a.users_unverified, href: "/user?verified=false" },
-    { label: "Orders stuck without a driver", value: a.orders_stuck_without_driver, href: "/order?stuck=true" },
+    { label: "Business Partners with open corrections", value: a.vendors_with_open_corrections, href: "/vendor?review=corrections" },
+    { label: "Business Partners with suspicion flags", value: a.vendors_with_open_flags, href: "/vendor?review=flags" },
+    { label: "Movers awaiting verification", value: a.drivers_pending_verification, href: "/driver?verified=false" },
+    { label: "Unverified users", value: a.users_unverified, href: "/user?verified=false" },
+    { label: "Orders stuck without a mover", value: a.orders_stuck_without_driver, href: "/order?stuck=true" },
     { label: "Refunds pending", value: a.refunds_pending, href: "/order?refund=refund_pending" },
   ];
 
@@ -129,7 +129,7 @@ export default function RegistrationOverview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <AccountCard
-          title="Customers"
+          title="Users"
           icon="pi-user"
           href="/user"
           asOf={stats.as_of}
@@ -140,7 +140,7 @@ export default function RegistrationOverview() {
           ]}
         />
         <AccountCard
-          title="Drivers"
+          title="Movers"
           icon="pi-car"
           href="/driver"
           asOf={stats.as_of}
@@ -153,7 +153,7 @@ export default function RegistrationOverview() {
           ]}
         />
         <AccountCard
-          title="Vendors"
+          title="Business Partners"
           icon="pi-shop"
           href="/vendor"
           asOf={stats.as_of}

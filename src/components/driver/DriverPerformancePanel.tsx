@@ -28,8 +28,8 @@ export default function DriverPerformancePanel({ driverId }: { driverId: string 
   const cards: [string, string, string?][] = [
     ["Deliveries completed", String(d.delivered)],
     ["In progress", String(d.in_progress)],
-    ["Completion rate", pct(d.completion_rate), "Delivered ÷ (delivered + driver-cancelled)"],
-    ["Cancellation rate", pct(d.cancellation_rate), "Driver-cancelled ÷ (delivered + driver-cancelled)"],
+    ["Completion rate", pct(d.completion_rate), "Delivered ÷ (delivered + mover-cancelled)"],
+    ["Cancellation rate", pct(d.cancellation_rate), "Mover-cancelled ÷ (delivered + mover-cancelled)"],
     ["Rating", perf.rating.average === null ? "No reviews" : `${Number(perf.rating.average).toFixed(1)} / 5`, `${perf.rating.reviews} review(s)`],
     ["Total earnings", naira(perf.earnings.total), `${perf.earnings.deliveries_paid} paid deliveries`],
     ["Avg per delivery", perf.earnings.average_per_delivery === null ? "—" : naira(perf.earnings.average_per_delivery)],

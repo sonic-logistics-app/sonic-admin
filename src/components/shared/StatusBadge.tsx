@@ -131,7 +131,7 @@ export default function StatusBadge({
       bg: "#FEF2F2", 
       text: "#DC2626", 
       icon: "✗", 
-      label: "Driver Cancelled" 
+      label: "Mover Cancelled" 
     },
     rejected: { 
       bg: "#FEF2F2", 

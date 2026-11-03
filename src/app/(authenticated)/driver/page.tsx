@@ -144,7 +144,7 @@ export default function DriverListPage() {
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: "Failed to load drivers",
+        detail: "Failed to load movers",
         life: 3000,
       });
     } finally {
@@ -169,7 +169,7 @@ export default function DriverListPage() {
       toast.current?.show({
         severity: "success",
         summary: "Success",
-        detail: `Driver ${driver.name} deleted successfully`,
+        detail: `Mover ${driver.name} deleted successfully`,
         life: 3000,
       });
       loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
@@ -178,7 +178,7 @@ export default function DriverListPage() {
       toast.current?.show({
         severity: "error",
         summary: "Delete Failed",
-        detail: error.message || "Failed to delete driver",
+        detail: error.message || "Failed to delete mover",
         life: 3000,
       });
     }
@@ -222,7 +222,7 @@ export default function DriverListPage() {
   const columns = [
     {
       field: "name",
-      header: "Driver",
+      header: "Mover",
       sortable: true,
       body: (rowData: Driver) => (
         <div className="flex items-center gap-3">
@@ -319,10 +319,10 @@ export default function DriverListPage() {
         }),
       );
       if (rows.length === 0) {
-        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No drivers match the current filters", life: 3000 });
+        toast.current?.show({ severity: "warn", summary: "Nothing to export", detail: "No movers match the current filters", life: 3000 });
         return;
       }
-      await downloadExcel("drivers", "Drivers", [
+      await downloadExcel("movers", "Movers", [
         { header: "Name", width: 26, value: (d: Driver) => `${d.first_name || ""} ${d.last_name || ""}`.trim() || "No Name" },
         { header: "Code", width: 14, value: (d: Driver) => d.short_code },
         { header: "Email", width: 30, value: (d: Driver) => d.email },
@@ -333,10 +333,10 @@ export default function DriverListPage() {
         { header: "Sign-up method", width: 16, value: (d: Driver) => d.provider },
         { header: "Joined", width: 22, value: (d: Driver) => formatExportDate(d.created_at) },
       ], rows);
-      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} drivers exported`, life: 3000 });
+      toast.current?.show({ severity: "success", summary: "Exported", detail: `${rows.length} movers exported`, life: 3000 });
     } catch (caught) {
       const error = caught as Error;
-      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export drivers", life: 4000 });
+      toast.current?.show({ severity: "error", summary: "Export failed", detail: error.message || "Could not export movers", life: 4000 });
     }
   };
 
@@ -357,7 +357,7 @@ export default function DriverListPage() {
       <div className="flex flex-col gap-4 h-full min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-[#111827]">Driver Management</h1>
+          <h1 className="text-[24px] font-bold text-[#111827]">Mover Management</h1>
           <div className="flex items-center gap-2">
             <ExcelExportButton onExport={exportDrivers} />
           <button
@@ -365,7 +365,7 @@ export default function DriverListPage() {
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >
             <i className="pi pi-plus text-sm" />
-            Create Driver
+            Create Mover
           </button>
           </div>
         </div>
@@ -378,7 +378,7 @@ export default function DriverListPage() {
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search drivers by name, email, or phone..."
+              placeholder="Search movers by name, email, or phone..."
             />
           </div>
 
@@ -450,7 +450,7 @@ export default function DriverListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={handleRowClick}
-            emptyMessage="No drivers found"
+            emptyMessage="No movers found"
             className="flex-1 min-h-0"
           />
         )}

@@ -19,8 +19,8 @@ import {
 } from "@/lib/api/admin/ops";
 
 const ROLES: { value: TeamAdmin["role"]; label: string; hint: string }[] = [
-  { value: "super_admin", label: "Super Admin", hint: "Everything, including deleting accounts, vendor categories and managing this team." },
-  { value: "operations", label: "Operations", hint: "Works the queues: approve and reject vendors, verify drivers and customers, suspend, vouchers, FAQ. Cannot delete or manage the team." },
+  { value: "super_admin", label: "Super Admin", hint: "Everything, including deleting accounts, business partner categories and managing this team." },
+  { value: "operations", label: "Operations", hint: "Works the queues: approve and reject business partners, verify movers and users, suspend, vouchers, FAQ. Cannot delete or manage the team." },
   { value: "support", label: "Support", hint: "Reads everything and handles support tickets. Cannot change accounts." },
 ];
 

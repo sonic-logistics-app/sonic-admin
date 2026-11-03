@@ -19,14 +19,14 @@ export default function SystemHealth({ system, loading }: SystemHealthProps) {
 
   const metrics = [
     {
-      label: "Active Drivers",
+      label: "Active Movers",
       value: system.activeDrivers,
       icon: "pi-users",
       color: "#0891B2",
       bgColor: "#CFFAFE",
     },
     {
-      label: "Active Vendors",
+      label: "Active Business Partners",
       value: system.activeVendors,
       icon: "pi-shop",
       color: "#7C3AED",

@@ -39,7 +39,7 @@ export default function FAQListPage() {
   });
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
-  const categories = ["General", "Account", "Orders", "Payment", "Vendors", "Drivers", "Support"];
+  const categories = ["General", "Account", "Orders", "Payment", "Business Partners", "Movers", "Support"];
 
   useEffect(() => {
     loadFAQs(pagination.page, debouncedSearch, categoryFilter);

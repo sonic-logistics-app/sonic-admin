@@ -333,7 +333,7 @@ export default function SupportPage() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-[24px] font-bold text-[#111827]">Support</h1>
-        <p className="text-[13px] text-[#525866]">Work vendor support cases and manage the contact details shown in the apps.</p>
+        <p className="text-[13px] text-[#525866]">Work business partner support cases and manage the contact details shown in the apps.</p>
       </div>
       <div role="tablist" aria-label="Support" className="inline-flex self-start rounded-lg border border-[#E1E4EA] bg-white p-1">
         {([

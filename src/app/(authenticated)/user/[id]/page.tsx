@@ -76,7 +76,7 @@ export default function UserDetailsPage() {
     run(async () => {
       if (suspend) await suspendUser(params.id as string, reason);
       else await unsuspendUser(params.id as string);
-      notify("success", suspend ? "Suspended" : "Reinstated", suspend ? "The customer is signed out and cannot sign in." : "The customer can sign in again.");
+      notify("success", suspend ? "Suspended" : "Reinstated", suspend ? "The user is signed out and cannot sign in." : "The user can sign in again.");
       setSuspending(false);
       setReason("");
       await load();
@@ -86,14 +86,14 @@ export default function UserDetailsPage() {
     return (
       <div className="text-center py-20">
         <p className="text-[14px] text-[#DC2626] mb-4">{error}</p>
-        <Button variant="outline" onClick={() => router.push("/user")}>Back to customers</Button>
+        <Button variant="outline" onClick={() => router.push("/user")}>Back to users</Button>
       </div>
     );
   }
   if (!detail) return <SkeletonLoader type="table" rows={6} />;
 
   const { user, orders, spend, vouchers, referrals } = detail;
-  const name = user.full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email || `Customer ${user.id}`;
+  const name = user.full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email || `User ${user.id}`;
   const initials = ((user.first_name?.charAt(0) || "") + (user.last_name?.charAt(0) || "")).toUpperCase() || "?";
   const given = Object.values(referrals.given).reduce((a, b) => a + b, 0);
 
@@ -110,7 +110,7 @@ export default function UserDetailsPage() {
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
       });
-      notify("success", "Saved", "Customer details updated.");
+      notify("success", "Saved", "User details updated.");
       setEditing(false);
       await load();
     });
@@ -126,7 +126,7 @@ export default function UserDetailsPage() {
     run(async () => {
       await customerService.ensureVoucher(user.id);
       await load();
-      notify("success", "Done", "Welcome voucher ensured for this customer.");
+      notify("success", "Done", "Welcome voucher ensured for this user.");
     });
 
   const remove = () =>
@@ -163,7 +163,7 @@ export default function UserDetailsPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">Customer Details</h1>
+            <h1 className="text-[24px] font-bold text-[#111827]">User Details</h1>
             <p className="text-[13px] text-[#525866]">Code: {user.short_code}</p>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function UserDetailsPage() {
       {suspending && (
         <div className="border border-[#DC2626] rounded-lg p-4 bg-[#FEF2F2] space-y-3">
           <p className="text-[13px] text-[#991B1B]">
-            Suspending signs the customer out and blocks sign-in. Their account and order history stay intact, and you can reinstate them any time.
+            Suspending signs the user out and blocks sign-in. Their account and order history stay intact, and you can reinstate them any time.
           </p>
           <textarea
             value={reason}
@@ -240,7 +240,7 @@ export default function UserDetailsPage() {
             className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] bg-white"
           />
           <div className="flex gap-2">
-            <Button size="sm" variant="danger" disabled={!reason.trim() || saving} loading={saving} onClick={() => applySuspension(true)}>Suspend customer</Button>
+            <Button size="sm" variant="danger" disabled={!reason.trim() || saving} loading={saving} onClick={() => applySuspension(true)}>Suspend user</Button>
             <Button size="sm" variant="ghost" onClick={() => setSuspending(false)}>Cancel</Button>
           </div>
         </div>
@@ -326,7 +326,7 @@ export default function UserDetailsPage() {
       {/* Activity */}
       <div>
         <h2 className="text-[18px] font-semibold text-[#111827]">Activity</h2>
-        <p className="text-[13px] text-[#525866]">Orders, spend, vouchers and referrals for this customer.</p>
+        <p className="text-[13px] text-[#525866]">Orders, spend, vouchers and referrals for this user.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -135,21 +135,21 @@ export default function CreateDriverPage() {
         toast.current?.show({
           severity: "success",
           summary: "Success",
-          detail: "Driver created successfully",
+          detail: "Mover created successfully",
           life: 3000,
         });
         setTimeout(() => {
           router.push("/driver");
         }, 1500);
       } else {
-        throw new Error(result.message || "Failed to create driver");
+        throw new Error(result.message || "Failed to create mover");
       }
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: error.message || "Failed to create driver",
+        detail: error.message || "Failed to create mover",
         life: 3000,
       });
     } finally {
@@ -212,8 +212,8 @@ export default function CreateDriverPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">Create New Driver</h1>
-            <p className="text-[13px] text-[#525866] mt-1">Add a new driver to the system</p>
+            <h1 className="text-[24px] font-bold text-[#111827]">Create New Mover</h1>
+            <p className="text-[13px] text-[#525866] mt-1">Add a new mover to the system</p>
           </div>
           <button
             onClick={() => router.back()}
@@ -612,7 +612,7 @@ export default function CreateDriverPage() {
               ) : (
                 <>
                   <i className="pi pi-check" />
-                  Create Driver
+                  Create Mover
                 </>
               )}
             </button>

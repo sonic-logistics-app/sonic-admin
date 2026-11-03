@@ -12,9 +12,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { usePermissions } from "@/lib/auth/permissions";
 
 const TABS: { kind: DeletedKind; label: string; singular: string }[] = [
-  { kind: "vendors", label: "Vendors", singular: "vendor" },
-  { kind: "users", label: "Customers", singular: "customer" },
-  { kind: "drivers", label: "Drivers", singular: "driver" },
+  { kind: "vendors", label: "Business Partners", singular: "business partner" },
+  { kind: "users", label: "Users", singular: "user" },
+  { kind: "drivers", label: "Movers", singular: "mover" },
 ];
 
 const formatDate = (value: string | null) =>

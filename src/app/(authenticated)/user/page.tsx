@@ -228,7 +228,7 @@ export default function UserListPage() {
   const columns = [
     {
       field: "name",
-      header: "Customer",
+      header: "User",
       sortable: true,
       body: (rowData: Customer) => (
         <div className="flex items-center gap-3">

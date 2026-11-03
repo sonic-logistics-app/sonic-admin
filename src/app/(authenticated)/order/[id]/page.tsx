@@ -553,12 +553,12 @@ export default function OrderDetailsPage() {
 
         {/* Customer Information */}
         <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
-          <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Customer Information</h2>
+          <h2 className="text-[16px] font-semibold text-[#111827] mb-4">User Information</h2>
           <div className="flex items-start gap-4">
             {order.user.picture ? (
               <img
                 src={order.user.picture}
-                alt={order.user.first_name || "Customer"}
+                alt={order.user.first_name || "User"}
                 className="w-16 h-16 rounded-full object-cover"
               />
             ) : (
@@ -626,12 +626,12 @@ export default function OrderDetailsPage() {
         {/* Driver Information */}
         {order.driver && (
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
-            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Driver Information</h2>
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Mover Information</h2>
             <div className="flex items-start gap-4">
               {order.driver.picture ? (
                 <img
                   src={order.driver.picture}
-                  alt={order.driver.first_name || "Driver"}
+                  alt={order.driver.first_name || "Mover"}
                   className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
@@ -654,7 +654,7 @@ export default function OrderDetailsPage() {
         {/* Vendor Information */}
         {order.vendor && (
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-6">
-            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Vendor Information</h2>
+            <h2 className="text-[16px] font-semibold text-[#111827] mb-4">Business Partner Information</h2>
             <div>
               <p className="text-[15px] font-semibold text-[#111827]">
                 {order.vendor.name}
@@ -871,7 +871,7 @@ export default function OrderDetailsPage() {
             )}
             {order.accepted_at && (
               <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Vendor Accepted</span>
+                <span className="text-[13px] text-[#525866]">Business Partner Accepted</span>
                 <span className="text-[13px] text-[#111827]">{formatDate(order.accepted_at)}</span>
               </div>
             )}
@@ -889,7 +889,7 @@ export default function OrderDetailsPage() {
             )}
             {order.driver_assigned_at && (
               <div className="flex justify-between items-center">
-                <span className="text-[13px] text-[#525866]">Driver Assigned</span>
+                <span className="text-[13px] text-[#525866]">Mover Assigned</span>
                 <span className="text-[13px] text-[#111827]">{formatDate(order.driver_assigned_at)}</span>
               </div>
             )}
@@ -949,7 +949,7 @@ export default function OrderDetailsPage() {
             {order.vendor_notes && (
               <div className="md:col-span-2">
                 <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                  Vendor Notes
+                  Business Partner Notes
                 </label>
                 <p className="text-[13px] text-[#111827]">{order.vendor_notes}</p>
               </div>
@@ -957,7 +957,7 @@ export default function OrderDetailsPage() {
             {order.vendor_rating && (
               <div>
                 <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                  Vendor Rating
+                  Business Partner Rating
                 </label>
                 <p className="text-[13px] text-[#111827]">⭐ {order.vendor_rating}/5</p>
               </div>
@@ -965,7 +965,7 @@ export default function OrderDetailsPage() {
             {order.vendor_review && (
               <div className="md:col-span-2">
                 <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-2">
-                  Vendor Review
+                  Business Partner Review
                 </label>
                 <p className="text-[13px] text-[#111827]">{order.vendor_review}</p>
               </div>
