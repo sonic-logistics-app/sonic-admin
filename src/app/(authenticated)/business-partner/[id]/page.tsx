@@ -1,5 +1,6 @@
 "use client";
 
+import { PARTNER_SHARE_PERCENT } from "@/lib/commission";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import VendorService from "@/services/VendorService";
@@ -559,12 +560,6 @@ export default function VendorDetailsPage() {
                     {vendor.kyc_status.toUpperCase()}
                   </span>
                   <span className="text-[11px] text-[#525866]">KYC</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-[#059669]">
-                    {100 - vendor.commission_rate}%
-                  </span>
-                  <span className="text-[11px] text-[#525866]">Commission</span>
                 </div>
               </div>
             </div>
@@ -1251,10 +1246,10 @@ export default function VendorDetailsPage() {
                         Business Partner Commission
                       </label>
                       <p className="text-[13px] text-[#059669] font-semibold">
-                        {100 - vendor.commission_rate}%
+                        {PARTNER_SHARE_PERCENT}%
                       </p>
                       <p className="text-[11px] text-[#525866] mt-1">
-                        Business Partner receives this percentage from each order
+                        Every business partner receives this share of their item sales
                       </p>
                     </div>
                     <div>

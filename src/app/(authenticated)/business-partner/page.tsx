@@ -294,14 +294,9 @@ export default function VendorListPage() {
     },
     {
       field: "created_at",
-      header: "Joined / commission",
+      header: "Joined",
       sortable: true,
-      body: (rowData: Vendor) => (
-        <CellStack
-          primary={formatDate(rowData.created_at)}
-          secondary={<span className="font-semibold text-[#059669]">{100 - rowData.commission_rate}% to business partner</span>}
-        />
-      ),
+      body: (rowData: Vendor) => formatDate(rowData.created_at),
     },
     {
       field: "actions",
