@@ -299,7 +299,7 @@ export default function VendorListPage() {
       body: (rowData: Vendor) => (
         <CellStack
           primary={formatDate(rowData.created_at)}
-          secondary={<span className="font-semibold text-[#059669]">{100 - rowData.commission_rate}% to vendor</span>}
+          secondary={<span className="font-semibold text-[#059669]">{100 - rowData.commission_rate}% to business partner</span>}
         />
       ),
     },

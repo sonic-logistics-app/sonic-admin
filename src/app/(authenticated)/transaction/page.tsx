@@ -1,5 +1,6 @@
 "use client";
 
+import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PayoutsTab, WalletsTab } from "@/components/finance/FinanceTabs";
@@ -731,7 +732,7 @@ function TransactionsTab() {
                       Order Type
                     </label>
                     <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-                      {selectedTransaction.order_details.order_type}
+                      {displayOrderType(selectedTransaction.order_details.order_type)}
                     </span>
                   </div>
                   <div>

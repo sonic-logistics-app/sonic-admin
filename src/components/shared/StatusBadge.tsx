@@ -127,6 +127,12 @@ export default function StatusBadge({
       icon: "✗", 
       label: "Cancelled" 
     },
+    driverselected: {
+      bg: "#EFF6FF",
+      text: "#2563EB",
+      icon: "●",
+      label: "Mover Selected"
+    },
     drivercancelled: { 
       bg: "#FEF2F2", 
       text: "#DC2626", 

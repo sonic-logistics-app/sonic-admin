@@ -125,7 +125,7 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
           />
           {changed && (
             <p className="text-[12px] text-[#525866]">
-              {names(data.additional)} <i className="pi pi-arrow-right text-[10px] mx-1" /> {names(draft!)}. After saving, the vendor shows under: {everywhere.map(businessTypeLabel).join(", ")}.
+              {names(data.additional)} <i className="pi pi-arrow-right text-[10px] mx-1" /> {names(draft!)}. After saving, the business partner shows under: {everywhere.map(businessTypeLabel).join(", ")}.
               {!data.live_in_customer_app && " It is not live in the user app yet, so nothing changes for users until it is."}
             </p>
           )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import OrderService from "@/lib/api/admin/orders";
@@ -377,7 +378,7 @@ export default function OrderDetailsPage() {
               Order Type
             </label>
             <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
-              {order.order_type}
+              {displayOrderType(order.order_type)}
             </span>
           </div>
           <div className="bg-white border border-[#E1E4EA] rounded-lg p-4">

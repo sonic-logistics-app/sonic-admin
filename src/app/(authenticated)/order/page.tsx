@@ -1,5 +1,6 @@
 "use client";
 
+import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -252,7 +253,7 @@ export default function OrderListPage() {
       body: (rowData: Order) => (
         <div className="flex flex-col items-start gap-1">
           <StatusBadge status={rowData.order_status} />
-          <span className="text-[11px] text-[#525866]">{rowData.order_type}</span>
+          <span className="text-[11px] text-[#525866]">{displayOrderType(rowData.order_type)}</span>
         </div>
       ),
     },

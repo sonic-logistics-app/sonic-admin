@@ -745,7 +745,7 @@ export default function VendorDetailsPage() {
                 <div className="flex flex-col items-center gap-4 pt-6 border-t border-[#E1E4EA]">
                   {vendor.status === "pending_approval" && openFlags > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center max-w-2xl text-[13px] text-red-800">
-                      This vendor has {openFlags} unresolved suspicion flag{openFlags > 1 ? "s" : ""}. Approval is blocked until{" "}
+                      This business partner has {openFlags} unresolved suspicion flag{openFlags > 1 ? "s" : ""}. Approval is blocked until{" "}
                       <button type="button" onClick={() => setActiveTab("review")} className="underline font-semibold">
                         the flag is resolved
                       </button>

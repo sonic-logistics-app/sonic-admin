@@ -223,7 +223,7 @@ export default function UserDetailsPage() {
 
       {user.suspended_at && user.suspended_reason && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-[13px] text-orange-800">
-          Suspended {day(user.suspended_at)}: {user.suspended_reason}. The customer is signed out and cannot sign in until reinstated.
+          Suspended {day(user.suspended_at)}: {user.suspended_reason}. The user is signed out and cannot sign in until reinstated.
         </div>
       )}
 

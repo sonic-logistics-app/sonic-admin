@@ -24,3 +24,12 @@ export const displayAction = (action: string) => {
   const [first, ...rest] = action.split(".");
   return [displayTerm(first), ...rest].join(" · ").replace(/-/g, " ");
 };
+
+/** Order types are stored as VENDOR (an order from a business partner) and PACKAGE (a parcel). */
+export const displayOrderType = (stored: string | null | undefined) => {
+  if (!stored) return "";
+  const key = stored.toUpperCase();
+  if (key === "VENDOR") return TERMS.businessPartner;
+  if (key === "PACKAGE") return "Package";
+  return stored;
+};
