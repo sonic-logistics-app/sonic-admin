@@ -64,7 +64,7 @@ export default function AuthenticatedLayout({
 
         {/* Sidebar */}
         <div
-          className={`fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-[#E1E4EA] flex-shrink-0 transform transition-transform duration-300 z-40 ${
+          className={`fixed left-0 top-0 bottom-0 w-[272px] bg-white border-r border-[#E1E4EA] flex-shrink-0 transform transition-transform duration-300 z-40 ${
             mobileMenuActive ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0 lg:relative lg:transform-none`}
           onClick={onSidebarClick}
