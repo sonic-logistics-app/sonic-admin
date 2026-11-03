@@ -7,6 +7,8 @@ import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
+import StatCards from "@/components/shared/StatCards";
+import { useListStats } from "@/hooks/useListStats";
 import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
 import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
@@ -64,6 +66,8 @@ export default function UserListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
+  const [suspendedFilter, setSuspendedFilter] = useState<string>("");
+  const { counts: userCounts, reload: reloadUserCounts } = useListStats("users");
   const [otpVerifiedFilter, setOtpVerifiedFilter] = useState<string>("");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const { data: optimisticCustomers, optimisticUpdate, resetData } = useOptimisticUpdate<Customer>(customers);
@@ -96,12 +100,12 @@ export default function UserListPage() {
   useEffect(() => {
     if (!filtersReady) return;
     loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-  }, [filtersReady, pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, createdFrom, createdTo]);
+  }, [filtersReady, pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, suspendedFilter, createdFrom, createdTo]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, createdFrom, createdTo]);
+  }, [debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter, suspendedFilter, createdFrom, createdTo]);
 
   const loadCustomers = async (page: number, search: string, isVerified: string, provider: string, otpVerified: string) => {
     try {
@@ -113,6 +117,7 @@ export default function UserListPage() {
         is_verified: isVerified || undefined,
         provider: provider || undefined,
         otp_verified: otpVerified || undefined,
+        suspended: suspendedFilter || undefined,
         created_from: createdFrom || undefined,
         created_to: createdTo || undefined,
       });
@@ -125,6 +130,7 @@ export default function UserListPage() {
       setCustomers(formattedCustomers);
       resetData(formattedCustomers);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
+      reloadUserCounts();
     } catch (error) {
       toast.current?.show({
         severity: "error",
@@ -323,6 +329,7 @@ export default function UserListPage() {
           is_verified: isVerifiedFilter || undefined,
           provider: providerFilter || undefined,
           otp_verified: otpVerifiedFilter || undefined,
+          suspended: suspendedFilter || undefined,
           created_from: createdFrom || undefined,
           created_to: createdTo || undefined,
         }),
@@ -369,6 +376,7 @@ export default function UserListPage() {
           <div className="flex items-center gap-2">
             <ExcelExportButton onExport={exportUsers} />
           <button
+            disabled={!can("account.create")}
             onClick={() => router.push("/user/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >
@@ -379,6 +387,16 @@ export default function UserListPage() {
         </div>
 
         {/* Search Bar */}
+        <StatCards
+          cards={[
+            { key: "all", label: "All users", value: userCounts?.total, active: !isVerifiedFilter && !suspendedFilter, onClick: () => { setIsVerifiedFilter(""); setSuspendedFilter(""); } },
+            { key: "verified", label: "Verified", value: userCounts?.verified, tone: "good", active: isVerifiedFilter === "true" && !suspendedFilter, onClick: () => { setIsVerifiedFilter(isVerifiedFilter === "true" ? "" : "true"); setSuspendedFilter(""); } },
+            { key: "unverified", label: "Unverified", value: userCounts?.unverified, tone: "warn", active: isVerifiedFilter === "false" && !suspendedFilter, onClick: () => { setIsVerifiedFilter(isVerifiedFilter === "false" ? "" : "false"); setSuspendedFilter(""); } },
+            { key: "suspended", label: "Suspended", value: userCounts?.suspended, tone: "bad", active: suspendedFilter === "true", onClick: () => { setSuspendedFilter(suspendedFilter === "true" ? "" : "true"); setIsVerifiedFilter(""); } },
+            { key: "new", label: "New, 7 days", value: userCounts?.new_7_days, active: false, onClick: () => router.push(`/user?created_from=${new Date(Date.now() - 6 * 86400000 + 3600000).toISOString().slice(0, 10)}&created_to=${new Date(Date.now() + 3600000).toISOString().slice(0, 10)}`) },
+          ]}
+        />
+
         <RegisteredRangeChip />
 
         <div className="flex flex-wrap items-center gap-3">

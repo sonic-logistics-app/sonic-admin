@@ -127,7 +127,7 @@ export default function DeletedAccountsPage() {
           <Button variant="success" size="sm" icon="pi pi-replay" disabled={!can("account.delete")} onClick={() => askRestore(r)}>
             Restore
           </Button>
-          <Button variant="danger" size="sm" icon="pi pi-trash" onClick={() => askDeleteForever(r)}>
+          <Button variant="danger" size="sm" icon="pi pi-trash" disabled={!can("account.delete")} onClick={() => askDeleteForever(r)}>
             Delete forever
           </Button>
         </div>

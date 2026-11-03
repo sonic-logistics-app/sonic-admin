@@ -50,11 +50,11 @@ export default function KeyboardShortcuts() {
             break;
           case "d":
             e.preventDefault();
-            router.push("/driver");
+            router.push("/mover");
             break;
           case "v":
             e.preventDefault();
-            router.push("/vendor");
+            router.push("/business-partner");
             break;
           case "o":
             e.preventDefault();

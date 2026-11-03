@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import VendorService, { CreateVendorData } from "@/services/VendorService";
@@ -17,7 +18,7 @@ interface MenuCategory {
   is_active: boolean;
 }
 
-export default function CreateVendorPage() {
+function CreateVendorPageInner() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
@@ -177,7 +178,7 @@ export default function CreateVendorPage() {
           life: 3000,
         });
         setTimeout(() => {
-          router.push("/vendor");
+          router.push("/business-partner");
         }, 1500);
       } else {
         throw new Error(result.message || "Failed to create business partner");
@@ -745,5 +746,13 @@ export default function CreateVendorPage() {
         </form>
       </div>
     </>
+  );
+}
+
+export default function CreateVendorPage() {
+  return (
+    <PermissionGate permission="account.create" what="create business partners">
+      <CreateVendorPageInner />
+    </PermissionGate>
   );
 }

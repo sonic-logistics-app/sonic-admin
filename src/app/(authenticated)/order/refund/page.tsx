@@ -1,5 +1,6 @@
 "use client";
 
+import { usePermissions } from "@/lib/auth/permissions";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import RefundService, { RefundSummary, RefundSyncResponse, RefundDebugResponse } from "@/lib/api/admin/refunds";
@@ -8,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 export default function RefundManagementPage() {
+  const { can } = usePermissions();
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const refundService = new RefundService();
@@ -158,7 +160,7 @@ export default function RefundManagementPage() {
             </button>
             <button
               onClick={handleSyncRefunds}
-              disabled={syncing}
+              disabled={syncing || !can("refund.manage")}
               className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {syncing ? (

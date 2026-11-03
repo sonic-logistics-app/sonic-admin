@@ -6,11 +6,12 @@ import { RegistrationTrend, getRegistrationTrend } from "@/lib/api/admin/ops";
 
 const SERIES = [
   { key: "users", label: "Users", color: "#2563EB", href: "/user" },
-  { key: "drivers", label: "Movers", color: "#9C27B0", href: "/driver" },
-  { key: "vendors", label: "Business Partners", color: "#F59E0B", href: "/vendor" },
+  { key: "drivers", label: "Movers", color: "#9C27B0", href: "/mover" },
+  { key: "vendors", label: "Business Partners", color: "#F59E0B", href: "/business-partner" },
 ] as const;
 
 const RANGES = [7, 30, 90];
+const TOP_PAD = 14;
 
 const shortDay = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString("en-NG", { day: "numeric", month: "short" });
@@ -18,15 +19,16 @@ const shortDay = (iso: string) =>
 /** New accounts per day, stacked by account type. Click a day to open that day's records. */
 export default function RegistrationTrendChart() {
   const [days, setDays] = useState(30);
-  const [trend, setTrend] = useState<RegistrationTrend | null>(null);
+  // The result remembers which range it is for, so a new range shows the loading state without a reset in the effect
+  const [result, setResult] = useState<{ days: number; data: RegistrationTrend } | null>(null);
+  const trend = result && result.days === days ? result.data : null;
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setTrend(null);
     getRegistrationTrend(days)
-      .then(({ data }) => !cancelled && setTrend(data))
+      .then(({ data }) => !cancelled && setResult({ days, data }))
       .catch((e: Error) => !cancelled && setError(e.message));
     return () => {
       cancelled = true;
@@ -77,7 +79,9 @@ export default function RegistrationTrendChart() {
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${width} ${height + 22}`} className="w-full h-auto" role="img" aria-label={`New accounts per day over the last ${days} days`}>
+      {/* The top gridline label sits above the plot, so the chart gets room at the top for it */}
+      <svg viewBox={`0 0 ${width} ${height + 22 + TOP_PAD}`} className="w-full h-auto" role="img" aria-label={`New accounts per day over the last ${days} days`}>
+        <g transform={`translate(0, ${TOP_PAD})`}>
         {[0, 0.5, 1].map((f) => (
           <g key={f}>
             <line x1="0" x2={width} y1={height - f * height} y2={height - f * height} stroke="#EEF0F3" strokeWidth="1" />
@@ -104,6 +108,7 @@ export default function RegistrationTrendChart() {
             </g>
           );
         })}
+        </g>
       </svg>
 
       {selected ? (

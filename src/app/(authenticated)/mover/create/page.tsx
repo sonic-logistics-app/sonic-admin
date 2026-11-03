@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DriverService, { CreateDriverData } from "@/services/DriverService";
@@ -10,7 +11,7 @@ interface FileUpload {
   preview: string;
 }
 
-export default function CreateDriverPage() {
+function CreateDriverPageInner() {
   const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const driverService = new DriverService();
@@ -139,7 +140,7 @@ export default function CreateDriverPage() {
           life: 3000,
         });
         setTimeout(() => {
-          router.push("/driver");
+          router.push("/mover");
         }, 1500);
       } else {
         throw new Error(result.message || "Failed to create mover");
@@ -620,5 +621,13 @@ export default function CreateDriverPage() {
         </form>
       </div>
     </>
+  );
+}
+
+export default function CreateDriverPage() {
+  return (
+    <PermissionGate permission="account.create" what="create movers">
+      <CreateDriverPageInner />
+    </PermissionGate>
   );
 }

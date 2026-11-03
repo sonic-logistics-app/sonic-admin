@@ -1,5 +1,6 @@
 "use client";
 
+import PermissionGate from "@/components/auth/PermissionGate";
 import { displayAction, displayTerm } from "@/lib/terms";
 import { useState, useEffect, useRef, useCallback } from "react";
 import DataTable from "@/components/shared/DataTable";
@@ -16,7 +17,7 @@ const when = (iso: string) =>
 
 const actionLabel = displayAction;
 
-export default function AuditLogPage() {
+function AuditLogPageInner() {
   const toast = useRef<ToastRef>(null);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,8 +44,8 @@ export default function AuditLogPage() {
         });
         setLogs(result.data.logs);
         setPagination((prev) => ({ ...prev, page, total: result.meta?.total ?? result.data.logs.length }));
-      } catch (error: any) {
-        toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load audit log", life: 4000 });
+      } catch (error) {
+        toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to load audit log", life: 4000 });
       } finally {
         setInitialLoad(false);
         setLoading(false);
@@ -154,5 +155,13 @@ export default function AuditLogPage() {
         )}
       </div>
     </>
+  );
+}
+
+export default function AuditLogPage() {
+  return (
+    <PermissionGate permission="audit.read" what="open the audit log">
+      <AuditLogPageInner />
+    </PermissionGate>
   );
 }

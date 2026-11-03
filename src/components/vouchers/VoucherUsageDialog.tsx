@@ -14,17 +14,18 @@ interface Props {
 
 /** Who holds a voucher, how much of it was spent and what is left. */
 export default function VoucherUsageDialog({ voucherId, onClose }: Props) {
-  const [usage, setUsage] = useState<VoucherUsage | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Tagged with the voucher it belongs to, so opening another voucher shows loading without a reset in the effect
+  const [loaded, setLoaded] = useState<{ id: string; usage?: VoucherUsage; error?: string } | null>(null);
+  const mine = loaded && loaded.id === voucherId ? loaded : null;
+  const usage = mine?.usage ?? null;
+  const error = mine?.error ?? null;
 
   useEffect(() => {
     if (!voucherId) return;
     let cancelled = false;
-    setUsage(null);
-    setError(null);
     getVoucherUsage(voucherId)
-      .then(({ data }) => !cancelled && setUsage(data))
-      .catch((e: Error) => !cancelled && setError(e.message));
+      .then(({ data }) => !cancelled && setLoaded({ id: voucherId, usage: data }))
+      .catch((e: Error) => !cancelled && setLoaded({ id: voucherId, error: e.message }));
     return () => {
       cancelled = true;
     };

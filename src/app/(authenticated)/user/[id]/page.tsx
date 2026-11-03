@@ -65,8 +65,8 @@ export default function UserDetailsPage() {
     try {
       setSaving(true);
       await work();
-    } catch (e: any) {
-      notify("error", "Could not complete", e.message || "Something went wrong");
+    } catch (e) {
+      notify("error", "Could not complete", (e as Error).message || "Something went wrong");
     } finally {
       setSaving(false);
     }

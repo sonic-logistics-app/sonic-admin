@@ -7,6 +7,8 @@ import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
+import StatCards from "@/components/shared/StatCards";
+import { useListStats } from "@/hooks/useListStats";
 import RegisteredRangeChip, { useRegisteredRange } from "@/components/shared/RegisteredRangeChip";
 import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
@@ -78,6 +80,7 @@ export default function DriverListPage() {
   const [kycStatusFilter, setKycStatusFilter] = useState<string>("");
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
   const [isRejectedFilter, setIsRejectedFilter] = useState<string>("");
+  const { counts: moverCounts, reload: reloadMoverCounts } = useListStats("drivers");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -140,6 +143,7 @@ export default function DriverListPage() {
       setAllDrivers(formatted);
       setDrivers(formatted);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
+      reloadMoverCounts();
     } catch (error) {
       toast.current?.show({
         severity: "error",
@@ -198,7 +202,7 @@ export default function DriverListPage() {
   };
 
   const handleRowClick = async (driver: Driver) => {
-    router.push(`/driver/${driver.short_code || driver.id}`);
+    router.push(`/mover/${driver.short_code || driver.id}`);
   };
 
   const getVerificationProgress = (verificationStatus: VerificationStatus) => {
@@ -361,7 +365,8 @@ export default function DriverListPage() {
           <div className="flex items-center gap-2">
             <ExcelExportButton onExport={exportDrivers} />
           <button
-            onClick={() => router.push("/driver/create")}
+            disabled={!can("account.create")}
+            onClick={() => router.push("/mover/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >
             <i className="pi pi-plus text-sm" />
@@ -369,6 +374,28 @@ export default function DriverListPage() {
           </button>
           </div>
         </div>
+
+        <StatCards
+          cards={(() => {
+            const none = !statusFilter && !isVerifiedFilter && !isRejectedFilter;
+            const set = (verified: string, rejected: string, status = "") => () => {
+              setIsVerifiedFilter(verified);
+              setIsRejectedFilter(rejected);
+              setStatusFilter(status);
+            };
+            const verifiedOnly = isVerifiedFilter === "true" && !isRejectedFilter && !statusFilter;
+            const pending = isVerifiedFilter === "false" && isRejectedFilter === "false" && !statusFilter;
+            const rejected = isRejectedFilter === "true" && !statusFilter;
+            const available = statusFilter === "AVAILABLE" && isVerifiedFilter === "true";
+            return [
+              { key: "all", label: "All movers", value: moverCounts?.total, active: none, onClick: set("", "") },
+              { key: "verified", label: "Verified", value: moverCounts?.verified, tone: "good" as const, active: verifiedOnly, onClick: verifiedOnly ? set("", "") : set("true", "") },
+              { key: "pending", label: "Awaiting verification", value: moverCounts?.pending, tone: "warn" as const, active: pending, onClick: pending ? set("", "") : set("false", "false") },
+              { key: "rejected", label: "Rejected", value: moverCounts?.rejected, tone: "bad" as const, active: rejected, onClick: rejected ? set("", "") : set("", "true") },
+              { key: "available", label: "Available now", value: moverCounts?.available, tone: "good" as const, active: available, onClick: available ? set("", "") : set("true", "", "AVAILABLE") },
+            ];
+          })()}
+        />
 
         <RegisteredRangeChip />
 

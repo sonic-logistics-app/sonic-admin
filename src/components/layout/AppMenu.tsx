@@ -28,7 +28,7 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
       const next: Record<string, string> = {};
       try {
         const pending = (await getRegistrationStats()).data.attention.vendors_pending_approval;
-        if (pending > 0) next["/vendor"] = String(pending);
+        if (pending > 0) next["/business-partner"] = String(pending);
       } catch {}
       try {
         const open = (await getTickets({ status: "OPEN", limit: 1 })).meta?.total ?? 0;

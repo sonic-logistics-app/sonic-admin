@@ -108,11 +108,11 @@ export default function RegistrationOverview() {
 
   const a = stats.attention;
   const attention: { label: string; value: number; href: string }[] = [
-    { label: "Business Partners waiting for approval", value: a.vendors_pending_approval, href: "/vendor?status=pending_approval" },
-    { label: "Of those, ready to approve", value: a.vendors_ready_to_approve, href: "/vendor?status=pending_approval&ready=true" },
-    { label: "Business Partners with open corrections", value: a.vendors_with_open_corrections, href: "/vendor?review=corrections" },
-    { label: "Business Partners with suspicion flags", value: a.vendors_with_open_flags, href: "/vendor?review=flags" },
-    { label: "Movers awaiting verification", value: a.drivers_pending_verification, href: "/driver?verified=false" },
+    { label: "Business Partners waiting for approval", value: a.vendors_pending_approval, href: "/business-partner?status=pending_approval" },
+    { label: "Of those, ready to approve", value: a.vendors_ready_to_approve, href: "/business-partner?status=pending_approval&ready=true" },
+    { label: "Business Partners with open corrections", value: a.vendors_with_open_corrections, href: "/business-partner?review=corrections" },
+    { label: "Business Partners with suspicion flags", value: a.vendors_with_open_flags, href: "/business-partner?review=flags" },
+    { label: "Movers awaiting verification", value: a.drivers_pending_verification, href: "/mover?verified=false" },
     { label: "Unverified users", value: a.users_unverified, href: "/user?verified=false" },
     { label: "Orders stuck without a mover", value: a.orders_stuck_without_driver, href: "/order?stuck=true" },
     { label: "Refunds pending", value: a.refunds_pending, href: "/order?refund=refund_pending" },
@@ -142,27 +142,27 @@ export default function RegistrationOverview() {
         <AccountCard
           title="Movers"
           icon="pi-car"
-          href="/driver"
+          href="/mover"
           asOf={stats.as_of}
           counts={stats.drivers}
           rows={[
             { label: "Verified", value: stats.drivers.verified },
-            { label: "Pending", value: stats.drivers.pending_verification, href: "/driver?verified=false", tone: stats.drivers.pending_verification ? "text-[#D97706]" : undefined },
+            { label: "Pending", value: stats.drivers.pending_verification, href: "/mover?verified=false", tone: stats.drivers.pending_verification ? "text-[#D97706]" : undefined },
             { label: "Rejected", value: stats.drivers.rejected },
-            { label: "Available now", value: stats.drivers.available_now, href: "/driver?status=AVAILABLE" },
+            { label: "Available now", value: stats.drivers.available_now, href: "/mover?status=AVAILABLE" },
           ]}
         />
         <AccountCard
           title="Business Partners"
           icon="pi-shop"
-          href="/vendor"
+          href="/business-partner"
           asOf={stats.as_of}
           counts={stats.vendors}
           rows={[
-            { label: "Active", value: stats.vendors.active, href: "/vendor?status=active" },
-            { label: "Pending approval", value: stats.vendors.pending_approval, href: "/vendor?status=pending_approval", tone: stats.vendors.pending_approval ? "text-[#D97706]" : undefined },
-            { label: "Suspended", value: stats.vendors.suspended, href: "/vendor?status=suspended" },
-            { label: "KYC completed", value: stats.vendors.kyc_completed, href: "/vendor?kyc_status=completed" },
+            { label: "Active", value: stats.vendors.active, href: "/business-partner?status=active" },
+            { label: "Pending approval", value: stats.vendors.pending_approval, href: "/business-partner?status=pending_approval", tone: stats.vendors.pending_approval ? "text-[#D97706]" : undefined },
+            { label: "Suspended", value: stats.vendors.suspended, href: "/business-partner?status=suspended" },
+            { label: "KYC completed", value: stats.vendors.kyc_completed, href: "/business-partner?kyc_status=completed" },
           ]}
         />
       </div>

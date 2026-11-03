@@ -58,7 +58,8 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
           );
         }
 
-        const isActive = pathname === item.to;
+        // A detail page such as /mover/MVR-123 keeps its menu item highlighted
+        const isActive = !!item.to && (pathname === item.to || pathname.startsWith(`${item.to}/`));
         const hasSubmenu = item.items && item.items.length > 0;
 
         return (

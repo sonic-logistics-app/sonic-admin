@@ -345,7 +345,7 @@ export default function VendorDetailsPage() {
         detail: `Business Partner ${vendor.name} has been deleted successfully (soft delete - can be restored)`,
         life: 3000,
       });
-      router.push("/vendor"); // Navigate back since vendor is now deleted and won't appear in normal queries
+      router.push("/business-partner"); // Navigate back since vendor is now deleted and won't appear in normal queries
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
@@ -464,7 +464,7 @@ export default function VendorDetailsPage() {
           <p className="text-[16px] text-[#525866]">Business Partner not found</p>
           <Button
             variant="outline"
-            onClick={() => router.push("/vendor")}
+            onClick={() => router.push("/business-partner")}
             className="mt-4"
           >
             Back to Business Partners
@@ -494,7 +494,7 @@ export default function VendorDetailsPage() {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/vendor")}
+              onClick={() => router.push("/business-partner")}
               className="px-3 py-2"
             >
               <i className="pi pi-arrow-left mr-2" />
@@ -510,7 +510,7 @@ export default function VendorDetailsPage() {
           <div className="flex items-center gap-3">
             <StatusBadge status={vendor.status} />
             {nextPending && (
-              <Button variant="outline" onClick={() => router.push(`/vendor/${nextPending.code}`)}>
+              <Button variant="outline" onClick={() => router.push(`/business-partner/${nextPending.code}`)}>
                 Next pending ({nextPending.remaining})
                 <i className="pi pi-arrow-right ml-2" />
               </Button>

@@ -72,8 +72,8 @@ export default function SupportCases() {
         search: debouncedSearch || undefined,
       });
       setData(result.data);
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load cases", life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to load cases", life: 4000 });
     } finally {
       setLoading(false);
     }
@@ -90,8 +90,8 @@ export default function SupportCases() {
       setAssignDraft(detail.ticket.assigned_to ?? "");
       setMessage("");
       setMode("reply");
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Error", detail: error.message, life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message, life: 4000 });
     }
   };
 
@@ -101,8 +101,8 @@ export default function SupportCases() {
       await updateTicket(selected.id, body);
       await open(selected.id);
       loadList();
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Could not update", detail: error.message, life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Could not update", detail: (error as Error).message, life: 4000 });
     }
   };
 
@@ -115,8 +115,8 @@ export default function SupportCases() {
       setMessage("");
       await open(selected.id);
       loadList();
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Could not send", detail: error.message, life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Could not send", detail: (error as Error).message, life: 4000 });
     } finally {
       setSending(false);
     }

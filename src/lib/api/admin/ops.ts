@@ -378,3 +378,8 @@ export const saveVendorCategories = (vendorId: string, additional: string[], rea
     method: "PUT",
     body: JSON.stringify({ additional_business_types: additional, reason }),
   });
+
+// ---------------------------------------------------------------- list cards
+
+export const getListStats = (kind: "users" | "drivers" | "orders") =>
+  request<{ kind: string; counts: Record<string, number> }>(`/list-stats/${kind}`);

@@ -9,6 +9,8 @@ import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
+import StatCards from "@/components/shared/StatCards";
+import { useListStats } from "@/hooks/useListStats";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -109,6 +111,7 @@ export default function OrderListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const { counts: orderCounts, reload: reloadOrderCounts } = useListStats("orders");
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("");
   const [dispatchStatusFilter, setDispatchStatusFilter] = useState<string>("");
@@ -171,6 +174,7 @@ export default function OrderListPage() {
       });
       setOrders(result.data as unknown as Order[]);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
+      reloadOrderCounts();
     } catch (error) {
       toast.current?.show({ severity: "error", summary: "Error", detail: "Failed to load orders", life: 3000 });
     } finally {
@@ -320,6 +324,30 @@ export default function OrderListPage() {
             Manage Refunds
           </button>
         </div>
+
+        <StatCards
+          cards={(() => {
+            const IN_PROGRESS = "DRIVER_SELECTED,IN_PAYMENT,CONFIRMED,ACCEPTED,PREPARING,READY,PICKUP,IN_TRANSIT";
+            const CANCELLED = "CANCELLED,DRIVER_CANCELLED,REJECTED";
+            // One card at a time: choosing a card replaces the status, stuck and refund filters
+            const pick = (status: string, stuck = "", refund = "") => () => {
+              setStatusFilter(status);
+              setStuckFilter(stuck);
+              setRefundStatusFilter(refund);
+            };
+            const toggle = (on: boolean, status: string, stuck = "", refund = "") => (on ? pick("") : pick(status, stuck, refund));
+            const isStatus = (value: string) => statusFilter === value && !stuckFilter && !refundStatusFilter;
+            return [
+              { key: "all", label: "All orders", value: orderCounts?.total, active: !statusFilter && !stuckFilter && !refundStatusFilter, onClick: pick("") },
+              { key: "pending", label: "Pending", value: orderCounts?.pending, tone: "warn" as const, active: isStatus("PENDING"), onClick: toggle(isStatus("PENDING"), "PENDING") },
+              { key: "progress", label: "In progress", value: orderCounts?.in_progress, active: isStatus(IN_PROGRESS), onClick: toggle(isStatus(IN_PROGRESS), IN_PROGRESS) },
+              { key: "delivered", label: "Delivered", value: orderCounts?.delivered, tone: "good" as const, active: isStatus("DELIVERED"), onClick: toggle(isStatus("DELIVERED"), "DELIVERED") },
+              { key: "cancelled", label: "Cancelled", value: orderCounts?.cancelled, active: isStatus(CANCELLED), onClick: toggle(isStatus(CANCELLED), CANCELLED) },
+              { key: "stuck", label: "Stuck without mover", value: orderCounts?.stuck, tone: "bad" as const, active: stuckFilter === "true", onClick: toggle(stuckFilter === "true", "", "true") },
+              { key: "refund", label: "Refund pending", value: orderCounts?.refund_pending, tone: "warn" as const, active: refundStatusFilter === "refund_pending", onClick: toggle(refundStatusFilter === "refund_pending", "", "", "refund_pending") },
+            ];
+          })()}
+        />
 
         {/* Search Bar and Filters */}
         <div className="flex flex-wrap items-center gap-3">

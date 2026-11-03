@@ -331,7 +331,7 @@ export default function VendorListPage() {
         toast.current?.show({ severity: "info", summary: "Queue is clear", detail: "No business partners are waiting for approval", life: 3000 });
         return;
       }
-      router.push(`/vendor/${data.next.short_code || data.next.id}`);
+      router.push(`/business-partner/${data.next.short_code || data.next.id}`);
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Could not load the queue", life: 3000 });
@@ -409,7 +409,7 @@ export default function VendorListPage() {
             <ExcelExportButton onExport={exportVendors} />
           <button
             disabled={!can("account.create")}
-            onClick={() => router.push("/vendor/create")}
+            onClick={() => router.push("/business-partner/create")}
             className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2"
           >
             <i className="pi pi-plus text-sm" />
@@ -422,15 +422,15 @@ export default function VendorListPage() {
         {queue && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "Pending approval", value: queue.vendors_pending_approval, href: "/vendor?status=pending_approval", on: statusFilter === "pending_approval" && !readyFilter && !reviewFilter },
-              { label: "Ready to approve", value: queue.vendors_ready_to_approve, href: "/vendor?status=pending_approval&ready=true", on: readyFilter === "true" },
-              { label: "Needs correction", value: queue.vendors_with_open_corrections, href: "/vendor?review=corrections", on: reviewFilter === "corrections" },
-              { label: "Flagged", value: queue.vendors_with_open_flags, href: "/vendor?review=flags", on: reviewFilter === "flags" },
+              { label: "Pending approval", value: queue.vendors_pending_approval, href: "/business-partner?status=pending_approval", on: statusFilter === "pending_approval" && !readyFilter && !reviewFilter },
+              { label: "Ready to approve", value: queue.vendors_ready_to_approve, href: "/business-partner?status=pending_approval&ready=true", on: readyFilter === "true" },
+              { label: "Needs correction", value: queue.vendors_with_open_corrections, href: "/business-partner?review=corrections", on: reviewFilter === "corrections" },
+              { label: "Flagged", value: queue.vendors_with_open_flags, href: "/business-partner?review=flags", on: reviewFilter === "flags" },
             ].map((card) => (
               <button
                 key={card.label}
                 type="button"
-                onClick={() => router.push(card.on ? "/vendor" : card.href)}
+                onClick={() => router.push(card.on ? "/business-partner" : card.href)}
                 className={`text-left border rounded-lg px-4 py-3 ${card.on ? "border-[#2563EB] bg-[#F8FAFF]" : "border-[#E1E4EA] bg-white hover:border-[#2563EB]"}`}
               >
                 <p className="text-[11px] uppercase tracking-wider text-[#525866]">{card.label}</p>
@@ -518,7 +518,7 @@ export default function VendorListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
-            onRowClick={(vendor) => router.push(`/vendor/${vendor.short_code || vendor.id}`)}
+            onRowClick={(vendor) => router.push(`/business-partner/${vendor.short_code || vendor.id}`)}
             emptyMessage="No business partners found"
             className="flex-1 min-h-0"
           />

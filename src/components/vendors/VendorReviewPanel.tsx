@@ -62,8 +62,8 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
     try {
       setLoading(true);
       setReview((await getVendorReview(vendorId)).data);
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load review", life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to load review", life: 4000 });
     } finally {
       setLoading(false);
     }
@@ -96,8 +96,8 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
       closeForm();
       await load();
       onChanged();
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Could not save", detail: error.message, life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Could not save", detail: (error as Error).message, life: 4000 });
     } finally {
       setSaving(false);
     }
@@ -112,8 +112,8 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
       setResolving(null);
       await load();
       onChanged();
-    } catch (error: any) {
-      toast.current?.show({ severity: "error", summary: "Could not resolve", detail: error.message, life: 4000 });
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Could not resolve", detail: (error as Error).message, life: 4000 });
     } finally {
       setSaving(false);
     }
@@ -182,7 +182,7 @@ export default function VendorReviewPanel({ vendorId, onChanged }: Props) {
         <div>
           <h3 className="text-[15px] font-semibold text-[#111827]">Review actions</h3>
           <p className="text-[13px] text-[#525866]">
-            Corrections and notes are recorded here. A correction request only reaches the business partner if you tick "Notify the business partner" when saving it.
+            Corrections and notes are recorded here. A correction request only reaches the business partner if you tick &quot;Notify the business partner&quot; when saving it.
           </p>
         </div>
         {!can("vendor.review") && <p className="text-[12px] text-[#525866]">Your role can read the review history but not add to it.</p>}

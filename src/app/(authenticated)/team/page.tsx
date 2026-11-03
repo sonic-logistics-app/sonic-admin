@@ -64,8 +64,8 @@ export default function TeamPage() {
       await work();
       toast.current?.show({ severity: "success", summary: success, detail: "Done", life: 3500 });
       await load();
-    } catch (e: any) {
-      toast.current?.show({ severity: "error", summary: "Could not complete", detail: e.message, life: 5000 });
+    } catch (e) {
+      toast.current?.show({ severity: "error", summary: "Could not complete", detail: (e as Error).message, life: 5000 });
     } finally {
       setSaving(false);
     }
@@ -84,8 +84,8 @@ export default function TeamPage() {
       setInviting(false);
       setForm({ email: "", first_name: "", last_name: "", role: "operations" });
       await load();
-    } catch (e: any) {
-      toast.current?.show({ severity: "error", summary: "Could not invite", detail: e.message, life: 5000 });
+    } catch (e) {
+      toast.current?.show({ severity: "error", summary: "Could not invite", detail: (e as Error).message, life: 5000 });
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePermissions } from "@/lib/auth/permissions";
 import { useState, useEffect, useRef } from "react";
 import SupportService, { ContactInfo } from "@/services/SupportService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
@@ -9,6 +10,7 @@ import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import SupportCases from "@/components/support/SupportCases";
 
 function ContactInfoTab() {
+  const { can } = usePermissions();
   const toast = useRef<ToastRef>(null);
   const supportService = new SupportService();
 
@@ -314,7 +316,7 @@ function ContactInfoTab() {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !can("contact.manage")}
               className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] font-semibold hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}

@@ -267,7 +267,7 @@ export default function DriverDetailsPage() {
         detail: `Mover ${driver.full_name} deleted successfully`,
         life: 3000,
       });
-      router.push("/driver");
+      router.push("/mover");
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({
@@ -391,7 +391,7 @@ export default function DriverDetailsPage() {
           <p className="text-[16px] text-[#525866]">Mover not found</p>
           <Button
             variant="outline"
-            onClick={() => router.push("/driver")}
+            onClick={() => router.push("/mover")}
             className="mt-4"
           >
             Back to Movers
@@ -421,7 +421,7 @@ export default function DriverDetailsPage() {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/driver")}
+              onClick={() => router.push("/mover")}
               className="px-3 py-2"
             >
               <i className="pi pi-arrow-left mr-2" />
@@ -744,6 +744,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("document")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify All Documents
@@ -751,6 +752,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("document")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject All Documents
@@ -932,6 +934,7 @@ export default function DriverDetailsPage() {
                       <Button
                         variant="success"
                         onClick={() => handleVerifyComponent("personal_info")}
+                        disabled={!can("account.verify")}
                       >
                         <i className="pi pi-check mr-2" />
                         Verify Personal Information
@@ -939,6 +942,7 @@ export default function DriverDetailsPage() {
                       <Button
                         variant="danger"
                         onClick={() => handleRejectComponent("personal_info")}
+                        disabled={!can("account.verify")}
                       >
                         <i className="pi pi-times mr-2" />
                         Reject Personal Information
@@ -1024,6 +1028,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("id_confirmation")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify ID Confirmation
@@ -1031,6 +1036,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("id_confirmation")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject ID Confirmation
@@ -1130,6 +1136,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="success"
                           onClick={() => handleVerifyComponent("bank_account")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-check mr-2" />
                           Verify Bank Account
@@ -1137,6 +1144,7 @@ export default function DriverDetailsPage() {
                         <Button
                           variant="danger"
                           onClick={() => handleRejectComponent("bank_account")}
+                          disabled={!can("account.verify")}
                         >
                           <i className="pi pi-times mr-2" />
                           Reject Bank Account
@@ -1185,6 +1193,7 @@ export default function DriverDetailsPage() {
                             variant="success"
                             size="sm"
                             onClick={() => handleVerifyComponent("personal_info")}
+                            disabled={!can("account.verify")}
                           >
                             <i className="pi pi-check mr-1" />
                             Verify
@@ -1193,6 +1202,7 @@ export default function DriverDetailsPage() {
                             variant="danger"
                             size="sm"
                             onClick={() => handleRejectComponent("personal_info")}
+                            disabled={!can("account.verify")}
                           >
                             <i className="pi pi-times mr-1" />
                             Reject
@@ -1234,6 +1244,7 @@ export default function DriverDetailsPage() {
                               variant="success"
                               size="sm"
                               onClick={() => handleVerifyComponent("id_confirmation")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-check mr-1" />
                               Verify
@@ -1242,6 +1253,7 @@ export default function DriverDetailsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => handleRejectComponent("id_confirmation")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-times mr-1" />
                               Reject
@@ -1294,6 +1306,7 @@ export default function DriverDetailsPage() {
                               variant="success"
                               size="sm"
                               onClick={() => handleVerifyComponent("bank_account")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-check mr-1" />
                               Verify
@@ -1302,6 +1315,7 @@ export default function DriverDetailsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => handleRejectComponent("bank_account")}
+                              disabled={!can("account.verify")}
                             >
                               <i className="pi pi-times mr-1" />
                               Reject

@@ -60,8 +60,8 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
       setReason("");
       await load();
       onChanged?.();
-    } catch (e: any) {
-      setSaveError(e.message);
+    } catch (e) {
+      setSaveError((e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -147,7 +147,7 @@ export default function VendorCategoriesPanel({ vendorId, onChanged }: Props) {
         </div>
       )}
 
-      {!canEdit && <p className="text-[12px] text-[#9CA3AF]">Only a Super Admin can change a business partner's additional categories.</p>}
+      {!canEdit && <p className="text-[12px] text-[#9CA3AF]">Only a Super Admin can change a business partner&apos;s additional categories.</p>}
 
       {data.history.length > 0 && (
         <div className="border-t border-[#E1E4EA] pt-3">

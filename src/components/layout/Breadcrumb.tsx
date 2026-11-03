@@ -12,6 +12,8 @@ interface BreadcrumbItem {
 const pathLabels: Record<string, string> = {
   dashboard: "Dashboard",
   user: "Users",
+  mover: "Movers",
+  "business-partner": "Business Partners",
   driver: "Movers",
   vendor: "Business Partners",
   order: "Orders",

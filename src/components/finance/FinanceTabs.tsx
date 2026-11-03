@@ -32,8 +32,8 @@ export function PayoutsTab() {
         setRows(result.data.payouts);
         setSummary(result.data.summary);
         setPagination((prev) => ({ ...prev, page, total: result.meta?.total ?? 0 }));
-      } catch (error: any) {
-        toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load payouts", life: 4000 });
+      } catch (error) {
+        toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to load payouts", life: 4000 });
       } finally {
         setLoading(false);
       }
@@ -130,8 +130,8 @@ export function WalletsTab() {
         setRows(result.data.wallets);
         setTotals(result.data.summary);
         setPagination((prev) => ({ ...prev, page, total: result.meta?.total ?? 0 }));
-      } catch (error: any) {
-        toast.current?.show({ severity: "error", summary: "Error", detail: error.message || "Failed to load wallets", life: 4000 });
+      } catch (error) {
+        toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to load wallets", life: 4000 });
       } finally {
         setLoading(false);
       }

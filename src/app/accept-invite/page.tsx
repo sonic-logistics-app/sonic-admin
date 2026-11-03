@@ -41,8 +41,8 @@ function AcceptInvite() {
       setSaving(true);
       await acceptAdminInvite(token, password);
       setDone(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setSaving(false);
     }
