@@ -191,7 +191,7 @@ export default function DriverListPage() {
   };
 
   const handleRowClick = async (driver: Driver) => {
-    router.push(`/driver/${driver.id}`);
+    router.push(`/driver/${driver.short_code || driver.id}`);
   };
 
   const getVerificationProgress = (verificationStatus: VerificationStatus) => {
@@ -293,15 +293,6 @@ export default function DriverListPage() {
       header: "Actions",
       body: (rowData: Driver) => (
         <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/driver/${rowData.id}`);
-            }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-          >
-            View Details
-          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();

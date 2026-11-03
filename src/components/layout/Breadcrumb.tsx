@@ -41,6 +41,11 @@ export default function Breadcrumb() {
       return;
     }
 
+    if (/^(VND|USR|DRV|SNK)-[A-Z0-9]+$/i.test(segment)) {
+      breadcrumbs.push({ label: segment.toUpperCase() });
+      return;
+    }
+
     const label = pathLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
     breadcrumbs.push({ label, href: isLast ? undefined : href });
   });

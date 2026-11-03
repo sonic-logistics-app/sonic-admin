@@ -273,15 +273,6 @@ export default function VendorListPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/vendor/${rowData.id}`);
-            }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-          >
-            View Details
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
               confirmDelete(rowData);
             }}
             className="text-[#DC2626] hover:underline text-[13px] font-semibold"
@@ -429,6 +420,7 @@ export default function VendorListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
+            onRowClick={(vendor) => router.push(`/vendor/${vendor.short_code || vendor.id}`)}
             emptyMessage="No vendors found"
             className="flex-1 min-h-0"
           />

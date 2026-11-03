@@ -389,16 +389,7 @@ export default function UserListPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleRowClick(rowData);
-            }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-          >
-            View
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/user/${rowData.id}`);
+              router.push(`/user/${rowData.short_code || rowData.id}`);
             }}
             className="text-[#525866] hover:underline text-[13px] font-semibold"
           >

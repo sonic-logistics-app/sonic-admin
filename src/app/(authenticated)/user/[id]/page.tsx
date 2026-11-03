@@ -67,13 +67,15 @@ export default function UserActivityPage() {
     <div className="flex flex-col gap-6">
       <Toast ref={toast} />
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link href="/user" className="text-[12px] text-[#2563EB] hover:underline">← Customers</Link>
-          <h1 className="text-[24px] font-bold text-[#111827] mt-1">{name}</h1>
-          <p className="text-[13px] text-[#525866]">
-            {user.short_code} · {user.email || "no email"} · {user.phone || "no phone"} · joined {day(user.created_at)}
-            {user.last_login_at ? ` · last login ${day(user.last_login_at)}` : " · never logged in"}
-          </p>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => router.push("/user")} className="px-3 py-2">
+            <i className="pi pi-arrow-left mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-[24px] font-bold text-[#111827]">Customer Details</h1>
+            <p className="text-[13px] text-[#525866]">Code: {user.short_code}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={user.is_verified ? "VERIFIED" : "PENDING"} />
@@ -85,6 +87,14 @@ export default function UserActivityPage() {
           ))}
           {user.deleted_at && <span className="text-[11px] px-2 py-1 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold">Deleted {day(user.deleted_at)}</span>}
         </div>
+      </div>
+
+      <div>
+        <p className="text-[18px] font-semibold text-[#111827]">{name}</p>
+        <p className="text-[13px] text-[#525866]">
+          {user.email || "no email"} · {user.phone || "no phone"} · joined {day(user.created_at)}
+          {user.last_login_at ? ` · last login ${day(user.last_login_at)}` : " · never logged in"}
+        </p>
       </div>
 
       {user.suspended_at && user.suspended_reason && (
@@ -149,7 +159,7 @@ export default function UserActivityPage() {
               {orders.recent.map((o) => (
                 <tr key={o.id} className="border-t border-[#E1E4EA]">
                   <td className="py-2">
-                    <Link href={`/order/${o.id}`} className="text-[#2563EB] hover:underline">{o.order_number || `#${o.id}`}</Link>
+                    <Link href={`/order/${o.order_number || o.id}`} className="text-[#2563EB] hover:underline">{o.order_number || `#${o.id}`}</Link>
                   </td>
                   <td className="py-2"><StatusBadge status={o.order_status} /></td>
                   <td className="py-2">{o.payment_status}</td>

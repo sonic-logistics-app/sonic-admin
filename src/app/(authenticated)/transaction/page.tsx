@@ -300,21 +300,6 @@ function TransactionsTab() {
         </span>
       ),
     },
-    {
-      field: "actions",
-      header: "Actions",
-      body: (rowData: Transaction) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRowClick(rowData);
-          }}
-          className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-        >
-          View Details
-        </button>
-      ),
-    },
   ];
 
   return (

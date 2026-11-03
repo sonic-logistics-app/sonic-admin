@@ -321,22 +321,6 @@ export default function OrderListPage() {
       sortable: true,
       body: (rowData: Order) => formatDate(rowData.created_at),
     },
-    {
-      field: "actions",
-      header: "Actions",
-      sortable: false,
-      body: (rowData: Order) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/order/${rowData.id}`);
-          }}
-          className="text-[#2563EB] hover:underline text-[13px] font-semibold"
-        >
-          View Details
-        </button>
-      ),
-    },
   ];
 
   return (
@@ -442,6 +426,7 @@ export default function OrderListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
+            onRowClick={(order) => router.push(`/order/${order.order_number || order.id}`)}
             emptyMessage="No orders found"
             className="flex-1 min-h-0"
           />
