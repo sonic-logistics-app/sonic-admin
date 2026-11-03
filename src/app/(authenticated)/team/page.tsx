@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/components/shared/Skeleton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/shared/Button";
 import CellStack from "@/components/shared/CellStack";
@@ -95,7 +96,17 @@ export default function TeamPage() {
     return <p className="text-[14px] text-[#525866] py-10 text-center">Only a Super Admin can manage the team.</p>;
   }
   if (error) return <p className="text-[14px] text-[#DC2626] py-10 text-center">{error}</p>;
-  if (!admins) return <SkeletonLoader type="table" rows={5} />;
+  if (!admins) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-[24px] font-bold text-[#111827]">Team</h1>
+          <p className="text-[13px] text-[#525866]">Who can sign in to this admin, and what their role lets them do.</p>
+        </div>
+        <TableSkeleton headers={["Admin", "Role", "Status", "Added", "Actions"]} rows={4} />
+      </div>
+    );
+  }
 
   const columns = [
     {

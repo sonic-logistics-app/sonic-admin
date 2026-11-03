@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartSkeleton } from "@/components/shared/Skeleton";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RegistrationTrend, getRegistrationTrend } from "@/lib/api/admin/ops";
@@ -36,7 +37,7 @@ export default function RegistrationTrendChart() {
   }, [days]);
 
   if (error) return <p className="text-[13px] text-[#DC2626]">Registration trend unavailable: {error}</p>;
-  if (!trend) return <div className="h-56 rounded-2xl border border-[#E1E4EA] bg-white animate-pulse" />;
+  if (!trend) return <ChartSkeleton height={180} />;
 
   const totals = trend.series.map((d) => d.users + d.drivers + d.vendors);
   const max = Math.max(1, ...totals);

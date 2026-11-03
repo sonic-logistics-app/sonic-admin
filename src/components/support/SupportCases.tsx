@@ -1,5 +1,6 @@
 "use client";
 
+import StatCards from "@/components/shared/StatCards";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/shared/Button";
 import SearchBar from "@/components/shared/SearchBar";
@@ -129,27 +130,19 @@ export default function SupportCases() {
       <Toast ref={toast} />
 
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          {STATUSES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatus(status === s ? "" : s)}
-              className={`text-left border rounded-lg p-3 ${status === s ? "border-[#2563EB] bg-[#F8FAFF]" : "border-[#E1E4EA] bg-white"}`}
-            >
-              <p className="text-[11px] uppercase tracking-wider text-[#525866]">{label(s)}</p>
-              <p className="text-[20px] font-bold text-[#111827]">{summary.by_status[s]}</p>
-            </button>
-          ))}
-          <div className="border border-[#E1E4EA] rounded-lg p-3 bg-white">
-            <p className="text-[11px] uppercase tracking-wider text-[#525866]">Avg first reply</p>
-            <p className="text-[20px] font-bold text-[#111827]">{duration(summary.avg_first_response_minutes)}</p>
-          </div>
-          <div className="border border-[#E1E4EA] rounded-lg p-3 bg-white">
-            <p className="text-[11px] uppercase tracking-wider text-[#525866]">Avg resolution</p>
-            <p className="text-[20px] font-bold text-[#111827]">{duration(summary.avg_resolution_minutes)}</p>
-          </div>
-        </div>
+        <StatCards
+          cards={[
+            ...STATUSES.map((s) => ({
+              key: s,
+              label: label(s),
+              value: summary.by_status[s],
+              active: status === s,
+              onClick: () => setStatus(status === s ? "" : s),
+            })),
+            { key: "first", label: "Avg first reply", text: duration(summary.avg_first_response_minutes) },
+            { key: "resolution", label: "Avg resolution", text: duration(summary.avg_resolution_minutes) },
+          ]}
+        />
       )}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -169,7 +162,7 @@ export default function SupportCases() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-2 border border-[#E1E4EA] rounded-lg bg-white overflow-hidden max-h-[640px] overflow-y-auto">
+        <div className="lg:col-span-2 border border-[#E1E4EA] rounded-lg bg-white overflow-hidden">
           {loading && !data ? (
             <p className="p-4 text-[13px] text-[#525866]">Loading cases...</p>
           ) : data && data.tickets.length > 0 ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import StatCards from "@/components/shared/StatCards";
 import { useCallback, useEffect, useRef, useState } from "react";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -80,21 +81,18 @@ export function PayoutsTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full min-h-0">
+    <div className="flex flex-col gap-4">
       <Toast ref={toast} />
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        {summary.map((s) => (
-          <button
-            key={s.status}
-            type="button"
-            onClick={() => setStatus(status === s.status ? "" : s.status)}
-            className={`text-left border rounded-lg p-3 ${status === s.status ? "border-[#2563EB] bg-[#F8FAFF]" : "border-[#E1E4EA] bg-white"}`}
-          >
-            <p className="text-[11px] uppercase tracking-wider text-[#525866]">{s.status} ({s.count})</p>
-            <p className="text-[16px] font-bold text-[#111827]">{naira(s.net_amount)}</p>
-          </button>
-        ))}
-      </div>
+      <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Payouts</h1>
+      <StatCards
+        cards={summary.map((s) => ({
+          key: s.status,
+          label: `${s.status} (${s.count})`,
+          text: naira(s.net_amount),
+          active: status === s.status,
+          onClick: () => setStatus(status === s.status ? "" : s.status),
+        }))}
+      />
       <div className="flex-1 min-w-[250px]">
         <SearchBar value={search} onChange={setSearch} placeholder="Search payouts by business partner name..." />
       </div>
@@ -104,8 +102,7 @@ export function PayoutsTab() {
         loading={loading}
         pagination={pagination}
         onPaginationChange={(next) => next.page !== pagination.page && load(next.page)}
-        emptyMessage="No payouts found"
-        className="flex-1 min-h-0"
+        emptyMessage="No payouts found"
       />
     </div>
   );
@@ -157,8 +154,9 @@ export function WalletsTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full min-h-0">
+    <div className="flex flex-col gap-4">
       <Toast ref={toast} />
+      <h1 className="text-[24px] font-bold text-[#111827]">Wallets</h1>
       <div className="flex flex-wrap items-center gap-3">
         <div role="tablist" aria-label="Wallet type" className="inline-flex rounded-lg border border-[#E1E4EA] bg-white p-1">
           {(["vendor", "driver"] as const).map((t) => (
@@ -180,24 +178,19 @@ export function WalletsTab() {
           <SearchBar value={search} onChange={setSearch} placeholder={`Search ${displayTerm(type).toLowerCase()} wallets by name...`} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 max-w-md">
-        <div className="border border-[#E1E4EA] rounded-lg p-3 bg-white">
-          <p className="text-[11px] uppercase tracking-wider text-[#525866]">Wallets</p>
-          <p className="text-[18px] font-bold text-[#111827]">{totals.wallets}</p>
-        </div>
-        <div className="border border-[#E1E4EA] rounded-lg p-3 bg-white">
-          <p className="text-[11px] uppercase tracking-wider text-[#525866]">Money held (owed out)</p>
-          <p className="text-[18px] font-bold text-[#111827]">{naira(totals.total_balance)}</p>
-        </div>
-      </div>
+      <StatCards
+        cards={[
+          { key: "wallets", label: "Wallets", value: totals.wallets },
+          { key: "held", label: "Money held (owed out)", text: naira(totals.total_balance) },
+        ]}
+      />
       <DataTable
         data={rows}
         columns={columns}
         loading={loading}
         pagination={pagination}
         onPaginationChange={(next) => next.page !== pagination.page && load(next.page)}
-        emptyMessage="No wallets found"
-        className="flex-1 min-h-0"
+        emptyMessage="No wallets found"
       />
     </div>
   );

@@ -8,7 +8,6 @@ import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermissions } from "@/lib/auth/permissions";
 
@@ -188,7 +187,7 @@ export default function FAQListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">FAQ Management</h1>
@@ -214,7 +213,7 @@ export default function FAQListPage() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={faqs}
@@ -223,7 +222,6 @@ export default function FAQListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             emptyMessage="No FAQs found"
-            className="flex-1 min-h-0"
           />
         )}
       </div>

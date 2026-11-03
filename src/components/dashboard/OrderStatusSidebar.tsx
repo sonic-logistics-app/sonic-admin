@@ -1,5 +1,7 @@
 "use client";
 
+import { Bar } from "@/components/shared/Skeleton";
+
 interface OrderStatus {
   status: string;
   total: number;
@@ -79,9 +81,13 @@ export default function OrderStatusSidebar({ ordersByStatus, loading, error }: O
         <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Order Status</h2>
         
         {loading ? (
-          <div className="text-center py-4">
-            <i className="pi pi-spinner pi-spin text-2xl" />
-            <p className="mt-2">Loading order status...</p>
+          <div className="flex flex-col gap-3" role="status" aria-label="Loading order status">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-3 px-4 border-l-4 border-[#E9ECF1] rounded-2xl">
+                <Bar className="h-4 w-28" />
+                <Bar className="h-4 w-8" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="text-center py-4">

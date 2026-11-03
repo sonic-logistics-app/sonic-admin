@@ -1,5 +1,7 @@
 "use client";
 
+import { Bar, KpiTileSkeleton } from "@/components/shared/Skeleton";
+
 export interface DailySignupCount {
   today: number;
   yesterday: number;
@@ -52,7 +54,19 @@ function SignupCard({ label, icon, tint, count }: { label: string; icon: string;
 }
 
 export default function DailySignups({ daily, loading }: DailySignupsProps) {
-  if (loading || !daily) return null;
+  if (loading) {
+    return (
+      <section aria-label="Signups today" role="status">
+        <Bar className="h-3 w-40 mb-3" />
+        <div className="grid grid-cols-3 gap-3 w-full">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <KpiTileSkeleton key={i} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+  if (!daily) return null;
 
   return (
     <section aria-label="Signups today">

@@ -3,13 +3,16 @@
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { acceptAdminInvite, checkAdminInvite } from "@/lib/api/admin/ops";
 
 type Invite = { email: string; first_name: string; role: keyof typeof ROLE_LABELS };
 
 function AcceptInvite() {
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
   const token = useSearchParams().get("token") || "";
   const [invite, setInvite] = useState<Invite | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -40,6 +43,12 @@ function AcceptInvite() {
     try {
       setSaving(true);
       await acceptAdminInvite(token, password);
+      // Sign them straight in; fall back to the sign-in link if that fails
+      const result = await login(invite!.email, password);
+      if (result.success) {
+        router.push("/dashboard");
+        return;
+      }
       setDone(true);
     } catch (err) {
       setError((err as Error).message);

@@ -1,5 +1,6 @@
 "use client";
 
+import { StatCardsSkeleton, TableSkeleton } from "@/components/shared/Skeleton";
 import { usePermissions } from "@/lib/auth/permissions";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -132,7 +133,8 @@ export default function RefundManagementPage() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-[24px] font-bold text-[#111827]">Refund Management</h1>
-        <SkeletonLoader type="card" rows={3} />
+        <StatCardsSkeleton count={4} />
+        <TableSkeleton headers={["Order", "User", "Amount", "Status", "Date"]} rows={6} />
       </div>
     );
   }

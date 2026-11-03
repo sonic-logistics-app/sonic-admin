@@ -1,5 +1,6 @@
 "use client";
 
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DriverService from "@/services/DriverService";
@@ -373,14 +374,7 @@ export default function DriverDetailsPage() {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Loading mover details...</p>
-        </div>
-      </div>
-    );
+    return <DetailPageSkeleton tabs={5} />;
   }
 
   if (!driver) {

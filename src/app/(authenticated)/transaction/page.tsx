@@ -1,5 +1,6 @@
 "use client";
 
+import StatCards from "@/components/shared/StatCards";
 import { displayOrderType } from "@/lib/terms";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,7 +11,6 @@ import SearchBar from "@/components/shared/SearchBar";
 import StatusBadge from "@/components/shared/StatusBadge";
 import CellStack from "@/components/shared/CellStack";
 import Toast, { ToastRef } from "@/components/shared/Toast";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { businessTypeLabel } from "@/lib/businessTypes";
 
@@ -291,72 +291,21 @@ function TransactionsTab() {
     <>
       <Toast ref={toast} />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Transaction Management</h1>
         </div>
 
-        {/* Summary Cards */}
+        {/* Totals for the current filters: figures, not filters */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Total Payments
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.total_payment_amount)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    {summary.total_successful_payments} successful transactions
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#ECFDF3] flex items-center justify-center">
-                  <i className="pi pi-credit-card text-[#059669] text-lg" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Business Partner Earnings
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.total_vendor_amount)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    {summary.total_vendor_transactions} transactions
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#DBEAFE] flex items-center justify-center">
-                  <i className="pi pi-shop text-[#2563EB] text-lg" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-medium text-[#525866] uppercase tracking-wider">
-                    Net Revenue
-                  </p>
-                  <p className="text-[20px] font-bold text-[#111827] mt-1">
-                    {formatCurrency(summary.net_payment_revenue)}
-                  </p>
-                  <p className="text-[11px] text-[#525866] mt-1">
-                    After {formatCurrency(summary.total_discount_given)} discounts
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#FEF3C7] flex items-center justify-center">
-                  <i className="pi pi-chart-line text-[#D97706] text-lg" />
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCards
+            cards={[
+              { key: "payments", label: "Total payments", text: formatCurrency(summary.total_payment_amount), hint: `${summary.total_successful_payments} successful` },
+              { key: "earnings", label: "Business Partner earnings", text: formatCurrency(summary.total_vendor_amount), hint: `${summary.total_vendor_transactions} transactions` },
+              { key: "net", label: "Net revenue", text: formatCurrency(summary.net_payment_revenue), hint: `After ${formatCurrency(summary.total_discount_given)} discounts` },
+            ]}
+          />
         )}
 
         {/* Filters */}
@@ -417,7 +366,7 @@ function TransactionsTab() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={transactions}
@@ -427,7 +376,6 @@ function TransactionsTab() {
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={handleRowClick}
             emptyMessage="No transactions found"
-            className="flex-1 min-h-0"
           />
         )}
       </div>

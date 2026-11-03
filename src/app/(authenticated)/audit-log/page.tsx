@@ -6,7 +6,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { AuditLog, getAuditLogs } from "@/lib/api/admin/ops";
 
@@ -108,7 +107,7 @@ function AuditLogPageInner() {
   return (
     <>
       <Toast ref={toast} />
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-[24px] font-bold text-[#111827]">Audit log</h1>
           <p className="text-[13px] text-[#525866]">
@@ -141,7 +140,7 @@ function AuditLogPageInner() {
         </div>
 
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={logs}
@@ -149,8 +148,7 @@ function AuditLogPageInner() {
             loading={loading}
             pagination={pagination}
             onPaginationChange={(next) => next.page !== pagination.page && load(next.page)}
-            emptyMessage="No admin actions recorded yet. Actions taken from now on appear here."
-            className="flex-1 min-h-0"
+            emptyMessage="No admin actions recorded yet. Actions taken from now on appear here."
           />
         )}
       </div>

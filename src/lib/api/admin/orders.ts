@@ -13,7 +13,6 @@ export interface PaginationParams {
   payment_status?: string;
   dispatch_status?: string;
   stuck?: string;
-  test?: string;
   vendor_id?: string;
   driver_id?: string;
   user_id?: string;
@@ -46,7 +45,6 @@ export default class OrderService {
     if (params?.payment_status) queryParams.append("payment_status", params.payment_status);
     if (params?.dispatch_status) queryParams.append("dispatch_status", params.dispatch_status);
     if (params?.stuck) queryParams.append("stuck", params.stuck);
-    if (params?.test) queryParams.append("test", params.test);
     if (params?.vendor_id) queryParams.append("vendor_id", params.vendor_id);
     if (params?.driver_id) queryParams.append("driver_id", params.driver_id);
     if (params?.user_id) queryParams.append("user_id", params.user_id);

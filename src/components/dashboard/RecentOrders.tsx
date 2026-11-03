@@ -71,7 +71,7 @@ export default function RecentOrders({ orders, loading, onRowClick }: RecentOrde
     <div className="mb-6 w-full">
       <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Recent Orders</h2>
       {loading ? (
-        <SkeletonLoader type="table" rows={5} />
+        <DataTable data={[]} columns={columns} loading pagination={{ page: 1, limit: 5, total: 5 }} />
       ) : (
         <DataTable
           data={orders.slice(0, 5)}

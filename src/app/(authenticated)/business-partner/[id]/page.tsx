@@ -1,5 +1,6 @@
 "use client";
 
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { PARTNER_SHARE_PERCENT } from "@/lib/commission";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -447,14 +448,7 @@ export default function VendorDetailsPage() {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <i className="pi pi-spinner pi-spin text-[#2563EB] text-4xl mb-4" />
-          <p className="text-[16px] text-[#525866]">Loading business partner details...</p>
-        </div>
-      </div>
-    );
+    return <DetailPageSkeleton tabs={7} />;
   }
 
   if (!vendor) {

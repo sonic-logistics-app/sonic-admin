@@ -1,5 +1,6 @@
 "use client";
 
+import { Bar } from "@/components/shared/Skeleton";
 import { useState } from "react";
 
 interface SystemHealthData {
@@ -87,7 +88,7 @@ export default function SystemHealth({ system, loading }: SystemHealthProps) {
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] text-[#525866] font-medium">{metric.label}</p>
                   <p className="text-[18px] font-bold text-[#111827]">
-                    {loading ? "..." : metric.value}
+                    {loading ? <Bar className="h-5 w-10 mt-1" /> : metric.value}
                   </p>
                 </div>
               </div>

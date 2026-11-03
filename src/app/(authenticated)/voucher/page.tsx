@@ -10,7 +10,6 @@ import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import Button from "@/components/shared/Button";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermissions } from "@/lib/auth/permissions";
 
@@ -204,7 +203,7 @@ export default function VoucherListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Voucher Management</h1>
           <Button onClick={handleCreate} disabled={!can("voucher.manage")}>
@@ -235,7 +234,7 @@ export default function VoucherListPage() {
         </div>
 
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={vouchers}
@@ -243,8 +242,7 @@ export default function VoucherListPage() {
             loading={false}
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
-            emptyMessage="No vouchers found"
-            className="flex-1 min-h-0"
+            emptyMessage="No vouchers found"
           />
         )}
       </div>

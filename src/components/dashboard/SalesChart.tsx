@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartSkeleton } from "@/components/shared/Skeleton";
 import { Chart } from "primereact/chart";
 import { useMemo } from "react";
 
@@ -214,12 +215,7 @@ export default function SalesChart({ data, loading = false }: SalesChartProps) {
     return (
       <div className="rounded-2xl border border-[#E1E4EA] bg-white p-6">
         <h2 className="text-[18px] font-semibold text-[#111827] mb-6">Sales Overview</h2>
-        <div className="flex items-center justify-center w-full relative" style={{ height: "420px" }}>
-          <div className="text-center">
-            <i className="pi pi-spinner pi-spin text-[#2563EB] text-3xl mb-2" />
-            <p className="text-[13px] text-[#525866]">Loading chart...</p>
-          </div>
-        </div>
+        <ChartSkeleton height={340} className="border-0 p-0" />
       </div>
     );
   }

@@ -14,7 +14,6 @@ import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import ExcelExportButton from "@/components/shared/ExcelExportButton";
 import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exportExcel";
@@ -358,7 +357,7 @@ export default function DriverListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Mover Management</h1>
@@ -468,7 +467,7 @@ export default function DriverListPage() {
           </select>
         </div>
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={drivers}
@@ -477,8 +476,7 @@ export default function DriverListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={handleRowClick}
-            emptyMessage="No movers found"
-            className="flex-1 min-h-0"
+            emptyMessage="No movers found"
           />
         )}
       </div>

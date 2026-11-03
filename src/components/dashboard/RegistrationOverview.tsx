@@ -1,5 +1,6 @@
 "use client";
 
+import { RegistrationOverviewSkeleton } from "@/components/shared/Skeleton";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RegistrationStats, getRegistrationStats } from "@/lib/api/admin/ops";
@@ -104,7 +105,7 @@ export default function RegistrationOverview() {
   }, []);
 
   if (error) return <p className="text-[13px] text-[#DC2626]">Registrations unavailable: {error}</p>;
-  if (!stats) return <div className="h-40 rounded-2xl border border-[#E1E4EA] bg-white animate-pulse" />;
+  if (!stats) return <RegistrationOverviewSkeleton />;
 
   const a = stats.attention;
   const attention: { label: string; value: number; href: string }[] = [

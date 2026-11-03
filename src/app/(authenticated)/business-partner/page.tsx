@@ -1,5 +1,6 @@
 "use client";
 
+import StatCards from "@/components/shared/StatCards";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import VendorService from "@/lib/api/admin/vendors";
@@ -13,7 +14,6 @@ import { usePermissions } from "@/lib/auth/permissions";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { businessTypeLabel, BUSINESS_TYPE_OPTIONS } from "@/lib/businessTypes";
 import ExcelExportButton from "@/components/shared/ExcelExportButton";
@@ -390,7 +390,7 @@ export default function VendorListPage() {
         icon={confirmDialog.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Management</h1>
@@ -415,24 +415,14 @@ export default function VendorListPage() {
 
         {/* Review queue */}
         {queue && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Pending approval", value: queue.vendors_pending_approval, href: "/business-partner?status=pending_approval", on: statusFilter === "pending_approval" && !readyFilter && !reviewFilter },
-              { label: "Ready to approve", value: queue.vendors_ready_to_approve, href: "/business-partner?status=pending_approval&ready=true", on: readyFilter === "true" },
-              { label: "Needs correction", value: queue.vendors_with_open_corrections, href: "/business-partner?review=corrections", on: reviewFilter === "corrections" },
-              { label: "Flagged", value: queue.vendors_with_open_flags, href: "/business-partner?review=flags", on: reviewFilter === "flags" },
-            ].map((card) => (
-              <button
-                key={card.label}
-                type="button"
-                onClick={() => router.push(card.on ? "/business-partner" : card.href)}
-                className={`text-left border rounded-lg px-4 py-3 ${card.on ? "border-[#2563EB] bg-[#F8FAFF]" : "border-[#E1E4EA] bg-white hover:border-[#2563EB]"}`}
-              >
-                <p className="text-[11px] uppercase tracking-wider text-[#525866]">{card.label}</p>
-                <p className={`text-[20px] font-bold ${card.value > 0 ? "text-[#111827]" : "text-[#9CA3AF]"}`}>{card.value}</p>
-              </button>
-            ))}
-          </div>
+          <StatCards
+            cards={[
+              { key: "pending", label: "Pending approval", value: queue.vendors_pending_approval, tone: "warn", active: statusFilter === "pending_approval" && !readyFilter && !reviewFilter, onClick: () => router.push(statusFilter === "pending_approval" && !readyFilter && !reviewFilter ? "/business-partner" : "/business-partner?status=pending_approval") },
+              { key: "ready", label: "Ready to approve", value: queue.vendors_ready_to_approve, tone: "good", active: readyFilter === "true", onClick: () => router.push(readyFilter === "true" ? "/business-partner" : "/business-partner?status=pending_approval&ready=true") },
+              { key: "corrections", label: "Needs correction", value: queue.vendors_with_open_corrections, tone: "warn", active: reviewFilter === "corrections", onClick: () => router.push(reviewFilter === "corrections" ? "/business-partner" : "/business-partner?review=corrections") },
+              { key: "flags", label: "Flagged", value: queue.vendors_with_open_flags, tone: "bad", active: reviewFilter === "flags", onClick: () => router.push(reviewFilter === "flags" ? "/business-partner" : "/business-partner?review=flags") },
+            ]}
+          />
         )}
 
         <RegisteredRangeChip />
@@ -481,13 +471,6 @@ export default function VendorListPage() {
             ))}
           </select>
 
-          <select value={readyFilter} onChange={(e) => setReadyFilter(e.target.value)}
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
-            <option value="">All Readiness</option>
-            <option value="true">Ready to approve</option>
-            <option value="false">Missing requirements</option>
-          </select>
-
           <select value={isAcceptingOrdersFilter} onChange={(e) => setIsAcceptingOrdersFilter(e.target.value)}
             className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
             <option value="">All Order Status</option>
@@ -505,7 +488,7 @@ export default function VendorListPage() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={vendors}
@@ -514,8 +497,7 @@ export default function VendorListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={(vendor) => router.push(`/business-partner/${vendor.short_code || vendor.id}`)}
-            emptyMessage="No business partners found"
-            className="flex-1 min-h-0"
+            emptyMessage="No business partners found"
           />
         )}
       </div>

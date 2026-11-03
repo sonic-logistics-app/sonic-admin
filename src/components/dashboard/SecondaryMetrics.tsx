@@ -1,5 +1,7 @@
 "use client";
 
+import { MetricTileSkeleton } from "@/components/shared/Skeleton";
+
 interface SecondaryMetricsData {
   totalRevenue: number;
   revenueGrowth: number;
@@ -22,6 +24,16 @@ export default function SecondaryMetrics({ metrics, loading }: SecondaryMetricsP
     }
     return `₦${value.toLocaleString()}`;
   };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full" role="status" aria-label="Loading metrics">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <MetricTileSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">

@@ -1,5 +1,6 @@
 "use client";
 
+import { DetailPageSkeleton } from "@/components/shared/Skeleton";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -90,7 +91,7 @@ export default function UserDetailsPage() {
       </div>
     );
   }
-  if (!detail) return <SkeletonLoader type="table" rows={6} />;
+  if (!detail) return <DetailPageSkeleton tabs={0} />;
 
   const { user, orders, spend, vouchers, referrals } = detail;
   const name = user.full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email || `User ${user.id}`;

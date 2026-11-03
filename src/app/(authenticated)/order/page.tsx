@@ -12,12 +12,10 @@ import CellStack from "@/components/shared/CellStack";
 import StatCards from "@/components/shared/StatCards";
 import { useListStats } from "@/hooks/useListStats";
 import Toast, { ToastRef } from "@/components/shared/Toast";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface Order {
   id: number;
-  is_test?: boolean;
   order_id: string;
   order_number: string;
   order_status: string;
@@ -119,8 +117,6 @@ export default function OrderListPage() {
   const [voucherUsedFilter, setVoucherUsedFilter] = useState<string>("");
   // Orders waiting too long for a driver (or whose dispatch failed)
   const [stuckFilter, setStuckFilter] = useState<string>("");
-  // "exclude" hides orders from internal test accounts so live numbers are clean
-  const [testFilter, setTestFilter] = useState<string>("");
   const searchParams = useSearchParams();
   const [filtersReady, setFiltersReady] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -142,17 +138,17 @@ export default function OrderListPage() {
 
   useEffect(() => {
     if (!filtersReady) return;
-    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter);
-  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter]);
+    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter]);
+  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter]);
 
   const loadOrders = async (
     page: number, search: string, status: string, orderType: string,
     paymentStatus: string, dispatchStatus: string, refundStatus: string,
-    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string, stuck: string, test: string
+    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string, stuck: string
   ) => {
     try {
       setLoading(true);
@@ -164,7 +160,6 @@ export default function OrderListPage() {
         payment_status: paymentStatus || undefined,
         dispatch_status: dispatchStatus || undefined,
         stuck: stuck || undefined,
-        test: test || undefined,
         refund_status: refundStatus || undefined,
         voucher_used: voucherUsed || undefined,
         date_from: dateFrom || undefined,
@@ -213,9 +208,6 @@ export default function OrderListPage() {
       body: (rowData: Order) => (
         <div className="flex flex-col">
           <span className="text-[13px] font-semibold text-[#111827]">
-            {rowData.is_test && (
-              <span className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-[#E0E7FF] text-[#3730A3] font-semibold align-middle">TEST</span>
-            )}
             {rowData.order_number || rowData.order_id}
           </span>
           {rowData.order_number && (
@@ -312,7 +304,7 @@ export default function OrderListPage() {
     <>
       <Toast ref={toast} />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-[24px] font-bold text-[#111827]">Order Management</h1>
@@ -394,14 +386,6 @@ export default function OrderListPage() {
             <option value="NO_REFUND">No Refund</option>
           </select>
 
-          <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)}
-            title="Test orders come from internal test accounts"
-            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
-            <option value="">Live and test orders</option>
-            <option value="exclude">Live orders only</option>
-            <option value="only">Test orders only</option>
-          </select>
-
           <button
             onClick={() => setStuckFilter(stuckFilter === "true" ? "" : "true")}
             title="Orders being prepared with no mover, where dispatch failed or the wait is over 20 minutes"
@@ -427,7 +411,7 @@ export default function OrderListPage() {
 
         {/* Data Table */}
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={10} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={orders}
@@ -436,8 +420,7 @@ export default function OrderListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={(order) => router.push(`/order/${order.order_number || order.id}`)}
-            emptyMessage="No orders found"
-            className="flex-1 min-h-0"
+            emptyMessage="No orders found"
           />
         )}
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { KpiTileSkeleton } from "@/components/shared/Skeleton";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
 
 interface DashboardStatsData {
@@ -22,7 +23,13 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ stats, loading, error }: DashboardStatsProps) {
   if (loading) {
-    return <SkeletonLoader type="stats" />;
+    return (
+      <div className="grid grid-cols-4 gap-3 w-full" role="status" aria-label="Loading totals">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <KpiTileSkeleton key={i} />
+        ))}
+      </div>
+    );
   }
 
   return (

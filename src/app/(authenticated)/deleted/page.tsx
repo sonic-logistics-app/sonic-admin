@@ -7,7 +7,6 @@ import SearchBar from "@/components/shared/SearchBar";
 import Button from "@/components/shared/Button";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
-import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePermissions } from "@/lib/auth/permissions";
 
@@ -149,7 +148,7 @@ export default function DeletedAccountsPage() {
         icon={confirm.variant === "danger" ? "pi-exclamation-triangle" : "pi-check-circle"}
       />
 
-      <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-[24px] font-bold text-[#111827]">Deleted accounts</h1>
           <p className="text-[13px] text-[#525866]">Accounts removed with a soft delete. Restore them or delete them permanently.</p>
@@ -184,7 +183,7 @@ export default function DeletedAccountsPage() {
         </div>
 
         {initialLoad && loading ? (
-          <SkeletonLoader type="table" rows={8} />
+          <DataTable data={[]} columns={columns} loading pagination={pagination} />
         ) : (
           <DataTable
             data={rows}
@@ -192,8 +191,7 @@ export default function DeletedAccountsPage() {
             loading={loading}
             pagination={pagination}
             onPaginationChange={changePage}
-            emptyMessage={`No deleted ${tab.label.toLowerCase()}`}
-            className="flex-1 min-h-0"
+            emptyMessage={`No deleted ${tab.label.toLowerCase()}`}
           />
         )}
       </div>
