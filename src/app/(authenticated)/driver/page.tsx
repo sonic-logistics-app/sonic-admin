@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import DriverService from "@/lib/api/admin/drivers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -58,6 +58,8 @@ interface Driver {
 
 export default function DriverListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [filtersReady, setFiltersReady] = useState(false);
   const toast = useRef<ToastRef>(null);
   const driverService = new DriverService();
 
@@ -92,9 +94,17 @@ export default function DriverListPage() {
   });
 
   // Fetch on page / search / filter change — all server-side
+  // Dashboard links open this list already filtered (?verified=false, ?status=AVAILABLE)
   useEffect(() => {
+    setStatusFilter(searchParams.get("status") || "");
+    setIsVerifiedFilter(searchParams.get("verified") || "");
+    setFiltersReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!filtersReady) return;
     loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
-  }, [pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {

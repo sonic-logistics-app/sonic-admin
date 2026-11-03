@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PayoutsTab, WalletsTab } from "@/components/finance/FinanceTabs";
 import TransactionService, { Transaction, TransactionSummary } from "@/lib/api/admin/transactions";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -11,7 +12,7 @@ import SkeletonLoader from "@/components/shared/SkeletonLoader";
 import { useDebounce } from "@/hooks/useDebounce";
 import { businessTypeLabel } from "@/lib/businessTypes";
 
-export default function TransactionListPage() {
+function TransactionsTab() {
   const toast = useRef<ToastRef>(null);
   const searchParams = useSearchParams();
   const transactionService = new TransactionService();
@@ -969,5 +970,32 @@ export default function TransactionListPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function TransactionPage() {
+  const [tab, setTab] = useState<"transactions" | "payouts" | "wallets">("transactions");
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div role="tablist" aria-label="Finance" className="inline-flex self-start rounded-lg border border-[#E1E4EA] bg-white p-1">
+        {([
+          ["transactions", "Transactions"],
+          ["payouts", "Vendor payouts"],
+          ["wallets", "Wallets"],
+        ] as const).map(([id, text]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors ${tab === id ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+      {tab === "transactions" ? <TransactionsTab /> : tab === "payouts" ? <PayoutsTab /> : <WalletsTab />}
+    </div>
   );
 }

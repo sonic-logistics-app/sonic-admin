@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardService from "@/services/DashboardService";
 import DashboardStats from "@/components/dashboard/DashboardStats";
+import RegistrationOverview from "@/components/dashboard/RegistrationOverview";
 import DailySignups, { DailySignupStats } from "@/components/dashboard/DailySignups";
 import SecondaryMetrics from "@/components/dashboard/SecondaryMetrics";
 import RecentOrders from "@/components/dashboard/RecentOrders";
@@ -277,6 +278,8 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full">
+      <RegistrationOverview />
+
       {/* Primary Stats */}
       <div className="mb-4">
         <DashboardStats stats={dashboardStats} loading={loading} error={error} />

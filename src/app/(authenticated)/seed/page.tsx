@@ -5,8 +5,9 @@ import SeedService, { SeedStatus } from "@/services/SeedService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import SkeletonLoader from "@/components/shared/SkeletonLoader";
+import { devToolsVisible } from "@/lib/devTools";
 
-export default function SeedPage() {
+function SeedPageContent() {
   const toast = useRef<ToastRef>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const seedService = new SeedService();
@@ -353,4 +354,17 @@ export default function SeedPage() {
       </div>
     </>
   );
+}
+
+export default function SeedPage() {
+  if (!devToolsVisible) {
+    return (
+      <div className="bg-white border border-[#E1E4EA] rounded-2xl p-12 text-center">
+        <i className="pi pi-lock text-[40px] text-[#9CA3AF] mb-4 block" />
+        <h1 className="text-[20px] font-bold text-[#111827] mb-2">Turned off in production</h1>
+        <p className="text-[13px] text-[#525866]">This developer tool is only available in development and staging.</p>
+      </div>
+    );
+  }
+  return <SeedPageContent />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CustomerService from "@/lib/api/admin/customers";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -17,6 +17,7 @@ import { downloadExcel, fetchAllPages, formatExportDate, yesNo } from "@/lib/exp
 
 interface Customer {
   id: number;
+  suspended_at?: string | null;
   public_id: string;
   short_code: string;
   first_name: string | null;
@@ -47,6 +48,8 @@ interface Customer {
 
 export default function UserListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [filtersReady, setFiltersReady] = useState(false);
   const toast = useRef<ToastRef>(null);
   const customerService = new CustomerService();
 
@@ -84,10 +87,17 @@ export default function UserListPage() {
     total: 0,
   });
 
+  // Dashboard links open this list already filtered (?verified=false)
+  useEffect(() => {
+    setIsVerifiedFilter(searchParams.get("verified") || "");
+    setFiltersReady(true);
+  }, [searchParams]);
+
   // Fetch when page, search, or filters change
   useEffect(() => {
+    if (!filtersReady) return;
     loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
-  }, [pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
+  }, [filtersReady, pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
@@ -324,6 +334,9 @@ export default function UserListPage() {
             </div>
           )}
           <span>{rowData.name}</span>
+          {rowData.suspended_at && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-semibold">Suspended</span>
+          )}
         </div>
       ),
     },
@@ -381,6 +394,15 @@ export default function UserListPage() {
             className="text-[#2563EB] hover:underline text-[13px] font-semibold"
           >
             View
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/user/${rowData.id}`);
+            }}
+            className="text-[#525866] hover:underline text-[13px] font-semibold"
+          >
+            Activity
           </button>
           {!rowData.is_verified && (
             <button

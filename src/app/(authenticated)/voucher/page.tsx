@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import VoucherService, { Voucher } from "@/lib/api/admin/vouchers";
 import VoucherFormDialog from "@/components/vouchers/VoucherFormDialog";
+import VoucherUsageDialog from "@/components/vouchers/VoucherUsageDialog";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
 import Toast, { ToastRef } from "@/components/shared/Toast";
@@ -27,6 +28,7 @@ export default function VoucherListPage() {
   const debouncedMin = useDebounce(minAmount, 600);
   const debouncedMax = useDebounce(maxAmount, 600);
   const [showDialog, setShowDialog] = useState(false);
+  const [usageVoucherId, setUsageVoucherId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
@@ -157,12 +159,24 @@ export default function VoucherListPage() {
     },
     {
       field: "used",
-      header: "Used",
+      header: "Given to",
       sortable: true,
       body: (rowData: Voucher) => (
         <span className="text-[13px] text-[#111827]">
-          {rowData.used || 0} times
+          {rowData.used || 0} users
         </span>
+      ),
+    },
+    {
+      field: "redeemed",
+      header: "Redeemed by",
+      body: (rowData: Voucher) => <span className="text-[13px] text-[#111827]">{rowData.redeemed ?? 0} users</span>,
+    },
+    {
+      field: "discount_given",
+      header: "Discount given",
+      body: (rowData: Voucher) => (
+        <span className="text-[13px] font-semibold text-[#111827]">₦{(rowData.discount_given ?? 0).toLocaleString("en-NG")}</span>
       ),
     },
     {
@@ -176,6 +190,15 @@ export default function VoucherListPage() {
       header: "Actions",
       body: (rowData: Voucher) => (
         <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setUsageVoucherId(rowData.id);
+            }}
+            className="text-[#525866] hover:underline text-[13px] font-semibold"
+          >
+            Usage
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -257,6 +280,7 @@ export default function VoucherListPage() {
         )}
       </div>
 
+      <VoucherUsageDialog voucherId={usageVoucherId} onClose={() => setUsageVoucherId(null)} />
       <VoucherFormDialog
         visible={showDialog}
         editMode={editMode}

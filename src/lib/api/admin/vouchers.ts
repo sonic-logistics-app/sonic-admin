@@ -26,6 +26,8 @@ export interface Voucher {
   code: string;
   expiry_type: string;
   used?: number;
+  redeemed?: number;
+  discount_given?: number;
   created_at: string;
   updated_at?: string;
 }

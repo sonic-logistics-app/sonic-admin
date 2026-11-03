@@ -91,6 +91,11 @@ export default function AppSubmenu({ items, root = false, onMenuItemClick }: App
                   >
                     {item.icon && <i className={`${item.icon} w-5 h-5 flex-shrink-0 text-[18px] leading-5 ${item.label === "Logout" ? "text-[#DC2626]" : ""}`} />}
                     <span className="flex-1">{item.label}</span>
+                    {item.badge && (
+                      <span className="min-w-[20px] px-1.5 py-0.5 rounded-full bg-[#DC2626] text-white text-[11px] font-semibold text-center">
+                        {item.badge}
+                      </span>
+                    )}
                     {hasSubmenu && (
                       <i className="pi pi-angle-down text-xs" />
                     )}

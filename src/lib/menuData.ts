@@ -1,4 +1,5 @@
 import { MenuModel } from "@/types/menu";
+import { devToolsVisible } from "@/lib/devTools";
 
 export const menuData: MenuModel[] = [
   {
@@ -17,8 +18,9 @@ export const menuData: MenuModel[] = [
   {
     label: "Tools",
     items: [
-      { label: "Seed Data", icon: "pi pi-fw pi-database", to: "/seed" },
-      { label: "API Docs", icon: "pi pi-fw pi-book", to: "/api-docs" },
+      { label: "Seed Data", icon: "pi pi-fw pi-database", to: "/seed", visible: devToolsVisible },
+      { label: "Audit Log", icon: "pi pi-fw pi-history", to: "/audit-log" },
+      { label: "API Docs", icon: "pi pi-fw pi-book", to: "/api-docs", visible: devToolsVisible },
     ],
   },
   {

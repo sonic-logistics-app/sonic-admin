@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import VendorService from "@/lib/api/admin/vendors";
 import DataTable from "@/components/shared/DataTable";
 import SearchBar from "@/components/shared/SearchBar";
@@ -52,10 +52,12 @@ interface Vendor {
   bank_code: string | null;
   onboarding_completed: boolean;
   VendorAddress?: { landmark_address?: string | null } | null;
+  verification?: { isComplete: boolean; completionPercentage: number; missingItems: string[] };
 }
 
 export default function VendorListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
 
@@ -69,6 +71,9 @@ export default function VendorListPage() {
   const [kycStatusFilter, setKycStatusFilter] = useState<string>("");
   const [isAcceptingOrdersFilter, setIsAcceptingOrdersFilter] = useState<string>("");
   const [isOpenFilter, setIsOpenFilter] = useState<string>("");
+  const [readyFilter, setReadyFilter] = useState<string>("");
+  // Links from the dashboard open this list already filtered (?status=...&ready=...)
+  const [filtersReady, setFiltersReady] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
     title: string;
@@ -85,14 +90,22 @@ export default function VendorListPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
   useEffect(() => {
-    loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter);
-  }, [pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter]);
+    setStatusFilter(searchParams.get("status") || "");
+    setKycStatusFilter(searchParams.get("kyc_status") || "");
+    setReadyFilter(searchParams.get("ready") || "");
+    setFiltersReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter]);
+  }, [debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter]);
 
-  const loadVendors = async (page: number, search: string, status: string, category: string, kycStatus: string, isAccepting: string, isOpen: string) => {
+  const loadVendors = async (page: number, search: string, status: string, category: string, kycStatus: string, isAccepting: string, isOpen: string, ready: string) => {
     try {
       setLoading(true);
       const result = await vendorService.getAllVendors<Vendor>({
@@ -104,6 +117,7 @@ export default function VendorListPage() {
         kyc_status: kycStatus || undefined,
         is_accepting_orders: isAccepting || undefined,
         is_open: isOpen || undefined,
+        ready: ready || undefined,
       });
       setVendors(result.data);
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
@@ -129,7 +143,7 @@ export default function VendorListPage() {
     try {
       await vendorService.deleteVendor(vendor.id);
       toast.current?.show({ severity: "success", summary: "Success", detail: `Vendor ${vendor.name} deleted successfully`, life: 3000 });
-      loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter);
+      loadVendors(pagination.page, debouncedSearch, statusFilter, categoryFilter, kycStatusFilter, isAcceptingOrdersFilter, isOpenFilter, readyFilter);
     } catch (caught) {
       const error = caught as Error;
       toast.current?.show({ severity: "error", summary: "Delete Failed", detail: error.message || "Failed to delete vendor", life: 3000 });
@@ -216,6 +230,24 @@ export default function VendorListPage() {
           {rowData.kyc_status.toUpperCase()}
         </span>
       ),
+    },
+    {
+      field: "verification",
+      header: "Approval checklist",
+      body: (rowData: Vendor) => {
+        if (rowData.status !== "pending_approval" || !rowData.verification) return <span className="text-[#9CA3AF]">—</span>;
+        const { isComplete, missingItems } = rowData.verification;
+        return isComplete ? (
+          <span className="text-[11px] px-2 py-1 rounded-full bg-[#D1FAE5] text-[#065F46] font-semibold">Ready to approve</span>
+        ) : (
+          <span
+            title={missingItems.join(", ")}
+            className="text-[11px] px-2 py-1 rounded-full bg-[#FEF3C7] text-[#92400E] font-semibold cursor-help"
+          >
+            Missing {missingItems.length}
+          </span>
+        );
+      },
     },
     {
       field: "commission_rate",
@@ -363,6 +395,13 @@ export default function VendorListPage() {
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
             <option value="failed">Failed</option>
+          </select>
+
+          <select value={readyFilter} onChange={(e) => setReadyFilter(e.target.value)}
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
+            <option value="">All Readiness</option>
+            <option value="true">Ready to approve</option>
+            <option value="false">Missing requirements</option>
           </select>
 
           <select value={isAcceptingOrdersFilter} onChange={(e) => setIsAcceptingOrdersFilter(e.target.value)}

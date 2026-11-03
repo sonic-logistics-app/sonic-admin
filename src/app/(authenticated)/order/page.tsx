@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import OrderService from "@/lib/api/admin/orders";
 import DataTable from "@/components/shared/DataTable";
@@ -12,6 +13,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface Order {
   id: number;
+  is_test?: boolean;
   order_id: string;
   order_number: string;
   order_status: string;
@@ -110,6 +112,12 @@ export default function OrderListPage() {
   const [dispatchStatusFilter, setDispatchStatusFilter] = useState<string>("");
   const [refundStatusFilter, setRefundStatusFilter] = useState<string>("");
   const [voucherUsedFilter, setVoucherUsedFilter] = useState<string>("");
+  // Orders waiting too long for a driver (or whose dispatch failed)
+  const [stuckFilter, setStuckFilter] = useState<string>("");
+  // "exclude" hides orders from internal test accounts so live numbers are clean
+  const [testFilter, setTestFilter] = useState<string>("");
+  const searchParams = useSearchParams();
+  const [filtersReady, setFiltersReady] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [minPriceFilter, setMinPriceFilter] = useState<string>("");
@@ -119,18 +127,27 @@ export default function OrderListPage() {
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
 
+  // Dashboard links open this list already filtered (?stuck=true, ?refund=refund_pending)
   useEffect(() => {
-    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice);
-  }, [pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+    setStuckFilter(searchParams.get("stuck") || "");
+    setRefundStatusFilter(searchParams.get("refund") || "");
+    setSearchQuery(searchParams.get("search") || "");
+    setFiltersReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    loadOrders(pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice]);
+  }, [debouncedSearch, statusFilter, orderTypeFilter, paymentStatusFilter, dispatchStatusFilter, refundStatusFilter, voucherUsedFilter, dateFrom, dateTo, debouncedMinPrice, debouncedMaxPrice, stuckFilter, testFilter]);
 
   const loadOrders = async (
     page: number, search: string, status: string, orderType: string,
     paymentStatus: string, dispatchStatus: string, refundStatus: string,
-    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string
+    voucherUsed: string, dateFrom: string, dateTo: string, minPrice: string, maxPrice: string, stuck: string, test: string
   ) => {
     try {
       setLoading(true);
@@ -141,6 +158,8 @@ export default function OrderListPage() {
         order_type: orderType || undefined,
         payment_status: paymentStatus || undefined,
         dispatch_status: dispatchStatus || undefined,
+        stuck: stuck || undefined,
+        test: test || undefined,
         refund_status: refundStatus || undefined,
         voucher_used: voucherUsed || undefined,
         date_from: dateFrom || undefined,
@@ -188,6 +207,9 @@ export default function OrderListPage() {
       body: (rowData: Order) => (
         <div className="flex flex-col">
           <span className="text-[13px] font-semibold text-[#111827]">
+            {rowData.is_test && (
+              <span className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-[#E0E7FF] text-[#3730A3] font-semibold align-middle">TEST</span>
+            )}
             {rowData.order_number || rowData.order_id}
           </span>
           {rowData.order_number && (
@@ -378,6 +400,25 @@ export default function OrderListPage() {
             <option value="refunded">Refunded</option>
             <option value="NO_REFUND">No Refund</option>
           </select>
+
+          <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)}
+            title="Test orders come from internal test accounts"
+            className="px-4 py-2 border border-[#E1E4EA] rounded-lg text-[13px] font-medium text-[#525866] focus:outline-none focus:border-[#2563EB] bg-white">
+            <option value="">Live and test orders</option>
+            <option value="exclude">Live orders only</option>
+            <option value="only">Test orders only</option>
+          </select>
+
+          <button
+            onClick={() => setStuckFilter(stuckFilter === "true" ? "" : "true")}
+            title="Orders being prepared with no driver, where dispatch failed or the wait is over 20 minutes"
+            className={`px-4 py-2 border rounded-lg text-[13px] font-medium transition-colors flex items-center gap-2 ${
+              stuckFilter === "true" ? "border-[#D97706] bg-[#FFFBEB] text-[#92400E]" : "border-[#E1E4EA] bg-white text-[#525866] hover:bg-gray-50"
+            }`}
+          >
+            <i className="pi pi-exclamation-triangle text-sm" />
+            Stuck without driver
+          </button>
 
           <button
             onClick={() => setShowFiltersModal(true)}

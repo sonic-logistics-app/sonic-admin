@@ -8,6 +8,10 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { businessTypeLabel } from "@/lib/businessTypes";
+import VendorReviewPanel from "@/components/vendors/VendorReviewPanel";
+import MaskedValue from "@/components/shared/MaskedValue";
+import VendorCataloguePanel from "@/components/vendors/VendorCataloguePanel";
+import VendorFinancePanel from "@/components/vendors/VendorFinancePanel";
 
 interface KYCDocuments {
   business_registration?: string;
@@ -73,6 +77,8 @@ interface VendorDetails {
     missingItems: string[];
     missingProfileFields?: string[];
   };
+  open_flags?: number;
+  open_corrections?: number;
   orders_count?: number;
   last_order_date?: string;
   VendorAddress?: {
@@ -128,6 +134,15 @@ export default function VendorDetailsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Reload without the full-page spinner (used after review actions so the open tab stays put)
+  const refreshVendor = async () => {
+    try {
+      setVendor(await vendorService.getVendorById(params.id as string));
+    } catch {
+      /* keep the data already on screen */
     }
   };
 
@@ -356,7 +371,10 @@ export default function VendorDetailsPage() {
   const isKycComplete = !!reqs?.identityVerified && reqs.cacVerified !== false && reqs.documentsUploaded !== false;
   const isLocationPhotosComplete = !!reqs?.locationPhotosUploaded;
   const isBankingComplete = !!reqs?.bankAccountAdded;
+  const openFlags = vendor?.open_flags ?? 0;
+  const openCorrections = vendor?.open_corrections ?? 0;
   const allTabsComplete = !!verification?.isComplete;
+  const canApprove = allTabsComplete && openFlags === 0;
   // Same rule the API applies before it accepts a KYC "verified" review
   const hasIdentityData =
     (vendor?.verification_type === "bvn" && !!vendor.bvn) ||
@@ -403,6 +421,13 @@ export default function VendorDetailsPage() {
       label: "Banking Details", 
       icon: "pi-credit-card",
       status: isBankingComplete ? "completed" : "pending"
+    },
+    { id: "catalogue", label: "Catalogue", icon: "pi-box" },
+    {
+      id: "review",
+      label: "Review",
+      icon: "pi-flag",
+      status: openFlags > 0 ? "rejected" : openCorrections > 0 ? "pending" : undefined,
     },
     { id: "activity", label: "Activity", icon: "pi-clock" },
   ];
@@ -698,6 +723,15 @@ export default function VendorDetailsPage() {
 
                 {/* Enhanced Status Management Actions */}
                 <div className="flex flex-col items-center gap-4 pt-6 border-t border-[#E1E4EA]">
+                  {vendor.status === "pending_approval" && openFlags > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center max-w-2xl text-[13px] text-red-800">
+                      This vendor has {openFlags} unresolved suspicion flag{openFlags > 1 ? "s" : ""}. Approval is blocked until{" "}
+                      <button type="button" onClick={() => setActiveTab("review")} className="underline font-semibold">
+                        the flag is resolved
+                      </button>
+                      .
+                    </div>
+                  )}
                   {vendor.status === "pending_approval" && !allTabsComplete && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center max-w-2xl">
                       <p className="text-[13px] text-orange-800 flex items-center justify-center gap-2">
@@ -727,8 +761,8 @@ export default function VendorDetailsPage() {
                         <Button
                           variant="success"
                           onClick={handleApprove}
-                          disabled={!allTabsComplete}
-                          className={!allTabsComplete ? "opacity-50 cursor-not-allowed" : ""}
+                          disabled={!canApprove}
+                          className={!canApprove ? "opacity-50 cursor-not-allowed" : ""}
                         >
                           <i className="pi pi-check mr-2" />
                           Approve Vendor
@@ -880,7 +914,7 @@ export default function VendorDetailsPage() {
                             Bank Verification Number (BVN)
                           </label>
                           <p className="text-[13px] text-[#111827] font-mono">
-                            {vendor.bvn}
+                            <MaskedValue value={vendor.bvn} />
                           </p>
                         </div>
                       )}
@@ -890,7 +924,7 @@ export default function VendorDetailsPage() {
                             National Identification Number (NIN)
                           </label>
                           <p className="text-[13px] text-[#111827] font-mono">
-                            {vendor.nin}
+                            <MaskedValue value={vendor.nin} />
                           </p>
                         </div>
                       )}
@@ -1322,7 +1356,7 @@ export default function VendorDetailsPage() {
                         Account Number
                       </label>
                       <p className="text-[16px] text-[#111827] font-mono font-semibold">
-                        {vendor.account_number || <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
+                        {vendor.account_number ? <MaskedValue value={vendor.account_number} visibleEnd={4} /> : <span className="text-[#DC2626] text-[13px] font-medium">Missing (required)</span>}
                       </p>
                     </div>
                     <div className="bg-[#F9FAFB] rounded-lg p-4">
@@ -1343,8 +1377,13 @@ export default function VendorDetailsPage() {
                     </div>
                   </div>
                 </div>
+                <VendorFinancePanel vendorId={vendor.id} />
               </div>
             )}
+
+            {activeTab === "catalogue" && <VendorCataloguePanel vendorId={vendor.id} />}
+
+            {activeTab === "review" && <VendorReviewPanel vendorId={vendor.id} onChanged={refreshVendor} />}
 
             {activeTab === "activity" && (
               <div className="space-y-6">

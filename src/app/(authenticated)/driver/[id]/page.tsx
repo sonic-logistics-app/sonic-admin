@@ -9,6 +9,7 @@ import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DocumentViewer from "@/components/driver/DocumentViewer";
 import VehicleViewer from "@/components/driver/VehicleViewer";
+import DriverPerformancePanel from "@/components/driver/DriverPerformancePanel";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -511,6 +512,34 @@ export default function DriverDetailsPage() {
           <div className="p-6">
             {activeTab === "overview" && (
               <div className="space-y-6">
+                {/* Dispatch readiness: what is still missing before this driver can take deliveries */}
+                <div className="border border-[#E1E4EA] rounded-lg p-4">
+                  <h3 className="text-[15px] font-semibold text-[#111827] mb-3">Readiness for dispatch</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      ["Personal info", driver.verificationStatus.personal_info],
+                      ["Documents", driver.verificationStatus.document],
+                      ["Vehicle", driver.verificationStatus.vehicle],
+                      ["ID confirmation", driver.verificationStatus.id_confirmation],
+                      ["Bank account", driver.verificationStatus.bank_account],
+                    ] as const).map(([name, state]) => (
+                      <span
+                        key={name}
+                        className={`text-[12px] px-3 py-1 rounded-full font-semibold ${
+                          state === "VERIFIED" ? "bg-[#D1FAE5] text-[#065F46]" : state === "REJECTED" ? "bg-[#FEE2E2] text-[#991B1B]" : "bg-[#FEF3C7] text-[#92400E]"
+                        }`}
+                      >
+                        {name}: {state === "VERIFIED" ? "done" : state === "REJECTED" ? "rejected" : "missing or pending"}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-[12px] text-[#525866] mt-2">
+                    {Object.values(driver.verificationStatus).every((v) => v === "VERIFIED")
+                      ? "Every section is verified. Online availability is separate and is set by the driver."
+                      : "Dispatch needs every section verified. Online or offline is separate from verification."}
+                  </p>
+                </div>
+
                 {/* Personal Information */}
                 <div>
                   <h3 className="text-[15px] font-semibold text-[#111827] mb-4">Personal Information</h3>
@@ -1297,6 +1326,7 @@ export default function DriverDetailsPage() {
 
             {activeTab === "activity" && (
               <div className="space-y-6">
+                <DriverPerformancePanel driverId={driver.id} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="border border-[#E1E4EA] rounded-lg p-4">
                     <h4 className="text-[13px] font-semibold text-[#111827] mb-2">Joined Date</h4>
