@@ -13,6 +13,8 @@ export function middleware(request: NextRequest) {
   const publicRoutes = [
     "/login",
     "/accept-invite",
+    "/forgot-password",
+    "/reset-password",
     "/api/admin/login", 
     "/api/admin/refresh",
     "/api/admin/status",

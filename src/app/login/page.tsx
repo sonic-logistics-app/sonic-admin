@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 
@@ -237,11 +238,12 @@ export default function LoginPage() {
                 Remember me
               </label>
             </div>
-            <a
+            <Link
+              href="/forgot-password"
               className="font-medium no-underline text-[#2563EB] text-right cursor-pointer text-[13px] hover:underline"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           <button

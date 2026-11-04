@@ -309,7 +309,7 @@ export const getRegistrationTrend = (days = 30) => request<RegistrationTrend>(`/
 export const getVendorLocalities = () => request<{ localities: { name: string; vendors: number }[] }>("/vendor/localities");
 
 export const getNextPendingVendor = (exclude?: string) =>
-  request<{ next: { id: string; short_code: string; name: string } | null; remaining: number }>(
+  request<{ next: { id: string; short_code: string; name: string } | null; next_is_ready: boolean; remaining: number; ready_remaining: number }>(
     `/vendor/next-pending${exclude ? `?exclude=${encodeURIComponent(exclude)}` : ""}`,
   );
 
@@ -353,6 +353,11 @@ const publicPost = async <T>(path: string, body: object): Promise<T> => {
 
 export const checkAdminInvite = (token: string) => publicPost<{ email: string; first_name: string; role: TeamAdmin["role"] }>("/invite/check", { token });
 export const acceptAdminInvite = (token: string, password: string) => publicPost<{ email: string }>("/accept-invite", { token, password });
+
+// forgot password
+export const requestPasswordReset = (email: string) => publicPost<Record<string, never>>("/forgot-password", { email });
+export const checkPasswordReset = (token: string) => publicPost<{ email: string; first_name: string }>("/reset-password/check", { token });
+export const resetPassword = (token: string, password: string) => publicPost<{ email: string }>("/reset-password", { token, password });
 
 // ---------------------------------------------------------------- vendor categories
 

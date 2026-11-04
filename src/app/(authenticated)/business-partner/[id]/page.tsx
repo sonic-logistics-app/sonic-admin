@@ -98,7 +98,7 @@ export default function VendorDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const { can } = usePermissions();
-  const [nextPending, setNextPending] = useState<{ code: string; name: string; remaining: number } | null>(null);
+  const [nextPending, setNextPending] = useState<{ code: string; name: string; remaining: number; ready: boolean; readyRemaining: number } | null>(null);
   const toast = useRef<ToastRef>(null);
   const vendorService = new VendorService();
 
@@ -127,11 +127,11 @@ export default function VendorDetailsPage() {
     }
   }, [params.id]);
 
-  // The longest-waiting pending vendor other than this one, so a reviewer can keep working the queue
+  // Next in the queue: ready-to-approve partners first (oldest first), then the other pending ones (oldest first)
   useEffect(() => {
     if (!params.id) return;
     getNextPendingVendor(String(params.id))
-      .then(({ data }) => setNextPending(data.next ? { code: data.next.short_code || data.next.id, name: data.next.name, remaining: data.remaining } : null))
+      .then(({ data }) => setNextPending(data.next ? { code: data.next.short_code || data.next.id, name: data.next.name, remaining: data.remaining, ready: data.next_is_ready, readyRemaining: data.ready_remaining } : null))
       .catch(() => setNextPending(null));
   }, [params.id, vendor?.status]);
 
@@ -506,7 +506,7 @@ export default function VendorDetailsPage() {
             <StatusBadge status={vendor.status} />
             {nextPending && (
               <Button variant="outline" onClick={() => router.push(`/business-partner/${nextPending.code}`)}>
-                Next pending ({nextPending.remaining})
+                {nextPending.ready ? `Next ready to approve (${nextPending.readyRemaining})` : `Next pending (${nextPending.remaining})`}
                 <i className="pi pi-arrow-right ml-2" />
               </Button>
             )}
