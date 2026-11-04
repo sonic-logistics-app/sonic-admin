@@ -7,6 +7,9 @@ import AuthService from '@/services/AuthService';
 
 const authService = new AuthService();
 
+// Pages that work without being signed in
+const PUBLIC_PATHS = ['/login', '/accept-invite', '/forgot-password', '/reset-password'];
+
 /**
  * Component that validates token on mount and periodically
  * Prevents the app from getting stuck with expired tokens
@@ -14,6 +17,7 @@ const authService = new AuthService();
 export default function TokenValidator({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isPublic = PUBLIC_PATHS.includes(pathname);
   const [isValidating, setIsValidating] = useState(false);
   const [isValid, setIsValid] = useState(false);
   // false while rendering on the server, true once running in the browser
@@ -25,8 +29,8 @@ export default function TokenValidator({ children }: { children: React.ReactNode
 
   useEffect(() => {
     const validateToken = async () => {
-      // Skip validation on login page
-      if (pathname === '/login') {
+      // Skip validation on pages that need no session
+      if (isPublic) {
         setIsValid(true);
         setIsValidating(false);
         return;
@@ -67,7 +71,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
 
     // Set up periodic token validation (every 5 minutes)
     const interval = setInterval(() => {
-      if (pathname !== '/login') {
+      if (!isPublic) {
         refreshTokenIfNeeded().catch(() => {
           authService.clearLocalStorage();
           router.push('/login');
@@ -76,7 +80,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [router, pathname]);
+  }, [router, pathname, isPublic]);
 
   // Don't render anything until mounted to avoid hydration mismatch
   if (!mounted) {
@@ -84,7 +88,7 @@ export default function TokenValidator({ children }: { children: React.ReactNode
   }
 
   // Show loading while validating (but not on login page)
-  if (isValidating && pathname !== '/login') {
+  if (isValidating && !isPublic) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -95,6 +99,6 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     );
   }
 
-  // Only render children if token is valid or on login page
-  return (isValid || pathname === '/login') ? <>{children}</> : null;
+  // Only render children if token is valid or the page is public
+  return (isValid || isPublic) ? <>{children}</> : null;
 }
