@@ -83,6 +83,8 @@ export default function UserListPage() {
     onConfirm: () => {},
     variant: "primary",
   });
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [bulkVerifying, setBulkVerifying] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -128,6 +130,7 @@ export default function UserListPage() {
 
       setCustomers(formattedCustomers);
       resetData(formattedCustomers);
+      setSelectedIds(new Set());
       setPagination((prev) => ({ ...prev, total: result.meta.total }));
       reloadUserCounts();
     } catch (error) {
@@ -167,6 +170,38 @@ export default function UserListPage() {
         });
       }
     );
+  };
+
+  const handleBulkVerify = async () => {
+    const ids = Array.from(selectedIds).map(Number);
+    try {
+      setBulkVerifying(true);
+      const result = await customerService.verifyCustomers(ids);
+      const { verified, failed } = result.data;
+      toast.current?.show({
+        severity: failed > 0 ? "warn" : "success",
+        summary: failed > 0 ? "Partly verified" : "Success",
+        detail: failed > 0 ? `${verified} verified, ${failed} failed` : `${verified} user${verified === 1 ? "" : "s"} verified`,
+        life: 4000,
+      });
+      setSelectedIds(new Set());
+      await loadCustomers(pagination.page, debouncedSearchQuery, isVerifiedFilter, providerFilter, otpVerifiedFilter);
+    } catch (error) {
+      toast.current?.show({ severity: "error", summary: "Error", detail: (error as Error).message || "Failed to verify users", life: 4000 });
+    } finally {
+      setBulkVerifying(false);
+    }
+  };
+
+  const confirmBulkVerify = () => {
+    const count = selectedIds.size;
+    setConfirmDialog({
+      visible: true,
+      title: "Confirm Verification",
+      message: `Verify ${count} selected user${count === 1 ? "" : "s"}?`,
+      onConfirm: handleBulkVerify,
+      variant: "success",
+    });
   };
 
   const confirmVerify = (customer: Customer) => {
@@ -229,6 +264,8 @@ export default function UserListPage() {
   const handleRowClick = (customer: Customer) => {
     router.push(`/user/${customer.short_code || customer.id}`);
   };
+
+  const canBulkVerify = can("account.verify") && optimisticCustomers.some((c) => !c.is_verified);
 
   const columns = [
     {
@@ -440,6 +477,21 @@ export default function UserListPage() {
           </select>
         </div>
 
+        {/* Checkboxes only show when this page has someone left to verify */}
+        {canBulkVerify && selectedIds.size > 0 && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-[#BFDBFE] bg-[#F8FAFF]">
+            <span className="text-[13px] font-medium text-[#111827]">{selectedIds.size} selected</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 text-[13px] text-[#525866] hover:text-[#111827]">
+                Clear
+              </button>
+              <Button variant="success" size="sm" onClick={confirmBulkVerify} loading={bulkVerifying}>
+                Verify selected
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Data Table */}
         {initialLoad && loading ? (
           <DataTable data={[]} columns={columns} loading pagination={pagination} />
@@ -454,6 +506,16 @@ export default function UserListPage() {
               setPagination(newPagination);
             }}
             onRowClick={handleRowClick}
+            selection={
+              canBulkVerify
+                ? {
+                    selectedKeys: selectedIds,
+                    onChange: setSelectedIds,
+                    getKey: (row) => row.id,
+                    isSelectable: (row) => !row.is_verified,
+                  }
+                : undefined
+            }
             emptyMessage="No users found"
           />
           </>
