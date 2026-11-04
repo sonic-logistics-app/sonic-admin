@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import AdminAuth from "@/lib/auth/admin-auth";
@@ -9,6 +9,7 @@ import { usePermissions, AdminPermission } from "@/lib/auth/permissions";
 import AppSubmenu from "./AppSubmenu";
 import { MenuModel, MenuItem } from "@/types/menu";
 import { getRegistrationStats, getTickets } from "@/lib/api/admin/ops";
+import { MENU_BADGES_EVENT } from "@/lib/menuBadges";
 
 interface AppMenuProps {
   model: MenuModel[];
@@ -18,6 +19,7 @@ interface AppMenuProps {
 export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
   const router = useRouter();
   const { can } = usePermissions();
+  const pathname = usePathname();
 
   // Counts shown as badges: vendors waiting for approval and open support cases.
   // A failed request just leaves the badge off.
@@ -36,13 +38,22 @@ export default function AppMenu({ model, onMenuItemClick }: AppMenuProps) {
       } catch {}
       if (!cancelled) setBadges(next);
     };
+    // Runs on mount and on every page change, so the count is right when you come back to a list
     load();
-    const timer = setInterval(load, 5 * 60 * 1000);
+    // Also when something changed a count, when the tab comes back into view, and once a minute
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener(MENU_BADGES_EVENT, load);
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(load, 60 * 1000);
     return () => {
       cancelled = true;
+      window.removeEventListener(MENU_BADGES_EVENT, load);
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
     };
-  }, []);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {

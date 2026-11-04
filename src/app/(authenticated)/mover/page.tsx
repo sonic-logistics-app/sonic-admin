@@ -58,6 +58,7 @@ interface Driver {
   no_show_count: number;
   verificationStatus: VerificationStatus;
   verificationProgress: string;
+  suspended_at?: string | null;
 }
 
 export default function DriverListPage() {
@@ -79,6 +80,7 @@ export default function DriverListPage() {
   const [kycStatusFilter, setKycStatusFilter] = useState<string>("");
   const [isVerifiedFilter, setIsVerifiedFilter] = useState<string>("");
   const [isRejectedFilter, setIsRejectedFilter] = useState<string>("");
+  const [suspendedFilter, setSuspendedFilter] = useState<string>("");
   const { counts: moverCounts, reload: reloadMoverCounts } = useListStats("drivers");
   const [providerFilter, setProviderFilter] = useState<string>("");
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -111,7 +113,7 @@ export default function DriverListPage() {
   useEffect(() => {
     if (!filtersReady) return;
     loadDrivers(pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter);
-  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, providerFilter, createdFrom, createdTo]);
+  }, [filtersReady, pagination.page, debouncedSearch, statusFilter, kycStatusFilter, isVerifiedFilter, isRejectedFilter, suspendedFilter, providerFilter, createdFrom, createdTo]);
 
   // Reset to page 1 when search or filters change
   useEffect(() => {
@@ -129,6 +131,7 @@ export default function DriverListPage() {
         kyc_status: kycStatus || undefined,
         is_verified: isVerified || undefined,
         is_rejected: isRejected || undefined,
+        suspended: suspendedFilter || undefined,
         provider: provider || undefined,
         created_from: createdFrom || undefined,
         created_to: createdTo || undefined,
@@ -262,6 +265,7 @@ export default function DriverListPage() {
       body: (rowData: Driver) => (
         <div className="flex flex-col items-start gap-1">
           <StatusBadge status={rowData.status} />
+          {rowData.suspended_at && <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold">Suspended</span>}
           <span className="text-[11px] text-[#525866]">KYC: {rowData.kyc_status.replace(/_/g, " ")}</span>
         </div>
       ),
@@ -316,6 +320,7 @@ export default function DriverListPage() {
           kyc_status: kycStatusFilter || undefined,
           is_verified: isVerifiedFilter || undefined,
           is_rejected: isRejectedFilter || undefined,
+          suspended: suspendedFilter || undefined,
           provider: providerFilter || undefined,
           created_from: createdFrom || undefined,
           created_to: createdTo || undefined,
@@ -376,21 +381,24 @@ export default function DriverListPage() {
 
         <StatCards
           cards={(() => {
-            const none = !statusFilter && !isVerifiedFilter && !isRejectedFilter;
-            const set = (verified: string, rejected: string, status = "") => () => {
+            const none = !statusFilter && !isVerifiedFilter && !isRejectedFilter && !suspendedFilter;
+            const set = (verified: string, rejected: string, status = "", suspended = "") => () => {
               setIsVerifiedFilter(verified);
               setIsRejectedFilter(rejected);
               setStatusFilter(status);
+              setSuspendedFilter(suspended);
             };
-            const verifiedOnly = isVerifiedFilter === "true" && !isRejectedFilter && !statusFilter;
-            const pending = isVerifiedFilter === "false" && isRejectedFilter === "false" && !statusFilter;
-            const rejected = isRejectedFilter === "true" && !statusFilter;
-            const available = statusFilter === "AVAILABLE" && isVerifiedFilter === "true";
+            const verifiedOnly = isVerifiedFilter === "true" && !isRejectedFilter && !statusFilter && !suspendedFilter;
+            const pending = isVerifiedFilter === "false" && isRejectedFilter === "false" && !statusFilter && !suspendedFilter;
+            const rejected = isRejectedFilter === "true" && !statusFilter && !suspendedFilter;
+            const suspended = suspendedFilter === "true";
+            const available = statusFilter === "AVAILABLE" && isVerifiedFilter === "true" && !suspendedFilter;
             return [
               { key: "all", label: "All movers", value: moverCounts?.total, active: none, onClick: set("", "") },
               { key: "verified", label: "Verified", value: moverCounts?.verified, tone: "good" as const, active: verifiedOnly, onClick: verifiedOnly ? set("", "") : set("true", "") },
               { key: "pending", label: "Awaiting verification", value: moverCounts?.pending, tone: "warn" as const, active: pending, onClick: pending ? set("", "") : set("false", "false") },
               { key: "rejected", label: "Rejected", value: moverCounts?.rejected, tone: "bad" as const, active: rejected, onClick: rejected ? set("", "") : set("", "true") },
+              { key: "suspended", label: "Suspended", value: moverCounts?.suspended, tone: "bad" as const, active: suspended, onClick: suspended ? set("", "") : set("", "", "", "true") },
               { key: "available", label: "Available now", value: moverCounts?.available, tone: "good" as const, active: available, onClick: available ? set("", "") : set("true", "", "AVAILABLE") },
             ];
           })()}
@@ -476,7 +484,7 @@ export default function DriverListPage() {
             pagination={pagination}
             onPaginationChange={(newPagination) => setPagination(newPagination)}
             onRowClick={handleRowClick}
-            emptyMessage="No movers found"
+            emptyMessage="No movers found"
           />
         )}
       </div>

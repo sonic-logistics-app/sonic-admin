@@ -113,7 +113,7 @@ export default function VehicleViewer({
           </div>
         )}
 
-        {status === "PENDING" && (
+        {status !== "VERIFIED" && (
           <div className="flex gap-2 pt-3 mt-3 border-t border-[#E1E4EA]">
             <Button
               variant="success"
@@ -124,15 +124,17 @@ export default function VehicleViewer({
               <i className="pi pi-check mr-1" />
               Verify Vehicle
             </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={onReject}
-              className="flex-1"
-            >
-              <i className="pi pi-times mr-1" />
-              Reject Vehicle
-            </Button>
+            {status === "PENDING" && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={onReject}
+                className="flex-1"
+              >
+                <i className="pi pi-times mr-1" />
+                Reject Vehicle
+              </Button>
+            )}
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { refreshMenuBadges } from "@/lib/menuBadges";
 import AuthService from "../../../services/AuthService";
 
 /**
@@ -26,6 +27,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<Envelop
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body?.message || `Request failed (${res.status})`);
+  if (init.method && init.method !== "GET") refreshMenuBadges();
   return { data: body.data as T, meta: body.meta };
 }
 
@@ -235,6 +237,8 @@ export interface UserDetail {
 export const getUserDetail = (id: string | number) => request<UserDetail>(`/user/${id}`);
 export const suspendUser = (id: string | number, reason: string) => put(`/user/${id}/suspend`, { reason });
 export const unsuspendUser = (id: string | number) => put(`/user/${id}/unsuspend`, {});
+export const suspendDriver = (id: string | number, reason: string, force = false) => put(`/driver/${id}/suspend`, { reason, force });
+export const unsuspendDriver = (id: string | number) => put(`/driver/${id}/unsuspend`, {});
 
 export interface DriverPerformance {
   deliveries: {
