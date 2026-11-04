@@ -12,6 +12,7 @@ import DocumentViewer from "@/components/driver/DocumentViewer";
 import VehicleViewer from "@/components/driver/VehicleViewer";
 import DriverPerformancePanel from "@/components/driver/DriverPerformancePanel";
 import { usePermissions } from "@/lib/auth/permissions";
+import { suspendDriver, unsuspendDriver } from "@/lib/api/admin/ops";
 
 interface VerificationStatus {
   personal_info: "PENDING" | "VERIFIED" | "REJECTED";
@@ -124,7 +125,30 @@ interface DriverDetails {
   driver_vehicle: DriverVehicle[];
   driver_id_confirmation: DriverIdConfirmation[];
   bank_account: BankAccount[];
+  suspended_at?: string | null;
+  suspended_reason?: string | null;
+  /** Open rejection reasons and suspension, newest first: what the mover sees in the app */
+  review_events?: { id: string; section: string; kind: string; reason: string; admin_email: string | null; created_at: string }[];
 }
+
+const needsForceMessage = (message: string) => /in progress/i.test(message);
+
+const SECTION_LABELS: Record<string, string> = {
+  personal_info: "Personal info",
+  document: "Documents",
+  vehicle: "Vehicle",
+  id_confirmation: "ID confirmation",
+  bank_account: "Bank account",
+};
+
+/** The KYC check result, coloured so a failure is not hidden among grey pills */
+const kycPillClass = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === "completed") return "bg-[#D1FAE5] text-[#065F46]";
+  if (s === "failed") return "bg-[#FEE2E2] text-[#991B1B]";
+  if (s === "pending" || s === "abandoned") return "bg-[#FEF3C7] text-[#92400E]";
+  return "bg-[#F3F4F6] text-[#525866]";
+};
 
 export default function DriverDetailsPage() {
   const { can } = usePermissions();
@@ -136,6 +160,11 @@ export default function DriverDetailsPage() {
   const [driver, setDriver] = useState<DriverDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  // Rejecting and suspending both need a reason the mover will read
+  const [reasonFor, setReasonFor] = useState<{ kind: "reject"; component: keyof VerificationStatus } | { kind: "suspend" } | null>(null);
+  const [reasonText, setReasonText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [needsForce, setNeedsForce] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     visible: boolean;
     title: string;
@@ -212,36 +241,55 @@ export default function DriverDetailsPage() {
     }
   };
 
-  const handleRejectComponent = async (component: keyof VerificationStatus) => {
+  const handleRejectComponent = (component: keyof VerificationStatus) => {
     if (!driver) return;
     if (!can("account.verify")) {
       toast.current?.show({ severity: "error", summary: "Not allowed", detail: "Your role does not allow this action.", life: 4000 });
       return;
     }
-    
+    setReasonText("");
+    setNeedsForce(false);
+    setReasonFor({ kind: "reject", component });
+  };
+
+  const submitReason = async (force = false) => {
+    if (!driver || !reasonFor) return;
+    const reason = reasonText.trim();
+    if (reason.length < 3) return;
     try {
-      const rejectionData = {
-        [component]: false,
-      };
-      
-      await driverService.rejectDriver(driver.id, rejectionData);
-      
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: `${component.replace('_', ' ')} rejected successfully`,
-        life: 3000,
-      });
-      
+      setBusy(true);
+      if (reasonFor.kind === "reject") {
+        await driverService.rejectDriver(driver.id, { [reasonFor.component]: true, reason });
+        toast.current?.show({ severity: "success", summary: "Rejected", detail: `${SECTION_LABELS[reasonFor.component] ?? reasonFor.component} rejected. The mover was told why.`, life: 4000 });
+      } else {
+        await suspendDriver(driver.id, reason, force);
+        toast.current?.show({ severity: "success", summary: "Suspended", detail: "The mover is offline and cannot take orders. They can still sign in to see why.", life: 4000 });
+      }
+      setReasonFor(null);
+      setReasonText("");
+      setNeedsForce(false);
       loadDriverDetails();
     } catch (caught) {
-      const error = caught as Error;
-      toast.current?.show({
-        severity: "error",
-        summary: "Rejection Failed",
-        detail: error.message || `Failed to reject ${component}`,
-        life: 3000,
-      });
+      const message = (caught as Error).message || "Something went wrong";
+      // A delivery is in progress: ask once, then allow it
+      if (reasonFor.kind === "suspend" && /in progress/i.test(message)) setNeedsForce(true);
+      toast.current?.show({ severity: needsForceMessage(message) ? "warn" : "error", summary: reasonFor.kind === "reject" ? "Rejection failed" : "Could not suspend", detail: message, life: 6000 });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reinstate = async () => {
+    if (!driver) return;
+    try {
+      setBusy(true);
+      await unsuspendDriver(driver.id);
+      toast.current?.show({ severity: "success", summary: "Reinstated", detail: "The mover can go online again.", life: 4000 });
+      loadDriverDetails();
+    } catch (caught) {
+      toast.current?.show({ severity: "error", summary: "Could not reinstate", detail: (caught as Error).message, life: 5000 });
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -430,6 +478,13 @@ export default function DriverDetailsPage() {
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge status={getOverallVerificationStatus(driver.verificationStatus)} />
+            {driver.suspended_at && <span className="text-[11px] px-2 py-1 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold">Suspended</span>}
+            {can("account.suspend") &&
+              (driver.suspended_at ? (
+                <Button variant="success" loading={busy} onClick={reinstate}>Reinstate</Button>
+              ) : (
+                <Button variant="outline" onClick={() => { setReasonText(""); setNeedsForce(false); setReasonFor({ kind: "suspend" }); }}>Suspend</Button>
+              ))}
             <Button
               variant="danger"
               onClick={confirmDelete}
@@ -439,6 +494,39 @@ export default function DriverDetailsPage() {
             </Button>
           </div>
         </div>
+
+        {driver.suspended_at && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-[13px] text-orange-800">
+            Suspended {new Date(driver.suspended_at).toLocaleDateString()}{driver.suspended_reason ? `: ${driver.suspended_reason}` : ""}. The mover is offline and cannot go online, take orders or withdraw. They can still sign in and see this reason.
+          </div>
+        )}
+
+        {reasonFor && (
+          <div className="border border-[#DC2626] rounded-lg p-4 bg-[#FEF2F2] space-y-3">
+            <p className="text-[13px] text-[#991B1B]">
+              {reasonFor.kind === "reject"
+                ? `Rejecting ${SECTION_LABELS[reasonFor.component] ?? reasonFor.component} takes the mover offline until it is fixed. They get this message in the app and by email, so say what to change.`
+                : "Suspending takes the mover offline and blocks going online, taking orders and withdrawing. They can still sign in to see this reason. You can reinstate them any time."}
+            </p>
+            <textarea
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              rows={2}
+              maxLength={500}
+              placeholder={reasonFor.kind === "reject" ? "What should the mover fix? (required)" : "Reason (required)"}
+              className="w-full px-3 py-2 border border-[#E1E4EA] rounded-lg text-[13px] bg-white"
+            />
+            {needsForce && (
+              <p className="text-[13px] text-[#991B1B] font-medium">This mover has a delivery in progress. Suspending does not cancel it. Confirm below to go ahead.</p>
+            )}
+            <div className="flex gap-2">
+              <Button size="sm" variant="danger" disabled={reasonText.trim().length < 3 || busy} loading={busy} onClick={() => submitReason(needsForce)}>
+                {reasonFor.kind === "reject" ? "Reject and notify mover" : needsForce ? "Suspend anyway" : "Suspend mover"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { setReasonFor(null); setNeedsForce(false); }}>Cancel</Button>
+            </div>
+          </div>
+        )}
 
         {/* Driver Profile Card */}
         <div className="bg-white rounded-2xl border border-[#E1E4EA] p-6">
@@ -469,7 +557,7 @@ export default function DriverDetailsPage() {
                   <span className="text-[11px] text-[#525866]">Status</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
+                  <span className={`text-[11px] px-2 py-1 rounded-full font-medium ${kycPillClass(driver.kyc_status)}`}>
                     {driver.kyc_status.toUpperCase()}
                   </span>
                   <span className="text-[11px] text-[#525866]">KYC</span>
@@ -536,7 +624,20 @@ export default function DriverDetailsPage() {
                         {name}: {state === "VERIFIED" ? "done" : state === "REJECTED" ? "rejected" : "missing or pending"}
                       </span>
                     ))}
+                    <span className={`text-[12px] px-3 py-1 rounded-full font-semibold ${kycPillClass(driver.kyc_status)}`} title="The identity check run by the KYC provider. It is separate from the sections above.">
+                      KYC check: {driver.kyc_status.replace(/_/g, " ")}
+                    </span>
                   </div>
+                  {(driver.review_events ?? []).filter((e) => e.kind === "rejected").length > 0 && (
+                    <ul className="mt-3 space-y-1 text-[12px] text-[#991B1B]">
+                      {(driver.review_events ?? []).filter((e) => e.kind === "rejected").map((e) => (
+                        <li key={e.id}>
+                          <strong>{SECTION_LABELS[e.section === "documents" ? "document" : e.section] ?? e.section}:</strong> {e.reason}
+                          <span className="text-[#525866]"> ({e.admin_email ?? "admin"}, {new Date(e.created_at).toLocaleDateString()})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <p className="text-[12px] text-[#525866] mt-2">
                     {Object.values(driver.verificationStatus).every((v) => v === "VERIFIED")
                       ? "Every section is verified. Online availability is separate and is set by the mover."
@@ -613,7 +714,7 @@ export default function DriverDetailsPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         KYC Status
                       </label>
-                      <span className="text-[11px] px-2 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
+                      <span className={`text-[11px] px-2 py-1 rounded-full font-medium ${kycPillClass(driver.kyc_status)}`}>
                         {driver.kyc_status.toUpperCase()}
                       </span>
                     </div>
@@ -648,8 +749,8 @@ export default function DriverDetailsPage() {
                           </div>
                           <StatusBadge status={status} />
                         </div>
-                        <h4 className="text-[11px] font-semibold text-[#111827] capitalize">
-                          {key.replace('_', ' ')}
+                        <h4 className="text-[11px] font-semibold text-[#111827]">
+                          {SECTION_LABELS[key] ?? key}
                         </h4>
                       </div>
                     ))}
@@ -662,6 +763,11 @@ export default function DriverDetailsPage() {
               <div className="space-y-6">
                 {driver.driver_documents && driver.driver_documents.length > 0 ? (
                   <>
+                    {driver.verificationStatus.document === "REJECTED" && (
+                      <div className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#991B1B]">
+                        The documents section is marked rejected{(driver.review_events ?? []).find((e) => e.kind === "rejected" && e.section === "documents") ? `: ${(driver.review_events ?? []).find((e) => e.kind === "rejected" && e.section === "documents")!.reason}` : " (no reason was recorded)"}. The checks below show what is verified and what is still missing. Use Verify All Documents to clear the rejection once everything is in order.
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <DocumentViewer
                         title="National ID"
@@ -673,6 +779,7 @@ export default function DriverDetailsPage() {
                         onVerify={() => handleVerifyComponent("document")}
                         onReject={() => handleRejectComponent("document")}
                         status={getDocumentFieldStatus(driver.driver_documents[0], "national_id")}
+                        actions={false}
                       />
                       <DocumentViewer
                         title="Driver License"
@@ -688,6 +795,7 @@ export default function DriverDetailsPage() {
                         onVerify={() => handleVerifyComponent("document")}
                         onReject={() => handleRejectComponent("document")}
                         status={getDocumentFieldStatus(driver.driver_documents[0], "driver_license")}
+                        actions={false}
                       />
                     </div>
 
@@ -713,11 +821,11 @@ export default function DriverDetailsPage() {
                       </div>
 
                       <div className="border border-[#E1E4EA] rounded-lg p-4">
-                        <h4 className="text-[15px] font-semibold text-[#111827] mb-4">Bank Verification</h4>
+                        <h4 className="text-[15px] font-semibold text-[#111827] mb-4">BVN Verification</h4>
                         <div className="space-y-3">
                           <div>
                             <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
-                              Verification Number
+                              BVN
                             </label>
                             <p className="text-[13px] text-[#111827] font-mono">
                               {driver.driver_documents[0].bank_verification || "N/A"}
@@ -733,7 +841,7 @@ export default function DriverDetailsPage() {
                       </div>
                     </div>
 
-                    {driver.verificationStatus.document === "PENDING" && (
+                    {driver.verificationStatus.document !== "VERIFIED" && (
                       <div className="flex justify-center gap-4 pt-4 border-t border-[#E1E4EA]">
                         <Button
                           variant="success"
@@ -743,14 +851,16 @@ export default function DriverDetailsPage() {
                           <i className="pi pi-check mr-2" />
                           Verify All Documents
                         </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleRejectComponent("document")}
-                          disabled={!can("account.verify")}
-                        >
-                          <i className="pi pi-times mr-2" />
-                          Reject All Documents
-                        </Button>
+                        {driver.verificationStatus.document === "PENDING" && (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleRejectComponent("document")}
+                            disabled={!can("account.verify")}
+                          >
+                            <i className="pi pi-times mr-2" />
+                            Reject All Documents
+                          </Button>
+                      )}
                       </div>
                     )}
                   </>
@@ -909,7 +1019,7 @@ export default function DriverDetailsPage() {
                       <label className="block text-[11px] font-medium text-[#525866] uppercase tracking-wider mb-1">
                         KYC Status
                       </label>
-                      <span className="text-[13px] px-3 py-1 rounded-full bg-[#F3F4F6] text-[#525866] font-medium">
+                      <span className={`text-[11px] px-2 py-1 rounded-full font-medium ${kycPillClass(driver.kyc_status)}`}>
                         {driver.kyc_status.toUpperCase()}
                       </span>
                     </div>
@@ -923,7 +1033,7 @@ export default function DriverDetailsPage() {
                     </div>
                   </div>
 
-                  {driver.verificationStatus.personal_info === "PENDING" && (
+                  {driver.verificationStatus.personal_info !== "VERIFIED" && (
                     <div className="flex justify-center gap-4 pt-6 border-t border-[#E1E4EA]">
                       <Button
                         variant="success"
@@ -933,14 +1043,16 @@ export default function DriverDetailsPage() {
                         <i className="pi pi-check mr-2" />
                         Verify Personal Information
                       </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => handleRejectComponent("personal_info")}
-                        disabled={!can("account.verify")}
-                      >
-                        <i className="pi pi-times mr-2" />
-                        Reject Personal Information
-                      </Button>
+                      {driver.verificationStatus.personal_info === "PENDING" && (
+                        <Button
+                          variant="danger"
+                          onClick={() => handleRejectComponent("personal_info")}
+                          disabled={!can("account.verify")}
+                        >
+                          <i className="pi pi-times mr-2" />
+                          Reject Personal Information
+                        </Button>
+                    )}
                     </div>
                   )}
                 </div>
@@ -1017,7 +1129,7 @@ export default function DriverDetailsPage() {
                       </div>
                     </div>
 
-                    {driver.verificationStatus.id_confirmation === "PENDING" && (
+                    {driver.verificationStatus.id_confirmation !== "VERIFIED" && (
                       <div className="flex justify-center gap-4 pt-6 border-t border-[#E1E4EA]">
                         <Button
                           variant="success"
@@ -1027,14 +1139,16 @@ export default function DriverDetailsPage() {
                           <i className="pi pi-check mr-2" />
                           Verify ID Confirmation
                         </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleRejectComponent("id_confirmation")}
-                          disabled={!can("account.verify")}
-                        >
-                          <i className="pi pi-times mr-2" />
-                          Reject ID Confirmation
-                        </Button>
+                        {driver.verificationStatus.id_confirmation === "PENDING" && (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleRejectComponent("id_confirmation")}
+                            disabled={!can("account.verify")}
+                          >
+                            <i className="pi pi-times mr-2" />
+                            Reject ID Confirmation
+                          </Button>
+                      )}
                       </div>
                     )}
                   </div>
@@ -1125,7 +1239,7 @@ export default function DriverDetailsPage() {
                       </div>
                     </div>
 
-                    {driver.verificationStatus.bank_account === "PENDING" && (
+                    {driver.verificationStatus.bank_account !== "VERIFIED" && (
                       <div className="flex justify-center gap-4 pt-6 border-t border-[#E1E4EA]">
                         <Button
                           variant="success"
@@ -1135,14 +1249,16 @@ export default function DriverDetailsPage() {
                           <i className="pi pi-check mr-2" />
                           Verify Bank Account
                         </Button>
-                        <Button
-                          variant="danger"
-                          onClick={() => handleRejectComponent("bank_account")}
-                          disabled={!can("account.verify")}
-                        >
-                          <i className="pi pi-times mr-2" />
-                          Reject Bank Account
-                        </Button>
+                        {driver.verificationStatus.bank_account === "PENDING" && (
+                          <Button
+                            variant="danger"
+                            onClick={() => handleRejectComponent("bank_account")}
+                            disabled={!can("account.verify")}
+                          >
+                            <i className="pi pi-times mr-2" />
+                            Reject Bank Account
+                          </Button>
+                      )}
                       </div>
                     )}
                   </div>

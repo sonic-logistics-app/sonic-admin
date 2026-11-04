@@ -11,6 +11,7 @@ export interface DriverFilterParams {
   kyc_status?: string;
   is_verified?: boolean;
   is_rejected?: boolean;
+  suspended?: string;
   provider?: string;
   sortBy?: string;
   sortOrder?: string;
@@ -134,6 +135,7 @@ export default class DriverService {
     if (params?.kyc_status) queryParams.append('kyc_status', params.kyc_status);
     if (params?.is_verified !== undefined) queryParams.append('is_verified', params.is_verified.toString());
     if (params?.is_rejected !== undefined) queryParams.append('is_rejected', params.is_rejected.toString());
+    if (params?.suspended) queryParams.append('suspended', params.suspended);
     if (params?.provider) queryParams.append('provider', params.provider);
     if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
@@ -204,9 +206,10 @@ export default class DriverService {
       headers: authService.getAuthHeaders(),
       body: JSON.stringify(requestBody)
     })
-      .then(res => {
+      .then(async res => {
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.message || `HTTP error! status: ${res.status}`);
         }
         return res.json();
       })

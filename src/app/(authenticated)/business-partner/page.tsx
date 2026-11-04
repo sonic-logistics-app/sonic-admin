@@ -1,5 +1,6 @@
 "use client";
 
+import { MENU_BADGES_EVENT } from "@/lib/menuBadges";
 import StatCards from "@/components/shared/StatCards";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -85,6 +86,8 @@ export default function VendorListPage() {
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [localities, setLocalities] = useState<{ name: string; vendors: number }[]>([]);
   const [queue, setQueue] = useState<RegistrationStats["attention"] | null>(null);
+  // Business partners that are approved (live)
+  const [approvedCount, setApprovedCount] = useState<number | undefined>(undefined);
   // Links from the dashboard open this list already filtered (?status=...&ready=...)
   const [filtersReady, setFiltersReady] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -113,8 +116,18 @@ export default function VendorListPage() {
 
   // Queue counts and neighbourhoods for the triage cards and the locality filter
   useEffect(() => {
-    getRegistrationStats().then(({ data }) => setQueue(data.attention)).catch(() => undefined);
+    const loadCards = () =>
+      getRegistrationStats()
+        .then(({ data }) => {
+          setQueue(data.attention);
+          setApprovedCount(data.vendors.active);
+        })
+        .catch(() => undefined);
+    loadCards();
     getVendorLocalities().then(({ data }) => setLocalities(data.localities)).catch(() => undefined);
+    // Approving, rejecting or suspending a business partner changes these numbers, so they follow along
+    window.addEventListener(MENU_BADGES_EVENT, loadCards);
+    return () => window.removeEventListener(MENU_BADGES_EVENT, loadCards);
   }, []);
 
   useEffect(() => {
@@ -418,6 +431,7 @@ export default function VendorListPage() {
           <StatCards
             cards={[
               { key: "pending", label: "Pending approval", value: queue.vendors_pending_approval, tone: "warn", active: statusFilter === "pending_approval" && !readyFilter && !reviewFilter, onClick: () => router.push(statusFilter === "pending_approval" && !readyFilter && !reviewFilter ? "/business-partner" : "/business-partner?status=pending_approval") },
+              { key: "approved", label: "Approved", value: approvedCount, tone: "good", active: statusFilter === "active" && !readyFilter && !reviewFilter, onClick: () => router.push(statusFilter === "active" && !readyFilter && !reviewFilter ? "/business-partner" : "/business-partner?status=active") },
               { key: "ready", label: "Ready to approve", value: queue.vendors_ready_to_approve, tone: "good", active: readyFilter === "true", onClick: () => router.push(readyFilter === "true" ? "/business-partner" : "/business-partner?status=pending_approval&ready=true") },
               { key: "corrections", label: "Needs correction", value: queue.vendors_with_open_corrections, tone: "warn", active: reviewFilter === "corrections", onClick: () => router.push(reviewFilter === "corrections" ? "/business-partner" : "/business-partner?review=corrections") },
               { key: "flags", label: "Flagged", value: queue.vendors_with_open_flags, tone: "bad", active: reviewFilter === "flags", onClick: () => router.push(reviewFilter === "flags" ? "/business-partner" : "/business-partner?review=flags") },

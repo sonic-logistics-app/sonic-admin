@@ -12,6 +12,7 @@ export interface PaginationParams {
   kyc_status?: string;
   is_verified?: string;
   is_rejected?: string;
+  suspended?: string;
   provider?: string;
   created_from?: string;
   created_to?: string;
@@ -33,6 +34,7 @@ export default class DriverService {
     if (params?.kyc_status) queryParams.append("kyc_status", params.kyc_status);
     if (params?.is_verified) queryParams.append("is_verified", params.is_verified);
     if (params?.is_rejected) queryParams.append("is_rejected", params.is_rejected);
+    if (params?.suspended) queryParams.append("suspended", params.suspended);
     if (params?.provider) queryParams.append("provider", params.provider);
     if (params?.created_from) queryParams.append("created_from", params.created_from);
     if (params?.created_to) queryParams.append("created_to", params.created_to);

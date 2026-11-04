@@ -1,3 +1,4 @@
+import { refreshMenuBadges } from "@/lib/menuBadges";
 import AuthService from './AuthService';
 
 const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
@@ -123,6 +124,7 @@ export default class VendorService {
           const body = await res.json().catch(() => null);
           throw new Error(body?.message || `HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .catch(error => {
@@ -142,6 +144,7 @@ export default class VendorService {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .catch(error => {
@@ -161,6 +164,7 @@ export default class VendorService {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .catch(error => {
@@ -180,6 +184,7 @@ export default class VendorService {
           const body = await res.json().catch(() => null);
           throw new Error(body?.message || `HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .catch(error => {
@@ -196,6 +201,7 @@ export default class VendorService {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .catch(error => {
@@ -285,6 +291,7 @@ export default class VendorService {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+        refreshMenuBadges();
         return res.json();
       })
       .then((d) => {

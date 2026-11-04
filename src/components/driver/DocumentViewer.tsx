@@ -15,6 +15,8 @@ interface DocumentViewerProps {
   onVerify: () => void;
   onReject: () => void;
   status: "PENDING" | "VERIFIED" | "REJECTED";
+  /** false hides Verify and Reject on this card, for cards where the action covers more than this one document */
+  actions?: boolean;
 }
 
 export default function DocumentViewer({
@@ -23,6 +25,7 @@ export default function DocumentViewer({
   onVerify,
   onReject,
   status,
+  actions = true,
 }: DocumentViewerProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -81,7 +84,7 @@ export default function DocumentViewer({
               ))}
             </div>
 
-            {status === "PENDING" && (
+            {actions && status !== "VERIFIED" && (
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="success"
@@ -92,15 +95,17 @@ export default function DocumentViewer({
                   <i className="pi pi-check mr-1" />
                   Verify
                 </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={onReject}
-                  className="flex-1"
-                >
-                  <i className="pi pi-times mr-1" />
-                  Reject
-                </Button>
+                {status === "PENDING" && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={onReject}
+                    className="flex-1"
+                  >
+                    <i className="pi pi-times mr-1" />
+                    Reject
+                  </Button>
+                )}
               </div>
             )}
           </div>
