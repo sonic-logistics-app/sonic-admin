@@ -142,7 +142,7 @@ export default function TeamPage() {
                 run: () => act(() => changeAdminRole(a.id, e.target.value as TeamAdmin["role"]), "Role updated"),
               })
             }
-            className="px-3 py-1.5 border border-[#E1E4EA] rounded-lg text-[13px] bg-white"
+            className="px-3 py-2.5 lg:py-1.5 border border-[#E1E4EA] rounded-lg text-[13px] bg-white"
           >
             {ROLES.map((r) => (
               <option key={r.value} value={r.value}>{r.label}</option>
@@ -168,7 +168,7 @@ export default function TeamPage() {
       header: "Actions",
       body: (a: TeamAdmin) => {
         if (a.id === me) return <span className="text-[12px] text-[#9CA3AF]">—</span>;
-        const link = "hover:underline text-[13px] font-semibold";
+        const link = "hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2";
         return (
           <div className="flex items-center gap-3">
             {a.status === "pending" && (

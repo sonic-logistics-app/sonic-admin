@@ -271,9 +271,9 @@ function CreateUserPageInner() {
                     id="is_verified"
                     checked={formData.is_verified}
                     onChange={(e) => handleInputChange('is_verified', e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                    className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                   />
-                  <label htmlFor="is_verified" className="text-[13px] text-[#111827] cursor-pointer">
+                  <label htmlFor="is_verified" className="text-[13px] text-[#111827] cursor-pointer py-3 flex-1">
                     Mark as verified
                   </label>
                 </div>
@@ -284,9 +284,9 @@ function CreateUserPageInner() {
                     id="otp_verified"
                     checked={formData.otp_verified}
                     onChange={(e) => handleInputChange('otp_verified', e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                    className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                   />
-                  <label htmlFor="otp_verified" className="text-[13px] text-[#111827] cursor-pointer">
+                  <label htmlFor="otp_verified" className="text-[13px] text-[#111827] cursor-pointer py-3 flex-1">
                     Mark OTP as verified
                   </label>
                 </div>

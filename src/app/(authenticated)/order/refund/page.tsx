@@ -145,14 +145,14 @@ export default function RefundManagementPage() {
 
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">Refund Management</h1>
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[#111827]">Refund Management</h1>
             <p className="text-[13px] text-[#525866] mt-1">
               Monitor and sync refund statuses with Flutterwave
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => router.push("/transaction?type=payment&status=REFUNDED")}
               className="px-4 py-2 border border-[#DC2626] text-[#DC2626] rounded-lg text-[13px] font-semibold hover:bg-[#DC2626] hover:text-white transition-colors flex items-center gap-2"
@@ -394,7 +394,7 @@ export default function RefundManagementPage() {
                 </div>
                 <button
                   onClick={() => setShowSyncResults(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
                   <i className="pi pi-times text-[#525866]" />
                 </button>
@@ -524,7 +524,7 @@ export default function RefundManagementPage() {
                 </div>
                 <button
                   onClick={() => setShowDebugResults(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
                   <i className="pi pi-times text-[#525866]" />
                 </button>

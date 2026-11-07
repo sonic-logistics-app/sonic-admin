@@ -164,7 +164,7 @@ export default function UserDetailsPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">User Details</h1>
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[#111827]">User Details</h1>
             <p className="text-[13px] text-[#525866]">Code: {user.short_code}</p>
           </div>
         </div>

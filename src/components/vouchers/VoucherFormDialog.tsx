@@ -102,7 +102,7 @@ export default function VoucherFormDialog({
           </h2>
           <button
             onClick={onHide}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
           >
             <i className="pi pi-times text-[#525866]" />
           </button>

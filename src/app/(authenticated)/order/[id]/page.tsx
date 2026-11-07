@@ -204,8 +204,8 @@ export default function OrderDetailsPage() {
   const loadOrder = async () => {
     try {
       setLoading(true);
-      const orderId = parseInt(params.id as string);
-      const data = await orderService.getOrderDetails(orderId);
+      // The list opens an order by its number (SNK-00001); the backend accepts that or the numeric id
+      const data = await orderService.getOrderDetails(params.id as string);
       setOrder(data);
     } catch (error) {
       toast.current?.show({
@@ -309,9 +309,9 @@ export default function OrderDetailsPage() {
 
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-[24px] font-bold text-[#111827]">Order Details</h1>
+            <h1 className="text-[20px] md:text-[24px] font-bold text-[#111827]">Order Details</h1>
             <p className="text-[13px] text-[#525866] mt-1">
               {order.order_number || order.order_id}
               {order.order_number && (
@@ -319,7 +319,7 @@ export default function OrderDetailsPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {order.refund_details && order.refund_details.refund_status === "refund_pending" && (
               <button
                 onClick={handleSyncRefund}
@@ -362,7 +362,8 @@ export default function OrderDetailsPage() {
             </label>
             <div className="space-y-2">
               <StatusBadge status={order.payment_status} />
-              {order.refund_details && (
+              {/* The refund state is often the same word as the payment status, so only show it when it adds something */}
+              {order.refund_details && order.refund_details.refund_status.toLowerCase() !== String(order.payment_status).toLowerCase() && (
                 <StatusBadge status={order.refund_details.refund_status} />
               )}
             </div>

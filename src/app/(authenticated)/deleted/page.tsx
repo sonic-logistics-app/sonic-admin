@@ -165,7 +165,7 @@ export default function DeletedAccountsPage() {
                   setKind(t.kind);
                   setSearchQuery("");
                 }}
-                className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+                className={`px-4 py-2.5 lg:py-1.5 rounded-md text-[13px] font-medium transition-colors ${
                   kind === t.kind ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"
                 }`}
               >

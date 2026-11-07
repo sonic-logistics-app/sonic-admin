@@ -436,16 +436,16 @@ function CreateVendorPageInner() {
                 </select>
               </div>
 
-              <div className="md:col-span-2 flex items-center gap-6">
+              <div className="md:col-span-2 flex flex-wrap items-center gap-x-6 gap-y-1">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     id="is_accepting_orders"
                     checked={formData.is_accepting_orders}
                     onChange={(e) => handleInputChange('is_accepting_orders', e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                    className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                   />
-                  <label htmlFor="is_accepting_orders" className="text-[13px] text-[#111827] cursor-pointer">
+                  <label htmlFor="is_accepting_orders" className="text-[13px] text-[#111827] cursor-pointer py-3 flex-1">
                     Accepting Orders
                   </label>
                 </div>
@@ -456,9 +456,9 @@ function CreateVendorPageInner() {
                     id="is_open"
                     checked={formData.is_open}
                     onChange={(e) => handleInputChange('is_open', e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                    className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                   />
-                  <label htmlFor="is_open" className="text-[13px] text-[#111827] cursor-pointer">
+                  <label htmlFor="is_open" className="text-[13px] text-[#111827] cursor-pointer py-3 flex-1">
                     Currently Open
                   </label>
                 </div>
@@ -469,9 +469,9 @@ function CreateVendorPageInner() {
                     id="onboarding_completed"
                     checked={formData.onboarding_completed}
                     onChange={(e) => handleInputChange('onboarding_completed', e.target.checked)}
-                    className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                    className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                   />
-                  <label htmlFor="onboarding_completed" className="text-[13px] text-[#111827] cursor-pointer">
+                  <label htmlFor="onboarding_completed" className="text-[13px] text-[#111827] cursor-pointer py-3 flex-1">
                     Onboarding Completed
                   </label>
                 </div>
@@ -642,7 +642,7 @@ function CreateVendorPageInner() {
               <button
                 type="button"
                 onClick={addMenuCategory}
-                className="px-3 py-1 bg-[#2563EB] text-white rounded-lg text-[12px] font-semibold hover:bg-[#1d4ed8] transition-colors"
+                className="px-3 py-2.5 bg-[#2563EB] text-white rounded-lg text-[12px] font-semibold hover:bg-[#1d4ed8] transition-colors"
               >
                 Add Category
               </button>
@@ -683,16 +683,16 @@ function CreateVendorPageInner() {
                         id={`category_active_${index}`}
                         checked={category.is_active}
                         onChange={(e) => updateMenuCategory(index, 'is_active', e.target.checked)}
-                        className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
+                        className="w-5 h-5 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
                       />
-                      <label htmlFor={`category_active_${index}`} className="text-[12px] text-[#111827] cursor-pointer">
+                      <label htmlFor={`category_active_${index}`} className="text-[12px] text-[#111827] cursor-pointer py-3 pr-3">
                         Active
                       </label>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeMenuCategory(index)}
-                      className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-[12px]"
+                      className="px-3 py-2.5 text-red-600 hover:bg-red-50 rounded text-[12px]"
                     >
                       Remove
                     </button>

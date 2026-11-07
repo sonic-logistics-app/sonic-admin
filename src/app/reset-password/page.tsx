@@ -62,8 +62,8 @@ function ResetPassword() {
           <div className="space-y-3">
             <h1 className="text-[22px] font-bold text-[#111827]">This link cannot be used</h1>
             <p className="text-[14px] text-[#525866]">{problem}</p>
-            <Link href="/forgot-password" className="block text-[14px] text-[#2563EB] hover:underline">Request a new link</Link>
-            <Link href="/login" className="block text-[14px] text-[#2563EB] hover:underline">Back to sign in</Link>
+            <Link href="/forgot-password" className="block text-[14px] text-[#2563EB] hover:underline py-3">Request a new link</Link>
+            <Link href="/login" className="block text-[14px] text-[#2563EB] hover:underline py-3">Back to sign in</Link>
           </div>
         ) : !who ? (
           <p className="text-[14px] text-[#525866]">Checking your link…</p>

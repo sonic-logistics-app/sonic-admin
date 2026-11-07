@@ -293,7 +293,7 @@ function TransactionsTab() {
 
       <div className="flex flex-col gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Transaction Management</h1>
         </div>
 
@@ -412,7 +412,7 @@ function TransactionsTab() {
               </div>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
               >
                 <i className="pi pi-times text-[#525866]" />
               </button>
@@ -783,7 +783,7 @@ function TransactionsTab() {
               </div>
               <button
                 onClick={() => setShowFiltersModal(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
               >
                 <i className="pi pi-times text-[#525866]" />
               </button>
@@ -907,7 +907,7 @@ export default function TransactionPage() {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors ${tab === id ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+            className={`px-4 py-2.5 lg:py-1.5 rounded-md text-[13px] font-medium transition-colors ${tab === id ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
           >
             {text}
           </button>

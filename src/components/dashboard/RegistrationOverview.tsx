@@ -45,7 +45,7 @@ function AccountCard({
   return (
     <div className="p-4 rounded-2xl border border-[#E1E4EA] bg-white flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <Link href={href} className="text-[11px] font-medium uppercase tracking-wider text-[#525866] hover:text-[#2563EB]">
+        <Link href={href} className="text-[11px] font-medium uppercase tracking-wider text-[#525866] hover:text-[#2563EB] py-2.5">
           {title}
         </Link>
         <i className={`pi ${icon} text-[#525866]`} />
@@ -77,7 +77,7 @@ function AccountCard({
             </>
           );
           return r.href ? (
-            <Link key={r.label} href={r.href} className="flex items-center justify-between hover:bg-[#F9FAFB] rounded px-1">
+            <Link key={r.label} href={r.href} className="flex items-center justify-between hover:bg-[#F9FAFB] rounded px-1 py-2">
               {body}
             </Link>
           ) : (

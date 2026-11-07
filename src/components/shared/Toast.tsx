@@ -104,7 +104,7 @@ function ToastItem({ message, onRemove }: ToastItemProps) {
         </div>
         <button
           onClick={handleRemove}
-          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
+          className="flex-shrink-0 w-9 h-9 -my-1.5 -mr-1.5 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
         >
           <i className="pi pi-times text-[#525866] text-xs" />
         </button>
