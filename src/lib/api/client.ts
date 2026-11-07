@@ -90,7 +90,10 @@ class ApiClient {
         });
         return this.handleResponse(retryResponse);
       } catch (error) {
-        // Refresh failed, redirect to login
+        // Refresh failed. Forget the saved session first: the sign-in page treats a saved token as "signed in" and
+        // would send the person straight back here, and the two pages would bounce forever.
+        ["admin_token", "admin_refresh_token", "admin_user", "admin_access"].forEach((key) => localStorage.removeItem(key));
+        document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         window.location.href = "/login";
         throw new Error("Authentication failed");
       }
