@@ -9,6 +9,48 @@ const authService = new AuthService();
 
 // Pages that work without being signed in
 const PUBLIC_PATHS = ['/login', '/accept-invite', '/forgot-password', '/reset-password'];
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
+const NO_REFRESH = /\/(login|register|refresh-token|forgot-password|reset-password|accept-invite|invite\/check|status)(\?|$|\/)/;
+
+let fetchGuarded = false;
+let refreshing: Promise<unknown> | null = null;
+
+/**
+ * Wraps fetch once. When the server says 401 to a signed-in request, try the refresh token once and repeat the
+ * request. If that cannot work, forget the session and go to the sign-in page. Without this, pages that call the API
+ * directly just show empty or broken data for a session the server has stopped accepting.
+ */
+function guardFetch() {
+  if (fetchGuarded || typeof window === 'undefined') return;
+  fetchGuarded = true;
+  const original = window.fetch.bind(window);
+
+  const signOut = () => {
+    authService.clearLocalStorage();
+    if (!PUBLIC_PATHS.includes(window.location.pathname)) window.location.href = '/login';
+  };
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await original(input, init);
+    if (response.status !== 401) return response;
+
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const sentToken = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined)).has('Authorization');
+    if (!url.startsWith(API_URL) || NO_REFRESH.test(url) || !sentToken || PUBLIC_PATHS.includes(window.location.pathname)) return response;
+
+    try {
+      if (!authService.getRefreshToken()) throw new Error('no refresh token');
+      refreshing = refreshing ?? authService.refreshToken().finally(() => { refreshing = null; });
+      await refreshing;
+    } catch {
+      signOut();
+      return response;
+    }
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    headers.set('Authorization', `Bearer ${authService.getToken()}`);
+    return original(input, { ...init, headers });
+  };
+}
 
 /**
  * Component that validates token on mount and periodically
@@ -26,6 +68,10 @@ export default function TokenValidator({ children }: { children: React.ReactNode
     () => true,
     () => false,
   );
+
+  useEffect(() => {
+    guardFetch();
+  }, []);
 
   useEffect(() => {
     const validateToken = async () => {

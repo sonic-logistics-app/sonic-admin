@@ -4,10 +4,29 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
+import AuthService from "@/services/AuthService";
 import Toast, { ToastRef } from "@/components/shared/Toast";
+
+const authService = new AuthService();
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api/admin';
+const BOUNCE_KEY = "admin_login_bounces";
+
+/** true when this page has been reached 4 times in 15 seconds, which means the dashboard keeps sending the person back */
+const tooManyBounces = () => {
+  try {
+    const now = Date.now();
+    const recent = (JSON.parse(sessionStorage.getItem(BOUNCE_KEY) || "[]") as number[]).filter((t) => now - t < 15000);
+    recent.push(now);
+    sessionStorage.setItem(BOUNCE_KEY, JSON.stringify(recent));
+    return recent.length >= 4;
+  } catch {
+    return false;
+  }
+};
 
 export default function LoginPage() {
   const toast = useRef<ToastRef>(null);
+  const redirecting = useRef(false);
   const { login, register, checkAuth, checkAdminStatus, isAuthenticated, isLoading } = useAuthStore();
   
   const [email, setEmail] = useState("");
@@ -26,10 +45,38 @@ export default function LoginPage() {
   const [regFirstName, setRegFirstName] = useState("");
   const [regLastName, setRegLastName] = useState("");
 
+  // A saved session only counts if the server still accepts it. Without this check an expired or rejected token
+  // sends the person to the dashboard, the dashboard sends them back here, and the page reloads in a loop.
   useEffect(() => {
-    if (isAuthenticated) {
-      window.location.assign("/dashboard");
-    }
+    if (!isAuthenticated || redirecting.current) return;
+    let cancelled = false;
+    const forgetSession = () => {
+      authService.clearLocalStorage();
+      useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
+    };
+    (async () => {
+      if (tooManyBounces()) {
+        forgetSession();
+        toast.current?.show({ severity: "warn", summary: "Signed out", detail: "Your session ended. Please sign in again.", life: 5000 });
+        return;
+      }
+      try {
+        const res = await fetch(`${API_URL}/profile`, { headers: authService.getAuthHeaders() });
+        if (cancelled || redirecting.current) return;
+        if (res.ok) {
+          redirecting.current = true;
+          window.location.assign("/dashboard");
+        } else if (res.status === 401 || res.status === 403) {
+          forgetSession();
+        }
+        // Any other answer: leave the saved session alone and show the form
+      } catch {
+        // No connection (or the page is already moving on): do not treat that as a rejected session
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -73,6 +120,7 @@ export default function LoginPage() {
         life: 3000,
       });
       // Full page load: a soft navigation can reuse a /dashboard response prefetched while logged out (which redirected to /login)
+      redirecting.current = true;
       window.location.assign("/dashboard");
     } else {
       toast.current?.show({
@@ -113,6 +161,7 @@ export default function LoginPage() {
       });
       setShowRegister(false);
       setNeedsSetup(false);
+      redirecting.current = true;
       window.location.assign("/dashboard");
     } else {
       toast.current?.show({
