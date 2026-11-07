@@ -52,8 +52,8 @@ export default function RegistrationTrendChart() {
     <div className="p-4 rounded-2xl border border-[#E1E4EA] bg-white flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-[#111827]">New accounts per day</h3>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 text-[12px] text-[#525866]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#525866]">
             {SERIES.map((s) => (
               <span key={s.key} className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm" style={{ background: s.color }} />
@@ -71,7 +71,7 @@ export default function RegistrationTrendChart() {
                   setDays(r);
                   setPicked(null);
                 }}
-                className={`px-2.5 py-1 rounded-md text-[12px] font-medium ${days === r ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+                className={`px-3 py-2 lg:px-2.5 lg:py-1 rounded-md text-[12px] font-medium ${days === r ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
               >
                 {r}d
               </button>

@@ -54,7 +54,7 @@ export default function Button({
 
   // Size styles
   const sizeStyles = {
-    sm: "h-8 px-4 text-[12px] rounded-[50px]",
+    sm: "h-9 lg:h-8 px-4 text-[12px] rounded-[50px]",
     md: "h-10 px-6 text-[13px] rounded-[50px]",
     lg: "h-[44px] px-8 text-[15px] rounded-[50px]",
   };

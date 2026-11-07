@@ -145,7 +145,7 @@ export default function FAQListPage() {
               e.stopPropagation();
               router.push(`/faq/${rowData.id}`);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2"
           >
             View
           </button>
@@ -155,7 +155,7 @@ export default function FAQListPage() {
               e.stopPropagation();
               router.push(`/faq/${rowData.id}/edit`);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Edit
           </button>
@@ -165,7 +165,7 @@ export default function FAQListPage() {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -189,7 +189,7 @@ export default function FAQListPage() {
 
       <div className="flex flex-col gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">FAQ Management</h1>
           <Button onClick={() => router.push("/faq/create")} disabled={!can("faq.manage")}>
             <i className="pi pi-plus mr-2" />

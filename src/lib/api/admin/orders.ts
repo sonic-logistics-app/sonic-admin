@@ -66,12 +66,13 @@ export default class OrderService {
       });
   }
 
-  getOrderDetails(orderId: number) {
+  getOrderDetails(orderId: number | string) {
     return fetch(`${apiUrl}/order/${orderId}`, {
       headers: authService.getAuthHeaders(),
     })
-      .then((res) => res.json())
-      .then((d) => {
+      .then(async (res) => {
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d?.message || `Could not load the order (${res.status})`);
         return d.data || d.order || d;
       });
   }

@@ -4,7 +4,7 @@
  */
 
 export function Bar({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-[#E9ECF1] ${className}`} aria-hidden="true" />;
+  return <span className={`block animate-pulse rounded-md bg-[#E9ECF1] ${className}`} aria-hidden="true" />;
 }
 
 const Dot = ({ className = "w-10 h-10" }: { className?: string }) => (

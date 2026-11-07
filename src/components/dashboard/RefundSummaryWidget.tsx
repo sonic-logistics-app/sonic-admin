@@ -57,7 +57,7 @@ export default function RefundSummaryWidget() {
         <h3 className="text-[16px] font-semibold text-[#111827]">Refund Status</h3>
         <button
           onClick={() => router.push("/order/refund")}
-          className="text-[12px] text-[#2563EB] hover:underline font-semibold"
+          className="text-[12px] text-[#2563EB] hover:underline font-semibold py-2.5 px-2 -mx-2"
         >
           View All
         </button>

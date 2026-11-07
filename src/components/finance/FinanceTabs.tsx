@@ -168,7 +168,7 @@ export function WalletsTab() {
                 setType(t);
                 setSearch("");
               }}
-              className={`px-4 py-1.5 rounded-md text-[13px] font-medium ${type === t ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
+              className={`px-4 py-2.5 lg:py-1.5 rounded-md text-[13px] font-medium ${type === t ? "bg-[#2563EB] text-white" : "text-[#525866] hover:text-[#111827]"}`}
             >
               {displayTerm(t)} wallets
             </button>

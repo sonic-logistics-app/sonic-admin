@@ -322,7 +322,7 @@ export default function VendorListPage() {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -405,9 +405,9 @@ export default function VendorListPage() {
 
       <div className="flex flex-col gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Management</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={reviewOldest}
               className="px-4 py-2 border border-[#2563EB] text-[#2563EB] rounded-lg text-[13px] font-semibold hover:bg-[#EFF6FF] transition-colors"

@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 
 export default function LoginPage() {
-  const router = useRouter();
   const toast = useRef<ToastRef>(null);
   const { login, register, checkAuth, checkAdminStatus, isAuthenticated, isLoading } = useAuthStore();
   
@@ -30,9 +28,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      window.location.assign("/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Check auth state from localStorage
@@ -74,7 +72,8 @@ export default function LoginPage() {
         detail: "Login successful",
         life: 3000,
       });
-      router.push("/dashboard");
+      // Full page load: a soft navigation can reuse a /dashboard response prefetched while logged out (which redirected to /login)
+      window.location.assign("/dashboard");
     } else {
       toast.current?.show({
         severity: "error",
@@ -114,7 +113,7 @@ export default function LoginPage() {
       });
       setShowRegister(false);
       setNeedsSetup(false);
-      router.push("/dashboard");
+      window.location.assign("/dashboard");
     } else {
       toast.current?.show({
         severity: "error",
@@ -218,7 +217,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525866] hover:text-[#111827]"
+                aria-label="Show or hide password"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-[#525866] hover:text-[#111827]"
               >
                 <i className={`pi ${showPassword ? "pi-eye-slash" : "pi-eye"}`}></i>
               </button>
@@ -234,13 +234,13 @@ export default function LoginPage() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-[#E1E4EA] text-[#2563EB] cursor-pointer"
               />
-              <label htmlFor="rememberme" className="text-[13px] text-[#525866] cursor-pointer">
+              <label htmlFor="rememberme" className="text-[13px] text-[#525866] cursor-pointer py-3 pr-2">
                 Remember me
               </label>
             </div>
             <Link
               href="/forgot-password"
-              className="font-medium no-underline text-[#2563EB] text-right cursor-pointer text-[13px] hover:underline"
+              className="font-medium no-underline text-[#2563EB] text-right cursor-pointer text-[13px] hover:underline py-3"
             >
               Forgot password?
             </Link>
@@ -309,7 +309,7 @@ export default function LoginPage() {
               </h2>
               <button
                 onClick={() => setShowRegister(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
               >
                 <i className="pi pi-times text-[#525866]" />
               </button>
@@ -379,7 +379,8 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setRegShowPassword(!regShowPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525866] hover:text-[#111827]"
+                    aria-label="Show or hide password"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-[#525866] hover:text-[#111827]"
                   >
                     <i className={`pi ${regShowPassword ? "pi-eye-slash" : "pi-eye"}`}></i>
                   </button>

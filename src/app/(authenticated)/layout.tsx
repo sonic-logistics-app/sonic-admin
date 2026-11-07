@@ -53,7 +53,8 @@ export default function AuthenticatedLayout({
         {/* Mobile hamburger */}
         <button
           type="button"
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:bg-gray-100 lg:hidden"
+          aria-label="Open menu"
+          className="fixed top-3 left-3 z-50 h-11 w-11 flex items-center justify-center rounded-lg bg-white shadow-md hover:bg-gray-100 lg:hidden"
           onClick={(e) => {
             e.stopPropagation();
             setMobileMenuActive(!mobileMenuActive);

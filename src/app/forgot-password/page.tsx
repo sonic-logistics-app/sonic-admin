@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
               If an admin account exists for <strong>{email.trim()}</strong>, a link to reset the password is on its way. It works once and expires in 1 hour.
             </p>
             <p className="text-[13px] text-[#9CA3AF]">Nothing in your inbox? Check spam, or wait a minute and try again.</p>
-            <Link href="/login" className="inline-block text-[14px] text-[#2563EB] hover:underline">Back to sign in</Link>
+            <Link href="/login" className="inline-block text-[14px] text-[#2563EB] hover:underline py-3">Back to sign in</Link>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
             >
               {sending ? "Sending…" : "Send reset link"}
             </button>
-            <Link href="/login" className="block text-center text-[14px] text-[#2563EB] hover:underline">Back to sign in</Link>
+            <Link href="/login" className="block text-center text-[14px] text-[#2563EB] hover:underline py-3">Back to sign in</Link>
           </form>
         )}
       </div>

@@ -335,7 +335,7 @@ export default function UserListPage() {
                 e.stopPropagation();
                 confirmVerify(rowData);
               }}
-              className="text-[#059669] hover:underline text-[13px] font-semibold"
+              className="text-[#059669] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2"
             >
               Verify
             </button>
@@ -346,7 +346,7 @@ export default function UserListPage() {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>
@@ -407,9 +407,9 @@ export default function UserListPage() {
 
       <div className="flex flex-col gap-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-[24px] font-bold text-[#111827]">User Management</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExcelExportButton onExport={exportUsers} />
           <button
             disabled={!can("account.create")}

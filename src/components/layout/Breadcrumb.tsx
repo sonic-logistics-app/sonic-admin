@@ -55,12 +55,12 @@ export default function Breadcrumb() {
   });
 
   return (
-    <nav className="flex mb-2" aria-label="Breadcrumb">
+    <nav className="flex mb-2 pl-12 lg:pl-0 min-h-[40px] items-center" aria-label="Breadcrumb">
       <ol className="inline-flex items-center space-x-2 md:space-x-3">
         <li className="inline-flex items-center">
           <Link
             href="/dashboard"
-            className="inline-flex items-center text-[16px] text-gray-500 hover:text-gray-700 no-underline"
+            className="inline-flex items-center justify-center min-h-[40px] min-w-[36px] text-[16px] text-gray-500 hover:text-gray-700 no-underline"
           >
             <i className="pi pi-home text-[18px]" />
           </Link>
@@ -76,7 +76,7 @@ export default function Breadcrumb() {
               {crumb.href ? (
                 <Link
                   href={crumb.href}
-                  className="text-[16px] font-medium text-gray-500 hover:text-gray-700 no-underline"
+                  className="inline-flex items-center min-h-[40px] min-w-[36px] text-[16px] font-medium text-gray-500 hover:text-gray-700 no-underline"
                 >
                   {crumb.label}
                 </Link>

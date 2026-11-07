@@ -485,8 +485,8 @@ export default function VendorDetailsPage() {
 
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3 md:gap-4">
             <Button
               variant="outline"
               onClick={() => router.push("/business-partner")}
@@ -496,13 +496,13 @@ export default function VendorDetailsPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-[24px] font-bold text-[#111827]">Business Partner Details</h1>
+              <h1 className="text-[20px] md:text-[24px] font-bold text-[#111827]">Business Partner Details</h1>
               <p className="text-[13px] text-[#525866]">
                 Code: {vendor.short_code}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={vendor.status} />
             {nextPending && (
               <Button variant="outline" onClick={() => router.push(`/business-partner/${nextPending.code}`)}>
@@ -536,15 +536,15 @@ export default function VendorDetailsPage() {
               </div>
             )}
             
-            <div className="flex-1">
-              <h2 className="text-[20px] font-semibold text-[#111827] mb-1">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-[20px] font-semibold text-[#111827] mb-1 break-words">
                 {vendor.name}
               </h2>
-              <p className="text-[13px] text-[#525866] mb-3">
+              <p className="text-[13px] text-[#525866] mb-3 break-all">
                 {vendor.email} • {vendor.phone}
               </p>
               
-              <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                 <div className="flex items-center gap-2">
                   <StatusBadge status={vendor.status} />
                   <span className="text-[11px] text-[#525866]">Status</span>
@@ -563,12 +563,12 @@ export default function VendorDetailsPage() {
         {/* Navigation Tabs */}
         <div className="bg-white rounded-2xl border border-[#E1E4EA]">
           <div className="border-b border-[#E1E4EA]">
-            <nav className="flex">
+            <nav className="flex overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors relative ${
+                  className={`flex items-center gap-2 px-4 md:px-6 py-4 text-[13px] font-medium whitespace-nowrap shrink-0 border-b-2 transition-colors relative ${
                     activeTab === tab.id
                       ? "border-[#2563EB] text-[#2563EB]"
                       : "border-transparent text-[#525866] hover:text-[#111827]"
@@ -753,7 +753,7 @@ export default function VendorDetailsPage() {
                                   key={c.tab}
                                   type="button"
                                   onClick={() => setActiveTab(c.tab)}
-                                  className="ml-2 underline font-semibold hover:text-orange-950"
+                                  className="ml-2 underline font-semibold hover:text-orange-950 py-2.5"
                                 >
                                   {c.label}
                                 </button>
@@ -767,7 +767,7 @@ export default function VendorDetailsPage() {
                   {!can("vendor.decide") && (
                     <p className="text-[12px] text-[#525866] mb-3">Your role can view this business partner but not approve, reject, suspend or delete it.</p>
                   )}
-                  <div className="flex gap-4">
+                  <div className="flex flex-wrap gap-3">
                     {vendor.status === "pending_approval" && (
                       <>
                         <Button

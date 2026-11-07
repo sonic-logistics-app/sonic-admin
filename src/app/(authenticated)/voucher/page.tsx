@@ -161,7 +161,7 @@ export default function VoucherListPage() {
               e.stopPropagation();
               setUsageVoucherId(rowData.id);
             }}
-            className="text-[#525866] hover:underline text-[13px] font-semibold"
+            className="text-[#525866] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2"
           >
             Usage
           </button>
@@ -171,7 +171,7 @@ export default function VoucherListPage() {
               e.stopPropagation();
               handleEdit(rowData);
             }}
-            className="text-[#2563EB] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#2563EB] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Edit
           </button>
@@ -181,7 +181,7 @@ export default function VoucherListPage() {
               e.stopPropagation();
               confirmDelete(rowData);
             }}
-            className="text-[#DC2626] hover:underline text-[13px] font-semibold disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+            className="text-[#DC2626] hover:underline text-[13px] font-semibold py-2.5 px-2 -mx-2 disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
           >
             Delete
           </button>

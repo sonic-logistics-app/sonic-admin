@@ -85,7 +85,7 @@ function AuditLogPageInner() {
           {r.metadata && Object.keys(r.metadata).length > 0 && (
             <button
               type="button"
-              className="text-[11px] text-[#2563EB] hover:underline"
+              className="text-[11px] text-[#2563EB] hover:underline py-2.5"
               onClick={(e) => {
                 e.stopPropagation();
                 setOpenId(openId === r.id ? null : r.id);
