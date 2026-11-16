@@ -9,6 +9,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Toast, { ToastRef } from "@/components/shared/Toast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import DocumentViewer from "@/components/driver/DocumentViewer";
+import ImageWithSkeleton from "@/components/driver/ImageWithSkeleton";
 import VehicleViewer from "@/components/driver/VehicleViewer";
 import DriverPerformancePanel from "@/components/driver/DriverPerformancePanel";
 import { usePermissions } from "@/lib/auth/permissions";
@@ -885,7 +886,7 @@ export default function DriverDetailsPage() {
                         color: driver.driver_vehicle[0].model_color || undefined,
                         plate_number: driver.driver_vehicle[0].model_plate_number || undefined,
                         registration_document: driver.driver_vehicle[0].model_certificate_url || undefined,
-                        insurance_document: driver.driver_vehicle[0].model_image_url || undefined,
+                        vehicle_photo: driver.driver_vehicle[0].model_image_url || undefined,
                         verified: driver.driver_vehicle[0].is_verified,
                       }}
                       onVerify={() => handleVerifyComponent("vehicle")}
@@ -1089,7 +1090,7 @@ export default function DriverDetailsPage() {
                     {driver.driver_id_confirmation[0].image_url ? (
                       <div className="flex justify-center mb-6">
                         <div className="relative">
-                          <img
+                          <ImageWithSkeleton
                             src={driver.driver_id_confirmation[0].image_url}
                             alt="ID Confirmation Selfie"
                             className="w-64 h-64 object-cover rounded-2xl border-2 border-[#E1E4EA] shadow-lg"

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Button from "@/components/shared/Button";
+import FileThumb from "./FileThumb";
 
 interface VehicleViewerProps {
   vehicle: {
@@ -11,7 +12,8 @@ interface VehicleViewerProps {
     color?: string;
     plate_number?: string;
     registration_document?: string;
-    insurance_document?: string;
+    /** The photo of the vehicle the mover uploaded. (The mover app has no insurance upload.) */
+    vehicle_photo?: string;
     verified: boolean;
   } | undefined;
   onVerify: () => void;
@@ -36,10 +38,11 @@ export default function VehicleViewer({
     );
   }
 
+  // Both slots always show, so a missing upload is visible instead of silently absent
   const documents = [
-    { label: "Registration", url: vehicle.registration_document },
-    { label: "Insurance", url: vehicle.insurance_document },
-  ].filter(doc => doc.url);
+    { label: "Registration certificate", url: vehicle.registration_document },
+    { label: "Vehicle photo", url: vehicle.vehicle_photo },
+  ];
 
   return (
     <>
@@ -95,19 +98,9 @@ export default function VehicleViewer({
         {documents.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-[11px] font-semibold text-[#111827]">Documents</h5>
-            <div className="grid grid-cols-2 gap-2">
-              {documents.map((doc, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={doc.url}
-                    alt={`Vehicle ${doc.label}`}
-                    className="w-full h-24 object-cover rounded border border-[#E1E4EA] cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setSelectedImage(doc.url!)}
-                  />
-                  <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
-                    {doc.label}
-                  </span>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {documents.map((doc) => (
+                <FileThumb key={`${doc.label}-${doc.url ?? "none"}`} url={doc.url} label={doc.label} alt={`Vehicle ${doc.label}`} onOpen={setSelectedImage} />
               ))}
             </div>
           </div>

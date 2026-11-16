@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Button from "@/components/shared/Button";
+import FileThumb from "./FileThumb";
 
 interface DocumentViewerProps {
   title: string;
@@ -69,18 +70,8 @@ export default function DocumentViewer({
         {images.length > 0 ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              {images.map((image, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={image.url}
-                    alt={`${title} - ${image.label}`}
-                    className="w-full h-24 object-cover rounded border border-[#E1E4EA] cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setSelectedImage(image.url!)}
-                  />
-                  <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
-                    {image.label}
-                  </span>
-                </div>
+              {images.map((image) => (
+                <FileThumb key={`${image.label}-${image.url}`} url={image.url} label={image.label} alt={`${title} - ${image.label}`} onOpen={setSelectedImage} />
               ))}
             </div>
 
