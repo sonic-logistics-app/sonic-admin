@@ -23,6 +23,7 @@ export type AdminPermission =
   | "faq.manage"
   | "contact.manage"
   | "ticket.handle"
+  | "broadcast.send"
   | "audit.read"
   | "admin.manage";
 
