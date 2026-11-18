@@ -26,6 +26,8 @@ import {
   SMS_MAX_SEGMENTS,
   TEMPLATES,
   TITLE_MAX,
+  moverInboxOn,
+  setMoverInbox,
   paragraphs,
   renderTemplate,
   smsLength,
@@ -103,7 +105,10 @@ function BroadcastPageInner() {
 
   useEffect(() => {
     getBroadcastConfig()
-      .then((res) => setConfig(res.data))
+      .then((res) => {
+        setMoverInbox(res.data.mover_inbox);
+        setConfig(res.data);
+      })
       .catch((e: Error) => toast.current?.show({ severity: "error", summary: "Could not load", detail: e.message, life: 5000 }));
     loadHistory();
   }, [loadHistory]);
@@ -180,7 +185,7 @@ function BroadcastPageInner() {
     if ((title || message || smsText) && !window.confirm("Replace what you have typed with this template?")) return;
     if (t.audience !== "any") {
       setAudience(t.audience);
-      setSegment(t.audience === "movers" ? "not_approved" : t.audience === "businesses" ? "incomplete" : "all");
+      setSegment(t.segment ?? (t.audience === "movers" ? "not_approved" : t.audience === "businesses" ? "incomplete" : "all"));
     }
     setTitle(t.title);
     setMessage(t.message);
@@ -318,7 +323,7 @@ function BroadcastPageInner() {
                           {channelLabel(c, audience)}
                         </span>
                         <span className={`block text-[12px] ${c === "sms" ? "text-[#B91C1C] font-medium" : "text-[#525866]"}`}>
-                          {c === "in_app" && audience === "movers" ? "Pop-up on their phone (not kept in the app)" : CHANNEL_META[c].hint}
+                          {c === "in_app" && audience === "movers" && !moverInboxOn() ? "Pop-up on their phone (not kept in the app yet)" : CHANNEL_META[c].hint}
                         </span>
                       </span>
                     </label>
@@ -335,7 +340,7 @@ function BroadcastPageInner() {
                       <span key={c}>
                         {i > 0 && (i === channels.length - 1 ? " and " : ", ")}
                         <b className={c === "sms" ? "text-[#B91C1C]" : ""}>
-                          {preview.counts[c].toLocaleString("en-NG")} by {c === "in_app" ? (audience === "movers" ? "push notification" : "in-app notification") : CHANNEL_LABELS[c]}
+                          {preview.counts[c].toLocaleString("en-NG")} by {c === "in_app" ? (audience === "movers" && !moverInboxOn() ? "push notification" : "in-app notification") : CHANNEL_LABELS[c]}
                         </b>
                       </span>
                     ))}
@@ -516,7 +521,9 @@ function BroadcastPageInner() {
                       </div>
                       <p className="text-[11px] text-[#525866] mt-2">
                         {audience === "movers"
-                          ? "Shown as a push notification on the mover’s phone. It is not saved in the Mover app’s notification list."
+                          ? moverInboxOn()
+                            ? "Saved in the Mover app’s notification list (first line is the title) and sent as a push notification."
+                            : "Shown as a push notification on the mover’s phone. It is not saved in the Mover app’s notification list yet."
                           : audience === "businesses"
                             ? "Saved in the Business Partner portal (first line is the title) and sent as a push notification."
                             : "Saved in the app’s notification list and sent as a push notification."}

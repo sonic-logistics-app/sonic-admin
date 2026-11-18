@@ -45,6 +45,8 @@ export interface BroadcastConfig {
   dry_run: boolean;
   max_sms_recipients: number;
   sms_unit_cost_ngn: number | null;
+  /** Movers also get a saved notification in the Mover app (off until the app can show it) */
+  mover_inbox: boolean;
   audiences: Record<Audience, { label: string; segments: Record<string, string> }>;
 }
 
