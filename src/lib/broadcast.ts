@@ -12,9 +12,16 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   in_app: "In-app notification",
 };
 
-/** Movers cannot get a saved notification (their app cannot show one), so for them "in-app" means a push notification. */
+let moverInbox = false;
+/** Set from the server settings. When off, movers cannot get a saved notification (the Mover app cannot show one yet). */
+export const setMoverInbox = (on: boolean) => {
+  moverInbox = on;
+};
+export const moverInboxOn = () => moverInbox;
+
+/** For movers, "in-app" is only a push notification until the Mover app can show saved messages. */
 export const channelLabel = (channel: Channel, audience: Audience): string =>
-  channel === "in_app" && audience === "movers" ? "Push notification" : CHANNEL_LABELS[channel];
+  channel === "in_app" && audience === "movers" && !moverInbox ? "Push notification" : CHANNEL_LABELS[channel];
 
 export const AUDIENCE_LABELS: Record<Audience, string> = {
   movers: "Movers",
@@ -84,6 +91,8 @@ export interface Template {
   id: string;
   label: string;
   audience: Audience | "any";
+  /** The group to pick with this template (defaults to the audience's usual one) */
+  segment?: string;
   title: string;
   message: string;
   sms: string;
@@ -97,7 +106,7 @@ export const TEMPLATES: Template[] = [
     title: "Update your Sonic Mover app",
     message:
       "We have released an update to the Sonic Mover app. Please update it from the Play Store or App Store.\n\nPlease also complete your profile (documents, vehicle details and bank account) so you can start receiving deliveries.\n\nThank you,\nThe Sonic team",
-    sms: "Hi {{first_name}}, please update your Sonic Mover app and complete your profile to start receiving deliveries. Thank you.",
+    sms: "Hi {{first_name}}, update your Sonic Mover app and complete your profile to start receiving deliveries and earning with Sonic!",
   },
   {
     id: "businesses-finish-setup",
@@ -107,6 +116,16 @@ export const TEMPLATES: Template[] = [
     message:
       "Your Sonic business account is not live yet. Log in to the Business Partner portal to finish your setup so customers can start ordering from you.\n\nThank you,\nThe Sonic team",
     sms: "Hi {{first_name}}, finish setting up your Sonic business account so customers can order from you. Log in at vendor.sonicmega.com",
+  },
+  {
+    id: "businesses-add-products",
+    label: "Businesses: your store is empty, add your products",
+    audience: "businesses",
+    segment: "no_products",
+    title: "Your Sonic store is waiting",
+    message:
+      "Your Sonic store is set up, but it does not have any products or services yet.\n\nLog in to the Business Partner portal and add your products or services so customers can start ordering from you.\n\nThank you,\nThe Sonic team",
+    sms: "Hi {{first_name}}, your Sonic store is waiting! Log in and add your products or services to get ready to receive customer orders.",
   },
   {
     id: "users-update-app",

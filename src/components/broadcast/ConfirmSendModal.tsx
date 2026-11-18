@@ -172,7 +172,7 @@ export default function ConfirmSendModal({ open, draft, config, onClose, onSent 
                 )}
               </div>
 
-              {draft.audience === "movers" && draft.channels.includes("in_app") && (
+              {draft.audience === "movers" && draft.channels.includes("in_app") && !config?.mover_inbox && (
                 <p className="text-[12px] text-[#525866] rounded-lg bg-[#F9FAFB] border border-[#E1E4EA] px-3 py-2">
                   For movers, the in-app message is delivered as a <b>push notification</b>. The Mover app’s notification list cannot show custom messages yet, so nothing is saved there. Movers without push turned on will not see it.
                 </p>
