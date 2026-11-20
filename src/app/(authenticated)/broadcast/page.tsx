@@ -22,6 +22,7 @@ import {
   CHANNEL_LABELS,
   Channel,
   channelLabel,
+  emailFailureReasons,
   MESSAGE_MAX,
   SMS_MAX_SEGMENTS,
   TEMPLATES,
@@ -573,6 +574,12 @@ function BroadcastPageInner() {
                           <div key={c}>
                             {channelLabel(c, b.audience)}: {b.counts?.[c]?.sent ?? 0}/{b.counts?.[c]?.targeted ?? 0}
                             {(b.counts?.[c]?.failed ?? 0) > 0 && <span className="text-[#B91C1C]"> ({b.counts[c].failed} failed)</span>}
+                            {c === "email" &&
+                              emailFailureReasons(b.counts?.email?.reasons).map((text) => (
+                                <div key={text} className="text-[11px] text-[#B91C1C] max-w-[320px]">
+                                  {text}
+                                </div>
+                              ))}
                           </div>
                         ))}
                       </td>
@@ -627,6 +634,12 @@ function ProgressCard({ record, onRetry }: { record: BroadcastRecord; onRetry: (
                 {r?.sent ?? 0} sent{(r?.failed ?? 0) > 0 && <span className="text-[#B91C1C]"> · {r?.failed} failed</span>} of {targeted}
               </span>
             </div>
+            {c === "email" &&
+              emailFailureReasons(record.counts?.email?.reasons).map((text) => (
+                <p key={text} className="text-[11px] text-[#B91C1C] mt-1">
+                  {text}
+                </p>
+              ))}
             {c === "in_app" && (record.counts?.in_app?.opted_out ?? 0) > 0 && (
               <p className="text-[11px] text-[#525866] mt-1">{record.counts.in_app.opted_out} turned off these notifications in their settings, so they were skipped.</p>
             )}
