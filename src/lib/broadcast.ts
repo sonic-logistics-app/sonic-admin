@@ -139,8 +139,25 @@ export const TEMPLATES: Template[] = [
   { id: "blank", label: "Start from blank", audience: "any", title: "", message: "", sms: "" },
 ];
 
+export type EmailFailureReason = "quota" | "rate_limited" | "invalid" | "other";
+
+const REASON_TEXT: Record<EmailFailureReason, string> = {
+  quota: "your email provider's sending limit was reached (it resets daily or monthly, or upgrade the plan), then retry",
+  rate_limited: "the email provider was too busy, retry in a few minutes",
+  invalid: "the address was rejected, check it",
+  other: "a temporary email provider error, retry",
+};
+
+/** "150: your email provider's sending limit was reached..." for each reason that happened, biggest first. */
+export function emailFailureReasons(reasons?: Partial<Record<EmailFailureReason, number>>): string[] {
+  return (Object.entries(reasons ?? {}) as [EmailFailureReason, number][])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, n]) => n + " " + (n === 1 ? "email" : "emails") + ": " + REASON_TEXT[reason]);
+}
+
 export interface BroadcastCounts {
-  email: { targeted: number; sent: number; failed: number };
+  email: { targeted: number; sent: number; failed: number; reasons?: Partial<Record<EmailFailureReason, number>> };
   sms: { targeted: number; sent: number; failed: number };
   in_app: { targeted: number; sent: number; failed: number; push_sent?: number; no_device?: number; opted_out?: number };
 }
